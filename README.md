@@ -2,6 +2,6 @@
 
 # Member:
 
-James Neil M. Maano
-Armanes Christopher G. Artajo
-Rimark Rafael Moreno
+James Neil M. Maano |
+Armanes Christopher G. Artajo |
+Rimark Rafael Moreno |
