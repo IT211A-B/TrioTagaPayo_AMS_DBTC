@@ -1,0 +1,203 @@
+/* ============================================================
+   AMS — 3TagaPayu Attendance Management System
+   FILE: dashboard.css — Shared dashboard page styles
+   ============================================================ */
+
+/* ============================================================
+   Page Wrapper (needed for dark mode sibling selector)
+   ============================================================ */
+.page-wrapper {
+  display: flex;
+  min-height: 100vh;
+  transition: background 0.35s, color 0.35s;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ============================================================
+   Main area — sits beside the sidebar
+   ============================================================ */
+.main {
+  margin-left: 240px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  transition: margin-left 0.3s;
+}
+
+/* ============================================================
+   Topbar
+   ============================================================ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 28px;
+  background: var(--card);
+  border-bottom: 1.5px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  transition: background 0.35s, border-color 0.35s;
+}
+.topbar-title {
+  font-family: var(--font-head);
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text);
+}
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.topbar-user h4 {
+  font-family: var(--font-head);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.2;
+}
+.topbar-user p {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Content area
+   ============================================================ */
+.content {
+  padding: 28px;
+  flex: 1;
+}
+
+/* ============================================================
+   Topbar Dark Mode Toggle Position
+   ============================================================ */
+.topbar-right .bb8-toggle { transform: scale(0.72); transform-origin: right center; }
+
+/* ============================================================
+   Content Stats Row
+   ============================================================ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.stat-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  display: flex; align-items: center; gap: 14px;
+  box-shadow: var(--shadow);
+  transition: background 0.35s, border-color 0.35s, transform 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); }
+.stat-icon {
+  width: 46px; height: 46px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.stat-icon img { width: 28px; height: 28px; object-fit: contain; }
+.stat-icon.blue   { background: var(--primary-lt); }
+.stat-icon.teal   { background: var(--teal-lt);    }
+.stat-icon.yellow { background: #fef3c7;            }
+.stat-info p { font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-info h3 { font-family: var(--font-head); font-size: 1.5rem; font-weight: 800; color: var(--text); line-height: 1.1; }
+
+/* ============================================================
+   Two-column grid for cards
+   ============================================================ */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ============================================================
+   Tab buttons inside cards
+   ============================================================ */
+.btn-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.btn-tab {
+  padding: 7px 16px; border-radius: 99px;
+  font-size: 0.8rem; font-weight: 700;
+  border: 1.5px solid var(--border);
+  background: transparent; color: var(--text-muted);
+  cursor: pointer; font-family: var(--font-main);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.btn-tab.active, .btn-tab:hover {
+  background: var(--primary); color: #fff;
+  border-color: var(--primary);
+}
+
+/* ============================================================
+   Search bar row
+   ============================================================ */
+.search-row {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 16px; flex-wrap: wrap;
+}
+.search-input-wrap { position: relative; flex: 1; min-width: 200px; }
+.search-input-wrap input { padding-left: 36px; }
+.search-icon {
+  position: absolute; left: 11px; top: 50%;
+  transform: translateY(-50%);
+  width: 16px; height: 16px; color: var(--text-muted);
+}
+
+/* ============================================================
+   Attendance table specifics
+   ============================================================ */
+.att-date-col { white-space: nowrap; font-weight: 700; color: var(--primary); }
+.att-name-col { font-weight: 600; }
+.att-no-col   { font-size: 0.8rem; color: var(--text-muted); }
+
+/* ============================================================
+   Records chart area placeholder
+   ============================================================ */
+.chart-area {
+  min-height: 180px;
+  background: var(--input-bg);
+  border-radius: var(--radius-sm);
+  border: 1.5px dashed var(--border);
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-muted); font-size: 0.85rem;
+  margin-top: 12px;
+}
+
+/* ============================================================
+   Pagination
+   ============================================================ */
+.pagination {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 16px; justify-content: flex-end;
+}
+.page-btn {
+  width: 32px; height: 32px; border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--card); color: var(--text-muted);
+  font-size: 0.8rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+.page-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.page-btn:hover:not(.active) { background: var(--primary-lt); color: var(--primary); }
+
+/* ============================================================
+   Responsive sidebar on small screens
+   ============================================================ */
+@media (max-width: 768px) {
+  .sidebar { width: 60px; }
+  .sb-title, .sb-label, .sb-nav a span, .sb-foot h4, .sb-foot a { display: none; }
+  .sb-nav a { justify-content: center; padding: 12px; }
+  .main { margin-left: 60px; }
+  .content { padding: 16px; }
+  .topbar { padding: 14px 16px; }
+  .stats-row { grid-template-columns: 1fr 1fr; }
+}

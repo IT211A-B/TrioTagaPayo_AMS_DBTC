@@ -1,0 +1,125 @@
+/* ============================================================
+   AMS — 3TagaPayu Attendance Management System
+   FILE: css/admin-students.css
+   PAGE: 04_Admin_Students.html
+   ============================================================ */
+
+/* ============================================================
+   Student Avatar in table
+   ============================================================ */
+.stu-avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  object-fit: contain;
+  background: var(--primary-lt);
+  padding: 3px;
+}
+
+/* ============================================================
+   Student name + number cell
+   ============================================================ */
+.stu-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stu-name-cell .name  { font-weight: 600; font-size: 0.875rem; color: var(--text); }
+.stu-name-cell .no    { font-size: 0.72rem; color: var(--text-muted); font-family: monospace; }
+
+/* ============================================================
+   Section badge
+   ============================================================ */
+.section-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: var(--primary-lt);
+  color: var(--primary);
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   Add Student form highlight
+   ============================================================ */
+.add-student-form {
+  background: var(--input-bg);
+  border: 1.5px dashed var(--primary);
+  border-radius: var(--radius-sm);
+  padding: 16px 18px;
+  margin-bottom: 22px;
+  transition: background 0.35s, border-color 0.35s;
+}
+.add-student-form .section-title { margin-bottom: 12px; }
+
+/* ============================================================
+   Student count chip
+   ============================================================ */
+.stu-count-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 99px;
+  background: var(--teal-lt);
+  color: var(--teal);
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-left: auto;
+}
+
+/* ============================================================
+   Search + filter row
+   ============================================================ */
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+/* ============================================================
+   Edit modal backdrop (CSS-only trick using :target)
+   ============================================================ */
+.modal-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.modal-backdrop:target { display: flex; }
+
+.modal-box {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 28px 30px;
+  width: 480px;
+  max-width: 95vw;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.25);
+  border: 1px solid var(--border);
+  animation: fadeUp 0.25s ease;
+}
+.modal-title {
+  font-family: var(--font-head);
+  font-size: 1rem; font-weight: 700;
+  color: var(--text); margin-bottom: 20px;
+}
+.modal-close {
+  display: inline-block;
+  margin-top: 16px;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+.modal-close:hover { color: var(--absent); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

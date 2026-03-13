@@ -1,0 +1,101 @@
+/* ============================================================
+   AMS — 3TagaPayu Attendance Management System
+   FILE: css/admin-courses.css
+   PAGE: 03_Admin_Courses.html
+   ============================================================ */
+
+/* ============================================================
+   Course Card Header Icon
+   ============================================================ */
+.card-hd img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   Tab panel toggle (Manage Courses / Enroll Students)
+   ============================================================ */
+.course-panels { position: relative; }
+.course-panel  { display: none; }
+
+#course-tab-1:checked ~ .course-panels #cp-manage  { display: block; }
+#course-tab-2:checked ~ .course-panels #cp-enroll  { display: block; }
+
+/* ============================================================
+   Course Code badge in table
+   ============================================================ */
+.course-code {
+  font-family: monospace;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: var(--primary-lt);
+  padding: 3px 9px;
+  border-radius: 6px;
+  display: inline-block;
+  letter-spacing: 0.04em;
+}
+
+/* ============================================================
+   Units badge
+   ============================================================ */
+.units-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--teal-lt);
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+/* ============================================================
+   Action buttons in table
+   ============================================================ */
+.tbl-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+.btn-edit   { padding: 4px 12px; font-size: 0.75rem; }
+.btn-delete {
+  padding: 4px 12px; font-size: 0.75rem;
+  background: #fee2e2; color: var(--absent);
+  border: 1.5px solid var(--absent);
+  border-radius: var(--radius-sm);
+  cursor: pointer; font-weight: 700;
+  font-family: var(--font-main);
+  transition: opacity 0.2s;
+}
+.btn-delete:hover { opacity: 0.8; }
+
+/* ============================================================
+   Enroll panel — student checklist
+   ============================================================ */
+.enroll-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 6px;
+}
+.enroll-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  background: var(--input-bg);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.enroll-item:hover { border-color: var(--primary); background: var(--primary-lt); }
+.enroll-item input[type="checkbox"] { accent-color: var(--primary); width: 16px; height: 16px; }
+.enroll-item-name  { font-weight: 600; font-size: 0.875rem; color: var(--text); }
+.enroll-item-no    { font-size: 0.75rem; color: var(--text-muted); margin-left: auto; font-family: monospace; }
