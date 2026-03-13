@@ -1,0 +1,92 @@
+/* ============================================================
+   AMS — 3TagaPayu Attendance Management System
+   FILE: css/teacher-attendance.css
+   PAGE: 06_Teacher_Attendance.html
+   ============================================================ */
+
+/* ============================================================
+   Teacher stat cards — teal theme
+   ============================================================ */
+.stats-row .stat-card:nth-child(1) .stat-icon { background: var(--teal-lt); }
+.stats-row .stat-card:nth-child(2) .stat-icon { background: var(--primary-lt); }
+.stats-row .stat-card:nth-child(3) .stat-icon { background: #fef3c7; }
+
+.stats-row .stat-info h3 { color: var(--teal); }
+
+/* ============================================================
+   Today's session banner
+   ============================================================ */
+.session-banner {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-radius: var(--radius-sm);
+  background: var(--teal-lt);
+  border-left: 4px solid var(--teal);
+  margin-bottom: 20px;
+  transition: background 0.35s;
+}
+.session-banner svg { width: 22px; height: 22px; color: var(--teal); flex-shrink: 0; }
+.session-banner p   { font-size: 0.875rem; font-weight: 600; color: var(--teal); }
+.session-banner span { font-weight: 400; color: var(--text-muted); font-size: 0.8rem; margin-left: 8px; }
+
+/* ============================================================
+   Attendance filter bar
+   ============================================================ */
+.att-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  padding: 14px 18px;
+  background: var(--input-bg);
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--border);
+  margin-bottom: 18px;
+  transition: background 0.35s, border-color 0.35s;
+}
+
+/* ============================================================
+   Attendance table — teal header
+   ============================================================ */
+.tbl-teal thead tr { background: var(--teal); }
+
+/* ============================================================
+   Attendance summary chips
+   ============================================================ */
+.att-summary {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.att-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 14px;
+  border-radius: 99px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.att-chip .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.att-chip.present { color: var(--present); border: 1.5px solid var(--present); background: #dcfce7; }
+.att-chip.absent  { color: var(--absent);  border: 1.5px solid var(--absent);  background: #fee2e2; }
+.att-chip.late    { color: var(--late);    border: 1.5px solid var(--late);    background: #fef3c7; }
+.att-chip.present .dot { background: var(--present); }
+.att-chip.absent  .dot { background: var(--absent);  }
+.att-chip.late    .dot { background: var(--late);    }
+
+/* ============================================================
+   Save button row
+   ============================================================ */
+.att-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}

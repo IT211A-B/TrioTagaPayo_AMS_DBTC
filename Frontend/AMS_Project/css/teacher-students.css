@@ -1,0 +1,101 @@
+/* ============================================================
+   AMS — 3TagaPayu Attendance Management System
+   FILE: css/teacher-students.css
+   PAGE: 08_Teacher_Students.html
+   ============================================================ */
+
+/* ============================================================
+   Student row with avatar
+   ============================================================ */
+.stu-row-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.stu-row-avatar {
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: var(--teal-lt);
+  object-fit: contain;
+  padding: 4px;
+  flex-shrink: 0;
+}
+.stu-row-info .name { font-weight: 600; font-size: 0.875rem; color: var(--text); }
+.stu-row-info .no   { font-size: 0.72rem; color: var(--text-muted); font-family: monospace; }
+
+/* ============================================================
+   Attendance percentage bar
+   ============================================================ */
+.att-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 140px;
+}
+.att-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.att-bar-fill {
+  height: 100%;
+  border-radius: 99px;
+  background: var(--teal);
+  transition: width 0.4s ease;
+}
+.att-bar-fill.low    { background: var(--absent); }
+.att-bar-fill.medium { background: var(--late);   }
+.att-bar-fill.high   { background: var(--present);}
+
+.att-pct {
+  font-size: 0.78rem;
+  font-weight: 700;
+  min-width: 36px;
+  text-align: right;
+  color: var(--text);
+}
+
+/* ============================================================
+   Section filter tabs
+   ============================================================ */
+.section-tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.section-tab {
+  padding: 5px 14px;
+  border-radius: 99px;
+  font-size: 0.78rem; font-weight: 700;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: var(--font-main);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.section-tab.active, .section-tab:hover {
+  background: var(--teal);
+  color: #fff;
+  border-color: var(--teal);
+}
+
+/* ============================================================
+   Table header — teal theme for teacher pages
+   ============================================================ */
+.tbl-teal thead tr { background: var(--teal); }
+
+/* ============================================================
+   Student detail link
+   ============================================================ */
+.stu-detail-link {
+  color: var(--teal);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.stu-detail-link:hover { opacity: 0.7; text-decoration: underline; }
