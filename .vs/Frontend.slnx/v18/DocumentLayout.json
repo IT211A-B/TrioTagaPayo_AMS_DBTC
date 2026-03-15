@@ -1,0 +1,462 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\admindashboard\\students.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\admindashboard\\students.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\wwwroot\\css\\dashboard.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:wwwroot\\css\\dashboard.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\teacherdashboard\\students.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\teacherdashboard\\students.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\shared\\_topbar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\shared\\_topbar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\wwwroot\\css\\login.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:wwwroot\\css\\login.css||{A5401142-F49D-43DB-90B1-F57BA349E55C}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\wwwroot\\js\\dashboard.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:wwwroot\\js\\dashboard.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\wwwroot\\js\\login.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:wwwroot\\js\\login.js||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\controllers\\admindashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:controllers\\admindashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\controllers\\logincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:controllers\\logincontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\controllers\\teacherdashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:controllers\\teacherdashboardcontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\models\\attendance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:models\\attendance.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\models\\course.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:models\\course.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\models\\student.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:models\\student.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\models\\teacher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:models\\teacher.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:models\\user.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\models\\viewmodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:models\\viewmodels.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\admindashboard\\attendance.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\admindashboard\\attendance.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\admindashboard\\courses.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\admindashboard\\courses.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\admindashboard\\teachers.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\admindashboard\\teachers.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\login\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\login\\login.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\shared\\_adminsidebar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\shared\\_adminsidebar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\shared\\_teachersidebar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\shared\\_teachersidebar.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\teacherdashboard\\attendance.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\teacherdashboard\\attendance.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\teacherdashboard\\courses.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\teacherdashboard\\courses.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|c:\\users\\manes christopher\\source\\repos\\frontend\\views\\teacherdashboard\\records.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{F7575659-3795-D654-7C13-9FD1B5855317}|Frontend.csproj|solutionrelative:views\\teacherdashboard\\records.cshtml||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "dashboard.css",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\css\\dashboard.css",
+              "RelativeDocumentMoniker": "wwwroot\\css\\dashboard.css",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\css\\dashboard.css",
+              "RelativeToolTip": "wwwroot\\css\\dashboard.css",
+              "ViewState": "AgIAAGIFAAAAAAAAAAAswH0FAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-03-15T00:42:01.09Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAKAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-15T00:28:27.745Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "Students.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Students.cshtml",
+              "RelativeDocumentMoniker": "Views\\TeacherDashboard\\Students.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Students.cshtml",
+              "RelativeToolTip": "Views\\TeacherDashboard\\Students.cshtml",
+              "ViewState": "AgIAAKQAAAAAAAAAAADwv7EAAAA+AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T01:43:34.736Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "_Topbar.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Shared\\_Topbar.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_Topbar.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Shared\\_Topbar.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_Topbar.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAADMAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T01:28:07.147Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "login.js",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\js\\login.js",
+              "RelativeDocumentMoniker": "wwwroot\\js\\login.js",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\js\\login.js",
+              "RelativeToolTip": "wwwroot\\js\\login.js",
+              "ViewState": "AgIAAAkAAAAAAAAAAAAwwB8AAAADAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T00:29:17.845Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "Students.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Students.cshtml",
+              "RelativeDocumentMoniker": "Views\\AdminDashboard\\Students.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Students.cshtml",
+              "RelativeToolTip": "Views\\AdminDashboard\\Students.cshtml",
+              "ViewState": "AgIAAMoAAAAAAAAAAAAAAMgAAAAzAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T00:48:12.318Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "login.css",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\css\\login.css",
+              "RelativeDocumentMoniker": "wwwroot\\css\\login.css",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\css\\login.css",
+              "RelativeToolTip": "wwwroot\\css\\login.css",
+              "ViewState": "AgIAAOQAAAAAAAAAAAAswPwAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003000|",
+              "WhenOpened": "2026-03-15T00:28:52.34Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "AdminDashboardController.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Controllers\\AdminDashboardController.cs",
+              "RelativeDocumentMoniker": "Controllers\\AdminDashboardController.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Controllers\\AdminDashboardController.cs",
+              "RelativeToolTip": "Controllers\\AdminDashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAgAAAAlAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:19:46.428Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "dashboard.js",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\js\\dashboard.js",
+              "RelativeDocumentMoniker": "wwwroot\\js\\dashboard.js",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\wwwroot\\js\\dashboard.js",
+              "RelativeToolTip": "wwwroot\\js\\dashboard.js",
+              "ViewState": "AgIAAKkAAAAAAAAAAADwv7IAAAAjAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001646|",
+              "WhenOpened": "2026-03-15T00:52:43.188Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "LoginController.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Controllers\\LoginController.cs",
+              "RelativeDocumentMoniker": "Controllers\\LoginController.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Controllers\\LoginController.cs",
+              "RelativeToolTip": "Controllers\\LoginController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAB8AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:19:29.456Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "TeacherDashboardController.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Controllers\\TeacherDashboardController.cs",
+              "RelativeDocumentMoniker": "Controllers\\TeacherDashboardController.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Controllers\\TeacherDashboardController.cs",
+              "RelativeToolTip": "Controllers\\TeacherDashboardController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:20:01.304Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "Attendance.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Attendance.cs",
+              "RelativeDocumentMoniker": "Models\\Attendance.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Attendance.cs",
+              "RelativeToolTip": "Models\\Attendance.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:21:27.732Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "Course.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Course.cs",
+              "RelativeDocumentMoniker": "Models\\Course.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Course.cs",
+              "RelativeToolTip": "Models\\Course.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:20:20.111Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "Student.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Student.cs",
+              "RelativeDocumentMoniker": "Models\\Student.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Student.cs",
+              "RelativeToolTip": "Models\\Student.cs",
+              "ViewState": "AgIAAAIAAAAAAAAAAAAxwA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:20:54.139Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "Teacher.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Teacher.cs",
+              "RelativeDocumentMoniker": "Models\\Teacher.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\Teacher.cs",
+              "RelativeToolTip": "Models\\Teacher.cs",
+              "ViewState": "AgIAAAQAAAAAAAAAAAAzwA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:21:18.361Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "User.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\User.cs",
+              "RelativeDocumentMoniker": "Models\\User.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\User.cs",
+              "RelativeToolTip": "Models\\User.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:20:45.829Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "ViewModels.cs",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\ViewModels.cs",
+              "RelativeDocumentMoniker": "Models\\ViewModels.cs",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Models\\ViewModels.cs",
+              "RelativeToolTip": "Models\\ViewModels.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAYAAAA0AAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-03-14T15:21:42.106Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "Attendance.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Attendance.cshtml",
+              "RelativeDocumentMoniker": "Views\\AdminDashboard\\Attendance.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Attendance.cshtml",
+              "RelativeToolTip": "Views\\AdminDashboard\\Attendance.cshtml",
+              "ViewState": "AgIAAMwAAAAAAAAAAADwv9kAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T00:43:18.783Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "Courses.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Courses.cshtml",
+              "RelativeDocumentMoniker": "Views\\AdminDashboard\\Courses.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Courses.cshtml",
+              "RelativeToolTip": "Views\\AdminDashboard\\Courses.cshtml",
+              "ViewState": "AgIAAEIAAAAAAAAAAADwv10AAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T00:47:36.474Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "Teachers.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Teachers.cshtml",
+              "RelativeDocumentMoniker": "Views\\AdminDashboard\\Teachers.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\AdminDashboard\\Teachers.cshtml",
+              "RelativeToolTip": "Views\\AdminDashboard\\Teachers.cshtml",
+              "ViewState": "AgIAAL4AAAAAAAAAAAAAAOIAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T01:36:05.582Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "Login.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Login\\Login.cshtml",
+              "RelativeDocumentMoniker": "Views\\Login\\Login.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Login\\Login.cshtml",
+              "RelativeToolTip": "Views\\Login\\Login.cshtml",
+              "ViewState": "AgIAABAAAAAAAAAAAAAwwBcAAABFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T00:30:22.708Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "_AdminSidebar.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Shared\\_AdminSidebar.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_AdminSidebar.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Shared\\_AdminSidebar.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_AdminSidebar.cshtml",
+              "ViewState": "AgIAAAsAAAAAAAAAAADwvyEAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T00:50:21.573Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "_TeacherSidebar.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Shared\\_TeacherSidebar.cshtml",
+              "RelativeDocumentMoniker": "Views\\Shared\\_TeacherSidebar.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\Shared\\_TeacherSidebar.cshtml",
+              "RelativeToolTip": "Views\\Shared\\_TeacherSidebar.cshtml",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAwwCEAAAAGAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T01:40:55.316Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "Attendance.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Attendance.cshtml",
+              "RelativeDocumentMoniker": "Views\\TeacherDashboard\\Attendance.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Attendance.cshtml",
+              "RelativeToolTip": "Views\\TeacherDashboard\\Attendance.cshtml",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAEAAAATAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T01:41:46.831Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "Courses.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Courses.cshtml",
+              "RelativeDocumentMoniker": "Views\\TeacherDashboard\\Courses.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Courses.cshtml",
+              "RelativeToolTip": "Views\\TeacherDashboard\\Courses.cshtml",
+              "ViewState": "AgIAADIAAAAAAAAAAADwv0gAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T01:42:24.609Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "Records.cshtml",
+              "DocumentMoniker": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Records.cshtml",
+              "RelativeDocumentMoniker": "Views\\TeacherDashboard\\Records.cshtml",
+              "ToolTip": "C:\\Users\\Manes Christopher\\source\\repos\\Frontend\\Views\\TeacherDashboard\\Records.cshtml",
+              "RelativeToolTip": "Views\\TeacherDashboard\\Records.cshtml",
+              "ViewState": "AgIAAEMAAAAAAAAAAADwv1kAAAAHAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2026-03-15T01:44:14.436Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+﻿@{
+    Layout = null; ViewData["Title"] = "My Courses";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>My Courses – 3TagaPayu AMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/dashboard.css">
+</head>
+<body>
+    <!-- Loading screen — change img src to swap logo -->
+    <!-- Dots: codepen.io/nzbin/pen/GGrXbp (MIT) | Pulse: uiverse.io loading styles -->
+    <div id="pageLoader">
+        <img src="~/assets/dbtc.png" alt="Loading" class="loader-logo">
+        <div class="loader-dots"><span></span><span></span><span></span></div>
+        <p class="loader-text">Loading...</p>
+    </div>
+
+    @await Html.PartialAsync("_TeacherSidebar", "Courses")
+    <div class="main">
+        @await Html.PartialAsync("_Topbar", new ViewDataDictionary(ViewData) { { "User", "Carl Joshua Santos" }, { "Role", "Teacher" } })
+        <div class="page-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-book panel-icon"></i>
+                    <img src="~/assets/dbtc.png" alt="">
+                    <h2>My Courses</h2>
+                </div>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Course Name</th>
+                            <th>Section</th>
+                            <th>Students</th>
+                            <th>Schedule</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><span class="course-tag">IT 212A</span></td>
+                            <td>Network Management 2</td>
+                            <td><span class="section-tag">IT-3A</span></td>
+                            <td>8</td>
+                            <td style="color:var(--muted)">Mon / Wed 8:00–10:00 AM</td>
+                        </tr>
+                        <tr>
+                            <td><span class="course-tag">IT 214A</span></td>
+                            <td>Capstone Project 1</td>
+                            <td><span class="section-tag">IT-4A</span></td>
+                            <td>8</td>
+                            <td style="color:var(--muted)">Tue / Thu 1:00–3:00 PM</td>
+                        </tr>
+                        <tr>
+                            <td><span class="course-tag">IT 216A</span></td>
+                            <td>Database Management</td>
+                            <td><span class="section-tag">IT-3B</span></td>
+                            <td>8</td>
+                            <td style="color:var(--muted)">Fri 7:30–10:30 AM</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <script src="~/js/dashboard.js"></script>
+</body>
+</html>

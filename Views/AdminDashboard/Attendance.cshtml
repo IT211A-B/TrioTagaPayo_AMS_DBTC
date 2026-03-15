@@ -1,0 +1,227 @@
+﻿@{
+    Layout = null; ViewData["Title"] = "Attendance";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Attendance – 3TagaPayu AMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/dashboard.css">
+</head>
+<body>
+
+    <!-- ── LOADING SCREEN ──────────────────────────────────────
+         Logo animation: codepen.io/nzbin/pen/GGrXbp (MIT)
+         Dots bounce: uiverse.io loading dots style
+         To change logo: swap the img src below to any image
+    ──────────────────────────────────────────────────────── -->
+    <div id="pageLoader">
+        <img src="~/assets/dbtc.png" alt="Loading" class="loader-logo">
+        <div class="loader-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+        <p class="loader-text">Loading...</p>
+    </div>
+
+    @await Html.PartialAsync("_AdminSidebar", "Attendance")
+
+    <div class="main">
+        @await Html.PartialAsync("_Topbar", new ViewDataDictionary(ViewData) { { "User", "Administrator" }, { "Role", "Admin" } })
+
+        <div class="page-content">
+            <!-- STAT CARDS -->
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <div class="stat-icon"><img src="~/assets/student_logo.png" alt=""></div>
+                    <div><div class="stat-label">Total Students</div><div class="stat-value">8</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><img src="~/assets/Teacher_logo.png" alt=""></div>
+                    <div><div class="stat-label">Present Today</div><div class="stat-value">5</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><img src="~/assets/dbtc.png" alt=""></div>
+                    <div><div class="stat-label">Active Courses</div><div class="stat-value">4</div></div>
+                </div>
+            </div>
+
+            <div class="layout-split">
+                <!-- TAKE ATTENDANCE -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-clipboard-list panel-icon"></i>
+                        <h2>Take Attendance</h2>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field" style="flex:1">
+                            <label>Course</label>
+                            <select>
+                                <option>IT 212A – Network Management 2</option>
+                                <option>IT 213A – Systems Integration</option>
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Section</label>
+                            <select><option>IT-3A</option><option>IT-3B</option><option>IT-4A</option></select>
+                        </div>
+                        <div class="form-field">
+                            <label>Date</label>
+                            <input type="date" value="2026-03-14">
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student No.</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attBody">
+                            <tr>
+                                <td class="num-col">1</td>
+                                <td class="mono">2026-0001</td>
+                                <td>Artajo, Armanes Christopher G.</td>
+                                <td><div class="pal-group"><button class="pal-btn p-active" onclick="setPal(this,'p')">P</button><button class="pal-btn" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                            <tr>
+                                <td class="num-col">2</td>
+                                <td class="mono">2026-0002</td>
+                                <td>Maano, James Neil</td>
+                                <td><div class="pal-group"><button class="pal-btn" onclick="setPal(this,'p')">P</button><button class="pal-btn a-active" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                            <tr>
+                                <td class="num-col">3</td>
+                                <td class="mono">2026-0003</td>
+                                <td>Moreno, Rimark Rafel</td>
+                                <td><div class="pal-group"><button class="pal-btn p-active" onclick="setPal(this,'p')">P</button><button class="pal-btn" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                            <tr>
+                                <td class="num-col">4</td>
+                                <td class="mono">2026-0004</td>
+                                <td>Moreno, Anthony Josh</td>
+                                <td><div class="pal-group"><button class="pal-btn p-active" onclick="setPal(this,'p')">P</button><button class="pal-btn" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                            <tr>
+                                <td class="num-col">5</td>
+                                <td class="mono">2026-0005</td>
+                                <td>Rebese, Vincent</td>
+                                <td><div class="pal-group"><button class="pal-btn p-active" onclick="setPal(this,'p')">P</button><button class="pal-btn" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                            <tr>
+                                <td class="num-col">6</td>
+                                <td class="mono">2026-0006</td>
+                                <td>Villacorte, John Kevin</td>
+                                <td><div class="pal-group"><button class="pal-btn p-active" onclick="setPal(this,'p')">P</button><button class="pal-btn" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                            <tr>
+                                <td class="num-col">7</td>
+                                <td class="mono">2026-0007</td>
+                                <td>NobetNov, KenWil</td>
+                                <td><div class="pal-group"><button class="pal-btn p-active" onclick="setPal(this,'p')">P</button><button class="pal-btn" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                            <tr>
+                                <td class="num-col">8</td>
+                                <td class="mono">2026-0008</td>
+                                <td>Lopez, Francis M.</td>
+                                <td><div class="pal-group"><button class="pal-btn p-active" onclick="setPal(this,'p')">P</button><button class="pal-btn" onclick="setPal(this,'a')">A</button><button class="pal-btn" onclick="setPal(this,'l')">L</button></div></td>
+                                <td><input type="text" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;" placeholder="Optional"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div style="display:flex;gap:10px;margin-top:18px;">
+                        <button class="btn btn-success">Save Attendance</button>
+                        <button class="btn btn-ghost">Reset</button>
+                    </div>
+                </div>
+
+                <!-- STUDENT REGISTRATION PANEL -->
+                <div class="reg-panel">
+                    <h3>Student Registration</h3>
+                    <div class="reg-id-row">
+                        <div class="reg-field">
+                            <label>Student ID</label>
+                            <input type="text" placeholder="2026-XXXX" value="2026-XXXX">
+                        </div>
+                        <div class="reg-field">
+                            <label>Grade / Level</label>
+                            <select><option>IT-3A</option><option>IT-3B</option><option>IT-4A</option></select>
+                        </div>
+                    </div>
+                    <div class="reg-field">
+                        <label>Full Name</label>
+                        <input type="text" placeholder="Last Name, First Name M.">
+                    </div>
+                    <div class="reg-field">
+                        <label>Gmail (for notifications)</label>
+                        <input type="email" placeholder="student@gmail.com">
+                    </div>
+                    <div class="reg-field">
+                        <label>SMS / Mobile (for notifications)</label>
+                        <input type="text" placeholder="+63 9XX XXX XXXX">
+                    </div>
+                    <div class="qr-box">
+                        <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <rect x="2" y="2" width="22" height="22" rx="2" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" fill="none" />
+                            <rect x="8" y="8" width="10" height="10" rx="1" fill="rgba(255,255,255,0.2)" />
+                            <rect x="36" y="2" width="22" height="22" rx="2" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" fill="none" />
+                            <rect x="42" y="8" width="10" height="10" rx="1" fill="rgba(255,255,255,0.2)" />
+                            <rect x="2" y="36" width="22" height="22" rx="2" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" fill="none" />
+                            <rect x="8" y="42" width="10" height="10" rx="1" fill="rgba(255,255,255,0.2)" />
+                            <line x1="36" y1="36" x2="36" y2="42" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                            <line x1="36" y1="48" x2="36" y2="58" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                            <line x1="42" y1="36" x2="58" y2="36" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                            <line x1="42" y1="42" x2="50" y2="42" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                            <line x1="50" y1="48" x2="58" y2="48" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                            <line x1="42" y1="52" x2="42" y2="58" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                            <line x1="50" y1="54" x2="58" y2="54" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                            <line x1="56" y1="42" x2="56" y2="48" stroke="rgba(255,255,255,0.2)" stroke-width="2.5" />
+                        </svg>
+                    </div>
+                    <p style="font-size:0.7rem;color:var(--muted);text-align:center;margin-bottom:12px;">Scan student QR Code after filling form</p>
+
+                    <div class="scanned-label">Scanned Today — 2 Students</div>
+                    <div class="scanned-item">
+                        <div class="scan-num">1</div>
+                        <div class="scan-info">
+                            <div class="sname">Artajo, Armanes C.</div>
+                            <div class="smeta">2026-0001 · IT-3A</div>
+                            <div style="margin-top:3px;"><span style="font-size:0.7rem;color:#888;">8:04 AM</span> <span class="badge badge-present" style="font-size:0.65rem;padding:2px 7px;">Present</span></div>
+                        </div>
+                    </div>
+                    <div class="scanned-item">
+                        <div class="scan-num">2</div>
+                        <div class="scan-info">
+                            <div class="sname">Moreno, Rimark R.</div>
+                            <div class="smeta">2026-0003 · IT-3A</div>
+                            <div style="margin-top:3px;"><span style="font-size:0.7rem;color:#888;">8:09 AM</span> <span class="badge badge-present" style="font-size:0.65rem;padding:2px 7px;">Present</span></div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary" style="width:100%;margin-top:12px;">○ Submit Registration &amp; Scan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/dashboard.js"></script>
+</body>
+</html>

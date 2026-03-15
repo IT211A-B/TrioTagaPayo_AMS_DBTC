@@ -1,0 +1,90 @@
+﻿@{
+    Layout = null; ViewData["Title"] = "Att. Records";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Att. Records – 3TagaPayu AMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/dashboard.css">
+</head>
+<body>
+    <!-- Loading screen — change img src to swap logo -->
+    <!-- Dots: codepen.io/nzbin/pen/GGrXbp (MIT) | Pulse: uiverse.io loading styles -->
+    <div id="pageLoader">
+        <img src="~/assets/dbtc.png" alt="Loading" class="loader-logo">
+        <div class="loader-dots"><span></span><span></span><span></span></div>
+        <p class="loader-text">Loading...</p>
+    </div>
+
+    @await Html.PartialAsync("_TeacherSidebar", "Records")
+    <div class="main">
+        @await Html.PartialAsync("_Topbar", new ViewDataDictionary(ViewData) { { "User", "Carl Joshua Santos" }, { "Role", "Teacher" } })
+        <div class="page-content">
+            <div class="panel">
+                <div class="panel-header">
+                    <i class="fas fa-chart-bar panel-icon"></i>
+                    <img src="~/assets/Teacher_logo.png" alt="">
+                    <h2>Attendance Records</h2>
+                </div>
+
+                <div class="form-row" style="margin-bottom:20px;">
+                    <div class="form-field" style="flex:1">
+                        <label>Course</label>
+                        <select>
+                            <option>IT 212A – Network Management 2</option>
+                            <option>IT 214A – Capstone Project 1</option>
+                            <option>IT 216A – Database Management</option>
+                        </select>
+                    </div>
+                    <div class="form-field">
+                        <label>From Date</label>
+                        <input type="date" value="2026-03-01">
+                    </div>
+                    <div class="form-field">
+                        <label>To Date</label>
+                        <input type="date" value="2026-03-14">
+                    </div>
+                    <div class="form-field" style="justify-content:flex-end;">
+                        <label>&nbsp;</label>
+                        <button class="btn btn-primary">Filter</button>
+                    </div>
+                </div>
+
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Student No.</th>
+                            <th>Name</th>
+                            <th>Status</th>
+                            <th>Remarks</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Mar 14, 2026</td><td class="mono">2026-0001</td><td>Artajo, Armanes Christopher G.</td><td><span class="badge badge-present">Present</span></td><td style="color:var(--muted)">—</td></tr>
+                        <tr><td>Mar 14, 2026</td><td class="mono">2026-0002</td><td>Maano, James Neil</td><td><span class="badge badge-absent">Absent</span></td><td style="color:var(--muted)">Sick</td></tr>
+                        <tr><td>Mar 14, 2026</td><td class="mono">2026-0003</td><td>Moreno, Rimark Rafel</td><td><span class="badge badge-late">Late</span></td><td style="color:var(--muted)">Traffic</td></tr>
+                        <tr><td>Mar 14, 2026</td><td class="mono">2026-0004</td><td>Moreno, Anthony Josh</td><td><span class="badge badge-present">Present</span></td><td style="color:var(--muted)">—</td></tr>
+                        <tr><td>Mar 14, 2026</td><td class="mono">2026-0005</td><td>Rebese, Vincent</td><td><span class="badge badge-present">Present</span></td><td style="color:var(--muted)">—</td></tr>
+                        <tr><td>Mar 14, 2026</td><td class="mono">2026-0006</td><td>Villacorte, John Kevin</td><td><span class="badge badge-late">Late</span></td><td style="color:var(--muted)">Traffic</td></tr>
+                        <tr><td>Mar 13, 2026</td><td class="mono">2026-0001</td><td>Artajo, Armanes Christopher G.</td><td><span class="badge badge-present">Present</span></td><td style="color:var(--muted)">—</td></tr>
+                        <tr><td>Mar 13, 2026</td><td class="mono">2026-0007</td><td>NobetNov, KenWil</td><td><span class="badge badge-absent">Absent</span></td><td style="color:var(--muted)">Sick</td></tr>
+                        <tr><td>Mar 13, 2026</td><td class="mono">2026-0008</td><td>Lopez, Francis M.</td><td><span class="badge badge-present">Present</span></td><td style="color:var(--muted)">—</td></tr>
+                    </tbody>
+                </table>
+
+                <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+                    <button class="btn btn-ghost">Export CSV</button>
+                    <button class="btn btn-success">Print Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="~/js/dashboard.js"></script>
+</body>
+</html>
