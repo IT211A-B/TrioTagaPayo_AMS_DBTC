@@ -1,13 +1,13 @@
-﻿using Attendance_Management_System.Models;
+﻿using Attendance_Management_System.DTOs;
 
 namespace Attendance_Management_System.Interfacess
 {
     public interface ICourseService
     {
-        Task<IEnumerable<Course>> GetAllAsync();
-        Task<Course?> GetByIdAsync(int id);
-        Task<Course> CreateAsync(Course course);
-        Task<Course?> UpdateAsync(int id, Course course);
+        Task<IEnumerable<CourseResponseDto>> GetAllAsync();
+        Task<CourseResponseDto?> GetByIdAsync(int id);
+        Task<CourseResponseDto> CreateAsync(CreateCourseDto dto);
+        Task<CourseResponseDto?> UpdateAsync(int id, UpdateCourseDto dto);
         Task<bool> DeleteAsync(int id);
     }
 }

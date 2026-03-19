@@ -1,56 +1,55 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Interfacess;
-using Attendance_Management_System.Models;
 
 namespace Attendance_Management_System.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class TeacherController : ControllerBase
     {
         private readonly ITeacherService _teacherService;
-
-        public TeacherController(ITeacherService teacherService)
-        {
-            _teacherService = teacherService;
-        }
+        public TeacherController(ITeacherService teacherService) => _teacherService = teacherService;
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var teachers = await _teacherService.GetAllAsync();
-            return Ok(teachers);
-        }
+        public async Task<IActionResult> GetAll() => Ok(await _teacherService.GetAllAsync());
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
             var teacher = await _teacherService.GetByIdAsync(id);
-            if (teacher == null) return NotFound();
-            return Ok(teacher);
+            return teacher == null ? NotFound() : Ok(teacher);
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Teacher teacher)
+        public async Task<IActionResult> Create([FromBody] CreateTeacherDto dto)
         {
-            var created = await _teacherService.CreateAsync(teacher);
+            var created = await _teacherService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] Teacher teacher)
+        public async Task<IActionResult> Update(int id, [FromBody] UpdateTeacherDto dto)
         {
-            var updated = await _teacherService.UpdateAsync(id, teacher);
-            if (updated == null) return NotFound();
-            return Ok(updated);
+            var updated = await _teacherService.UpdateAsync(id, dto);
+            return updated == null ? NotFound() : Ok(updated);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _teacherService.DeleteAsync(id);
-            if (!deleted) return NotFound();
-            return NoContent();
+            return deleted ? NoContent() : NotFound();
+        }
+
+        // Enable / Disable teacher — for the toggle button in the UI
+        [HttpPatch("{id}/toggle-status")]
+        public async Task<IActionResult> ToggleStatus(int id)
+        {
+            var result = await _teacherService.ToggleStatusAsync(id);
+            return result == null ? NotFound() : Ok(result);
         }
     }
 }

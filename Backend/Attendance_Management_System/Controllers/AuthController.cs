@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
 
@@ -15,6 +16,7 @@ namespace Attendance_Management_System.Controllers
             _authService = authService;
         }
 
+        [AllowAnonymous]  // ← add this line
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {

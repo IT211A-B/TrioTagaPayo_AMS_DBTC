@@ -1,13 +1,13 @@
-﻿using Attendance_Management_System.Models;
+﻿using Attendance_Management_System.DTOs;
 
 namespace Attendance_Management_System.Interfacess
 {
     public interface IStudentService
     {
-        Task<IEnumerable<Student>> GetAllAsync();
-        Task<Student?> GetByIdAsync(int id);
-        Task<Student> CreateAsync(Student student);
-        Task<Student?> UpdateAsync(int id, Student student);
+        Task<IEnumerable<StudentResponseDto>> GetAllAsync();
+        Task<StudentResponseDto?> GetByIdAsync(int id);
+        Task<StudentResponseDto> CreateAsync(CreateStudentDto dto);
+        Task<StudentResponseDto?> UpdateAsync(int id, UpdateStudentDto dto);
         Task<bool> DeleteAsync(int id);
     }
 }
