@@ -1,0 +1,62 @@
+﻿@{
+    var title = ViewData["Title"]?.ToString() ?? "";
+    var user = ViewData["User"]?.ToString() ?? "Administrator";
+    var role = ViewData["Role"]?.ToString() ?? "Admin";
+    var parts = user.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+    var initials = parts.Length >= 2
+        ? $"{parts[0][0]}{parts[1][0]}".ToUpper()
+        : user.Length >= 2
+            ? user.Substring(0, 2).ToUpper()
+            : user.ToUpper();
+    bool isTeacher = role == "Teacher";
+    string avatarClass = isTeacher ? "avatar teacher" : "avatar";
+    string roleClass = isTeacher ? "urole" : "urole admin-role";
+    string closeLogout = "closeModal('logoutModal')";
+}
+<div class="topbar">
+    <div class="topbar-title" style="display:flex;align-items:center;gap:4px;">
+        <button class="hamburger" id="hamburgerBtn" aria-label="Toggle sidebar">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+        @title
+    </div>
+    <div class="topbar-right">
+        <span class="topbar-clock" id="clock">--:--:-- --</span>
+        <input type="checkbox" class="theme-switch" id="themeToggle" title="Toggle light/dark mode">
+        <button class="btn btn-ghost" id="logoutBtn"
+                style="padding:6px 12px;font-size:0.78rem;display:flex;align-items:center;gap:6px;">
+            <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+        <div class="topbar-user">
+            <div class="@avatarClass">@initials</div>
+            <div class="uinfo">
+                <div class="uname">@user</div>
+                <div class="@roleClass">@role</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<div class="modal-backdrop" id="logoutModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>
+                <i class="fas fa-sign-out-alt"></i> Confirm Logout
+            </h3>
+            <button class="modal-close" onclick="@closeLogout">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to logout? You will be redirected to the login page.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="@closeLogout">Cancel</button>
+            <a href="/Login/Login" class="btn btn-danger">Yes, Logout</a>
+        </div>
+    </div>
+</div>
