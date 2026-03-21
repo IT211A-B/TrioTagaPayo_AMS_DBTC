@@ -1,0 +1,166 @@
+﻿@{
+    Layout = null; ViewData["Title"] = "My Attendance";
+    var courses = ViewBag.Courses as List<Frontend.Controllers.CourseDto> ?? new();
+    var students = ViewBag.Students as List<Frontend.Controllers.StudentDto> ?? new();
+    var username = ViewBag.Username?.ToString() ?? "Teacher";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>My Attendance – 3TagaPayu AMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/dashboard.css">
+</head>
+<body>
+    <div id="pageLoader">
+        <img src="~/assets/dbtc.png" alt="Loading" class="loader-logo">
+        <div class="loader-dots"><span></span><span></span><span></span></div>
+        <p class="loader-text">Loading...</p>
+    </div>
+
+    @await Html.PartialAsync("_TeacherSidebar", "Attendance")
+    <div class="main">
+        @{
+            ViewData["User"] = username; ViewData["Role"] = "Teacher";
+        }
+        @await Html.PartialAsync("_Topbar")
+        <div class="page-content">
+
+            <!-- STAT CARDS -->
+            <div class="stat-cards">
+                <div class="stat-card">
+                    <div class="stat-icon"><img src="~/assets/Teacher_logo.png" alt=""></div>
+                    <div><div class="stat-label">My Courses</div><div class="stat-value">@ViewBag.MyCourses</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><img src="~/assets/student_logo.png" alt=""></div>
+                    <div><div class="stat-label">Total Students</div><div class="stat-value">@ViewBag.TotalStudents</div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon"><img src="~/assets/dbtc.png" alt=""></div>
+                    <div><div class="stat-label">Today</div><div class="stat-value">@DateTime.Today.ToString("MMM dd")</div></div>
+                </div>
+            </div>
+
+            <div class="layout-split">
+                <!-- TAKE ATTENDANCE -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-clipboard-list panel-icon"></i>
+                        <h2>Take Attendance</h2>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-field" style="flex:1">
+                            <label>Course</label>
+                            <select id="courseSelect" onchange="filterStudentsByCourse()">
+                                @foreach (var c in courses)
+                                {
+                                    <option value="@c.Id" data-section="@c.Section">@c.CourseCode – @c.CourseName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Date</label>
+                            <input type="date" id="attDate" value="@DateTime.Today.ToString("yyyy-MM-dd")">
+                        </div>
+                    </div>
+
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student No.</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attBody">
+                            @{
+                                int n = 1;
+                            }
+                            @foreach (var s in students)
+                            {
+                                <tr data-student-id="@s.Id" data-section="@s.Section">
+                                    <td class="num-col">@n</td>
+                                    <td class="mono">@s.StudentNo</td>
+                                    <td>@s.LastName, @s.FirstName @s.MiddleName</td>
+                                    <td>
+                                        <div class="pal-group">
+                                            <button class="pal-btn p-active" onclick="setPal(this,'p')">P</button>
+                                            <button class="pal-btn" onclick="setPal(this,'a')">A</button>
+                                            <button class="pal-btn" onclick="setPal(this,'l')">L</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <input type="text" class="remarks-input"
+                                               style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:5px 8px;color:var(--text);font-size:0.8rem;width:110px;"
+                                               placeholder="Optional">
+                                    </td>
+                                </tr>
+                                n++;
+                            }
+                        </tbody>
+                    </table>
+
+                    <div style="display:flex;gap:10px;margin-top:18px;">
+                        <button class="btn btn-success" onclick="saveAttendance()">Save Attendance</button>
+                        <button class="btn btn-ghost" onclick="resetAttendance()">Reset</button>
+                    </div>
+                </div>
+
+                <!-- QUICK REGISTER PANEL -->
+                <div class="reg-panel">
+                    <h3>Quick Register Student</h3>
+                    <p style="font-size:0.75rem;color:var(--muted);margin-bottom:12px;">New student? Register them here directly.</p>
+                    <div class="reg-field">
+                        <label>Student No.</label>
+                        <input type="text" id="qrStudentNo" placeholder="2026-XXXX">
+                    </div>
+                    <div class="reg-field">
+                        <label>First Name</label>
+                        <input type="text" id="qrFirst" placeholder="First name">
+                    </div>
+                    <div class="reg-field">
+                        <label>Middle Name</label>
+                        <input type="text" id="qrMid" placeholder="Optional">
+                    </div>
+                    <div class="reg-field">
+                        <label>Last Name</label>
+                        <input type="text" id="qrLast" placeholder="Last name">
+                    </div>
+                    <div class="reg-field">
+                        <label>Section</label>
+                        <select id="qrSection">
+                            <option>IT-3A</option>
+                            <option>IT-3B</option>
+                            <option>IT-4A</option>
+                        </select>
+                    </div>
+                    <div class="reg-field">
+                        <label>Email</label>
+                        <input type="email" id="qrEmail" placeholder="student@gmail.com">
+                    </div>
+                    <div class="reg-field">
+                        <label>Mobile</label>
+                        <input type="text" id="qrMobile" placeholder="+63 9XX XXX XXXX">
+                    </div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:12px;" onclick="quickRegister()">+ Register Student</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ✅ Required for quickRegister() antiforgery token -->
+    <form id="csrfForm" style="display:none;">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <script src="~/js/dashboard.js"></script>
+</body>
+</html>

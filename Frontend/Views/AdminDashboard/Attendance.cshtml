@@ -1,0 +1,200 @@
+﻿@{
+    Layout = null; ViewData["Title"] = "Attendance";
+    var courses = ViewBag.Courses as List<Frontend.Controllers.CourseDto> ?? new();
+    var students = ViewBag.Students as List<Frontend.Controllers.StudentDto> ?? new();
+    var totalStudents = ViewBag.TotalStudents ?? 0;
+    var totalTeachers = ViewBag.TotalTeachers ?? 0;
+    var activeCourses = ViewBag.ActiveCourses ?? 0;
+    var username = ViewBag.Username?.ToString() ?? "Administrator";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>Attendance – 3TagaPayu AMS</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.10.5/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.css">
+    <link rel="stylesheet" href="~/css/dashboard.css">
+</head>
+<body>
+    <div id="pageLoader">
+        <img src="~/assets/dbtc.png" alt="Loading" class="loader-logo">
+        <div class="loader-dots"><span></span><span></span><span></span></div>
+        <p class="loader-text">Loading...</p>
+    </div>
+
+    @await Html.PartialAsync("_AdminSidebar", "Attendance")
+    <div class="main">
+        @{
+            ViewData["User"] = username; ViewData["Role"] = "Admin";
+        }
+        @await Html.PartialAsync("_Topbar")
+        <div class="page-content">
+
+            <!-- Stat Cards — force 3-column grid with inline style -->
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px;">
+                <div class="stat-card">
+                    <img src="~/assets/student_logo.png" alt="" class="stat-icon">
+                    <div class="stat-info">
+                        <span class="stat-label">Total Students</span>
+                        <span class="stat-value">@totalStudents</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <img src="~/assets/Teacher_logo.png" alt="" class="stat-icon">
+                    <div class="stat-info">
+                        <span class="stat-label">Total Teachers</span>
+                        <span class="stat-value">@totalTeachers</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <img src="~/assets/course_logo.png" alt="" class="stat-icon">
+                    <div class="stat-info">
+                        <span class="stat-label">Active Courses</span>
+                        <span class="stat-value">@activeCourses</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;">
+
+                <!-- Take Attendance Panel -->
+                <div class="panel">
+                    <div class="panel-header">
+                        <i class="fas fa-clipboard-check panel-icon"></i>
+                        <h2>Take Attendance</h2>
+                    </div>
+
+                    <div class="form-row" style="margin-bottom:16px;gap:12px;">
+                        <div class="form-field" style="flex:1">
+                            <label>Course</label>
+                            <select id="courseSelect" onchange="filterStudentsByCourse()"
+                                    style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;">
+                                <option value="">-- Select Course --</option>
+                                @foreach (var c in courses)
+                                {
+                                    <option value="@c.Id" data-section="@c.Section">@c.CourseCode – @c.CourseName</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="form-field">
+                            <label>Date</label>
+                            <input type="date" id="attDate"
+                                   value="@DateTime.Now.ToString("yyyy-MM-dd")"
+                                   style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;outline:none;">
+                        </div>
+                    </div>
+
+                    <table class="data-table" style="margin-bottom:16px;">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Student No.</th>
+                                <th>Name</th>
+                                <th>Status</th>
+                                <th>Remarks</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attBody">
+                            @{
+                                int an = 1;
+                            }
+                            @foreach (var s in students)
+                            {
+                                <tr data-student-id="@s.Id" data-section="@s.Section">
+                                    <td class="num-col">@an</td>
+                                    <td class="mono">@s.StudentNo</td>
+                                    <td>@s.LastName, @s.FirstName</td>
+                                    <td>
+                                        <div class="pal-group">
+                                            <button class="pal-btn p-active" onclick="setPal(this,'p')">P</button>
+                                            <button class="pal-btn" onclick="setPal(this,'a')">A</button>
+                                            <button class="pal-btn" onclick="setPal(this,'l')">L</button>
+                                        </div>
+                                    </td>
+                                    <td><input type="text" class="remarks-input" placeholder="Optional"></td>
+                                </tr>
+                                an++;
+                            }
+                        </tbody>
+                    </table>
+
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-primary" onclick="saveAttendance()">
+                            <i class="fas fa-save"></i> Save Attendance
+                        </button>
+                        <button class="btn btn-ghost" onclick="resetAttendance()">
+                            <i class="fas fa-redo"></i> Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Register Panel -->
+                <div class="panel">
+                    <div class="panel-header" style="margin-bottom:16px;">
+                        <i class="fas fa-circle panel-icon" style="color:var(--accent);font-size:0.6rem;"></i>
+                        <h2 style="font-size:0.78rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;">Student Registration</h2>
+                    </div>
+                    <div style="display:flex;flex-direction:column;gap:10px;">
+
+                        <!-- Student No + Section side by side -->
+                        <div style="display:grid;grid-template-columns:1fr 110px;gap:8px;">
+                            <div class="form-field">
+                                <label>Student No.</label>
+                                <input type="text" id="qrStudentNo" placeholder="2026-XXXX">
+                            </div>
+                            <div class="form-field">
+                                <label>Section</label>
+                                <select id="qrSection">
+                                    <option>IT-3A</option>
+                                    <option>IT-3B</option>
+                                    <option>IT-4A</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-field">
+                            <label>First Name</label>
+                            <input type="text" id="qrFirst" placeholder="First name">
+                        </div>
+                        <div class="form-field">
+                            <label>Middle Name</label>
+                            <input type="text" id="qrMid" placeholder="Optional">
+                        </div>
+                        <div class="form-field">
+                            <label>Last Name</label>
+                            <input type="text" id="qrLast" placeholder="Last name">
+                        </div>
+                        <div class="form-field">
+                            <label>Gmail</label>
+                            <input type="email" id="qrEmail" placeholder="student@gmail.com">
+                        </div>
+                        <div class="form-field">
+                            <label>Mobile</label>
+                            <input type="text" id="qrMobile" placeholder="+63 9XX XXX XXXX">
+                        </div>
+
+                        <button class="btn btn-primary" style="width:100%;margin-top:4px;" onclick="quickRegister()">
+                            <i class="fas fa-plus"></i> Register Student
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden form to supply antiforgery token for quickRegister AJAX -->
+    <form id="csrfForm" style="display:none;">
+        @Html.AntiForgeryToken()
+    </form>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.10.5/sweetalert2.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastify-js/1.12.0/toastify.min.js"></script>
+    <script src="~/js/dashboard.js"></script>
+</body>
+</html>

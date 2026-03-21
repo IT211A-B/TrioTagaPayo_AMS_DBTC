@@ -1,0 +1,38 @@
+﻿@model string
+@{
+    var username = ViewContext.ViewData["Username"]?.ToString() ?? "Teacher";
+    var initials = username.Length >= 2 ? username.Substring(0, 2).ToUpper() : "TC";
+}
+<div class="sidebar">
+    <div class="sidebar-brand">
+        <img src="~/assets/dbtc.png" alt="Logo">
+        <div class="brand-text">
+            <div class="name">3TagaPayu</div>
+            <div class="sub">Attendance System</div>
+        </div>
+    </div>
+
+    <div class="nav-section-label">Main Menu</div>
+    <nav class="sidebar-nav">
+        <a href="/TeacherDashboard/Attendance" class="nav-item @(Model == "Attendance" ? "active" : "")">
+            <i class="fas fa-clipboard-check"></i><span>My Attendance</span>
+        </a>
+        <a href="/TeacherDashboard/Courses" class="nav-item @(Model == "Courses" ? "active" : "")">
+            <i class="fas fa-book"></i><span>My Courses</span>
+        </a>
+        <a href="/TeacherDashboard/Students" class="nav-item @(Model == "Students" ? "active" : "")">
+            <i class="fas fa-user-graduate"></i><span>My Students</span>
+        </a>
+        <a href="/TeacherDashboard/Records" class="nav-item @(Model == "Records" ? "active" : "")">
+            <i class="fas fa-chart-bar"></i><span>Att. Records</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-user">
+        <div class="user-avatar teacher">@initials</div>
+        <div class="user-info">
+            <div class="uname">@username</div>
+            <a href="/Login/Logout" class="logout-link">Logout</a>
+        </div>
+    </div>
+</div>
