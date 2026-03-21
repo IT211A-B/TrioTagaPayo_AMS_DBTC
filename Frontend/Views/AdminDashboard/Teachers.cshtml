@@ -1,5 +1,7 @@
 ﻿@{
     Layout = null; ViewData["Title"] = "Teachers";
+    var teachers = ViewBag.Teachers as List<Frontend.Controllers.TeacherDto> ?? new();
+    var username = ViewBag.Username?.ToString() ?? "Administrator";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -21,8 +23,25 @@
 
     @await Html.PartialAsync("_AdminSidebar", "Teachers")
     <div class="main">
-        @await Html.PartialAsync("_Topbar", new ViewDataDictionary(ViewData) { { "User", "Administrator" }, { "Role", "Admin" } })
+        @{
+            ViewData["User"] = username; ViewData["Role"] = "Admin";
+        }
+        @await Html.PartialAsync("_Topbar")
         <div class="page-content">
+
+            @if (TempData["Success"] != null)
+            {
+                <div style="background:#22c55e20;border:1px solid #22c55e;border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#22c55e;font-size:0.85rem;">
+                    <i class="fas fa-check-circle"></i> @TempData["Success"]
+                </div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div style="background:#ef444420;border:1px solid #ef4444;border-radius:8px;padding:12px 16px;margin-bottom:16px;color:#ef4444;font-size:0.85rem;">
+                    <i class="fas fa-times-circle"></i> @TempData["Error"]
+                </div>
+            }
+
             <div class="panel">
                 <div class="panel-header">
                     <i class="fas fa-chalkboard-teacher panel-icon"></i>
@@ -32,32 +51,43 @@
 
                 <p style="font-size:0.78rem;font-weight:600;color:var(--accent);margin-bottom:12px;letter-spacing:0.5px;">+ ADD NEW TEACHER</p>
 
-                <div class="form-row" style="margin-bottom:20px;">
-                    <div class="form-field">
-                        <label>Teacher ID</label>
-                        <input type="text" value="TCH-008" style="min-width:110px;">
+                <form method="post" asp-action="AddTeacher" asp-controller="AdminDashboard">
+                    @Html.AntiForgeryToken()
+                    <div class="form-row" style="margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+                        <div class="form-field">
+                            <label>Teacher ID</label>
+                            <input type="text" name="teacherNo" placeholder="TCH-XXX" style="min-width:110px;">
+                        </div>
+                        <div class="form-field">
+                            <label>First Name</label>
+                            <input type="text" name="firstName" placeholder="First name" style="min-width:130px;">
+                        </div>
+                        <div class="form-field" style="flex:1">
+                            <label>Last Name</label>
+                            <input type="text" name="lastName" placeholder="Last name">
+                        </div>
+                        <div class="form-field" style="flex:1">
+                            <label>Email</label>
+                            <input type="email" name="email" placeholder="email@dbtc.edu.ph">
+                        </div>
+                        <div class="form-field">
+                            <label>Username</label>
+                            <input type="text" name="username" placeholder="Login username" style="min-width:130px;">
+                        </div>
+                        <div class="form-field">
+                            <label>Password</label>
+                            <input type="password" name="password" placeholder="Login password" style="min-width:130px;">
+                        </div>
+                        <div class="form-field" style="justify-content:flex-end;">
+                            <label>&nbsp;</label>
+                            <button type="submit" class="btn btn-primary">Add</button>
+                        </div>
                     </div>
-                    <div class="form-field">
-                        <label>First Name</label>
-                        <input type="text" placeholder="First name" style="min-width:140px;">
-                    </div>
-                    <div class="form-field" style="flex:1">
-                        <label>Last Name</label>
-                        <input type="text" placeholder="Last name">
-                    </div>
-                    <div class="form-field" style="flex:1">
-                        <label>Email</label>
-                        <input type="email" placeholder="email@dbtc.edu.ph">
-                    </div>
-                    <div class="form-field" style="justify-content:flex-end;">
-                        <label>&nbsp;</label>
-                        <button class="btn btn-primary" onclick="showToast('Teacher added successfully!','success')">Add</button>
-                    </div>
-                </div>
+                </form>
 
                 <div class="search-bar" style="margin-bottom:16px;">
                     <i class="fas fa-search"></i>
-                    <input type="text" placeholder="Search teachers...">
+                    <input type="text" id="teacherSearch" placeholder="Search teachers..." oninput="filterTeachers()">
                 </div>
 
                 <table class="data-table">
@@ -68,120 +98,84 @@
                             <th>Full Name</th>
                             <th>Email</th>
                             <th>Courses</th>
+                            <th>Username</th>
                             <th>Status</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr>
-                            <td class="num-col">1</td>
-                            <td class="mono">TCH-001</td>
-                            <td><strong>Santos, Carl Joshua</strong></td>
-                            <td style="color:var(--muted)">carl@dbtc.edu.ph</td>
-                            <td>3</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                            <td>
-                                <div style="display:flex;gap:6px;">
-                                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;" onclick="openEditTeacher('TCH-001','Santos, Carl Joshua','carl@dbtc.edu.ph')">Edit</button>
-                                    <button class="btn btn-warning" style="padding:5px 10px;font-size:0.78rem;" onclick="confirmDisableTeacher('Santos, Carl Joshua')">Disable</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="num-col">2</td>
-                            <td class="mono">TCH-002</td>
-                            <td><strong>Parba, Clyde</strong></td>
-                            <td style="color:var(--muted)">clyde@dbtc.edu.ph</td>
-                            <td>2</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                            <td>
-                                <div style="display:flex;gap:6px;">
-                                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;" onclick="openEditTeacher('TCH-002','Parba, Clyde','clyde@dbtc.edu.ph')">Edit</button>
-                                    <button class="btn btn-warning" style="padding:5px 10px;font-size:0.78rem;" onclick="confirmDisableTeacher('Parba, Clyde')">Disable</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="num-col">3</td>
-                            <td class="mono">TCH-003</td>
-                            <td><strong>Oraiz, Cassandra</strong></td>
-                            <td style="color:var(--muted)">cassandra@dbtc.edu.ph</td>
-                            <td>2</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                            <td>
-                                <div style="display:flex;gap:6px;">
-                                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;" onclick="openEditTeacher('TCH-003','Oraiz, Cassandra','cassandra@dbtc.edu.ph')">Edit</button>
-                                    <button class="btn btn-warning" style="padding:5px 10px;font-size:0.78rem;" onclick="confirmDisableTeacher('Oraiz, Cassandra')">Disable</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="num-col">4</td>
-                            <td class="mono">TCH-004</td>
-                            <td><strong>Bangoy, Leila M.</strong></td>
-                            <td style="color:var(--muted)">leila@dbtc.edu.ph</td>
-                            <td>1</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                            <td>
-                                <div style="display:flex;gap:6px;">
-                                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;" onclick="openEditTeacher('TCH-004','Bangoy, Leila M.','leila@dbtc.edu.ph')">Edit</button>
-                                    <button class="btn btn-warning" style="padding:5px 10px;font-size:0.78rem;" onclick="confirmDisableTeacher('Bangoy, Leila M.')">Disable</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="num-col">5</td>
-                            <td class="mono">TCH-005</td>
-                            <td><strong>Ejares, Shaira</strong></td>
-                            <td style="color:var(--muted)">shaira@dbtc.edu.ph</td>
-                            <td>2</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                            <td>
-                                <div style="display:flex;gap:6px;">
-                                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;" onclick="openEditTeacher('TCH-005','Ejares, Shaira','shaira@dbtc.edu.ph')">Edit</button>
-                                    <button class="btn btn-warning" style="padding:5px 10px;font-size:0.78rem;" onclick="confirmDisableTeacher('Ejares, Shaira')">Disable</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="num-col">6</td>
-                            <td class="mono">TCH-006</td>
-                            <td><strong>Pal, Carol</strong></td>
-                            <td style="color:var(--muted)">carol@dbtc.edu.ph</td>
-                            <td>1</td>
-                            <td><span class="badge badge-active">Active</span></td>
-                            <td>
-                                <div style="display:flex;gap:6px;">
-                                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;" onclick="openEditTeacher('TCH-006','Pal, Carol','carol@dbtc.edu.ph')">Edit</button>
-                                    <button class="btn btn-warning" style="padding:5px 10px;font-size:0.78rem;" onclick="confirmDisableTeacher('Pal, Carol')">Disable</button>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="num-col">7</td>
-                            <td class="mono">TCH-007</td>
-                            <td><strong>Domen, Janine</strong></td>
-                            <td style="color:var(--muted)">janine@dbtc.edu.ph</td>
-                            <td>1</td>
-                            <td><span class="badge badge-disabled">Disabled</span></td>
-                            <td>
-                                <div style="display:flex;gap:6px;">
-                                    <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;" onclick="openEditTeacher('TCH-007','Domen, Janine','janine@dbtc.edu.ph')">Edit</button>
-                                    <button class="btn btn-success" style="padding:5px 10px;font-size:0.78rem;" onclick="confirmDisableTeacher('Domen, Janine')">Enable</button>
-                                </div>
-                            </td>
-                        </tr>
+                    <tbody id="teacherBody">
+                        @{
+                            int tn = 1;
+                        }
+                        @foreach (var t in teachers)
+                        {
+                            <tr data-name="@($"{t.LastName} {t.FirstName}").ToLower()">
+                                <td class="num-col">@tn</td>
+                                <td class="mono">@t.TeacherNo</td>
+                                <td><strong>@t.LastName, @t.FirstName</strong></td>
+                                <td style="color:var(--muted)">@t.Email</td>
+                                <td>@t.CourseCount</td>
+                                <td>
+                                    @if (t.HasAccount)
+                                    {
+                                        <span class="mono" style="font-size:0.8rem;color:var(--accent)">@t.Username</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--muted);font-size:0.78rem;">No account</span>
+                                    }
+                                </td>
+                                <td><span class="badge @(t.IsActive ? "badge-active" : "badge-disabled")">@(t.IsActive ? "Active" : "Disabled")</span></td>
+                                <td>
+                                    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                                        <button class="btn btn-ghost" style="padding:5px 10px;font-size:0.78rem;"
+                                                data-id="@t.Id"
+                                                data-no="@t.TeacherNo"
+                                                data-first="@t.FirstName"
+                                                data-last="@t.LastName"
+                                                data-email="@t.Email"
+                                                onclick="openEditTeacherFromBtn(this)">
+                                            Edit
+                                        </button>
+
+                                        <button class="btn btn-primary" style="padding:5px 10px;font-size:0.78rem;"
+                                                data-id="@t.Id"
+                                                data-username="@t.Username"
+                                                onclick="openEditAccountFromBtn(this)">
+                                            <i class="fas fa-key"></i> Account
+                                        </button>
+
+                                        <form method="post" asp-action="ToggleTeacher" asp-controller="AdminDashboard" style="display:inline">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@t.Id" />
+                                            <button type="submit" class="btn @(t.IsActive ? "btn-warning" : "btn-success")"
+                                                    style="padding:5px 10px;font-size:0.78rem;">
+                                                @(t.IsActive ? "Disable" : "Enable")
+                                            </button>
+                                        </form>
+
+                                        <button class="btn btn-danger" style="padding:5px 10px;font-size:0.78rem;"
+                                                data-id="@t.Id"
+                                                data-name="@t.LastName, @t.FirstName"
+                                                onclick="confirmDeleteTeacherFromBtn(this)">
+                                            Del
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            tn++;
+                        }
                     </tbody>
                 </table>
             </div>
         </div>
     </div>
 
-    <!-- Edit Teacher Modal -->
+    <!-- Edit Teacher Info Modal -->
     <div class="modal-backdrop" id="editTeacherModal">
         <div class="modal">
             <div class="modal-header">
-                <h3><i class="fas fa-user-edit"></i> Edit Teacher</h3>
+                <h3><i class="fas fa-user-edit"></i> Edit Teacher Info</h3>
                 <button class="modal-close" onclick="closeModal('editTeacherModal')"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
@@ -190,8 +184,12 @@
                     <input type="text" id="editTeacherId" readonly>
                 </div>
                 <div class="modal-field">
-                    <label>Full Name</label>
-                    <input type="text" id="editTeacherName">
+                    <label>First Name</label>
+                    <input type="text" id="editTeacherFirst">
+                </div>
+                <div class="modal-field">
+                    <label>Last Name</label>
+                    <input type="text" id="editTeacherLast">
                 </div>
                 <div class="modal-field">
                     <label>Email</label>
@@ -205,22 +203,74 @@
         </div>
     </div>
 
-    <!-- Disable/Enable Teacher Modal -->
-    <div class="modal-backdrop" id="disableTeacherModal">
+    <!-- Edit Teacher Account Modal -->
+    <div class="modal-backdrop" id="editAccountModal">
         <div class="modal">
             <div class="modal-header">
-                <h3><i class="fas fa-user-slash warning"></i> Confirm Action</h3>
-                <button class="modal-close" onclick="closeModal('disableTeacherModal')"><i class="fas fa-times"></i></button>
+                <h3><i class="fas fa-key"></i> Edit Login Account</h3>
+                <button class="modal-close" onclick="closeModal('editAccountModal')"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to change the status of <strong id="disableTeacherName"></strong>?</p>
+                <p style="font-size:0.82rem;color:var(--muted);margin-bottom:12px;">Leave blank to keep unchanged.</p>
+                <div class="modal-field">
+                    <label>Current Username</label>
+                    <input type="text" id="currentUsername" readonly style="opacity:0.6;">
+                </div>
+                <div class="modal-field">
+                    <label>New Username</label>
+                    <input type="text" id="newUsername" placeholder="Leave blank to keep current">
+                </div>
+                <div class="modal-field">
+                    <label>New Password</label>
+                    <input type="password" id="newPassword" placeholder="Leave blank to keep current">
+                </div>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-ghost" onclick="closeModal('disableTeacherModal')">Cancel</button>
-                <button class="btn btn-warning" onclick="confirmAction()">Yes, Confirm</button>
+                <button class="btn btn-ghost" onclick="closeModal('editAccountModal')">Cancel</button>
+                <button class="btn btn-primary" onclick="saveEditAccount()">Update Account</button>
             </div>
         </div>
     </div>
+
+    <!-- Delete Teacher Modal -->
+    <div class="modal-backdrop" id="deleteTeacherModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fas fa-trash"></i> Delete Teacher</h3>
+                <button class="modal-close" onclick="closeModal('deleteTeacherModal')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteTeacherName"></strong>?</p>
+                <p style="font-size:0.82rem;color:#ef4444;margin-top:8px;"><i class="fas fa-exclamation-triangle"></i> This will also delete their login account. This cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-ghost" onclick="closeModal('deleteTeacherModal')">Cancel</button>
+                <button class="btn btn-danger" onclick="submitDeleteTeacher()">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Forms -->
+    <form method="post" asp-action="EditTeacher" asp-controller="AdminDashboard" id="editTeacherForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="etId" />
+        <input type="hidden" name="teacherNo" id="etNo" />
+        <input type="hidden" name="firstName" id="etFirst" />
+        <input type="hidden" name="lastName" id="etLast" />
+        <input type="hidden" name="email" id="etEmail" />
+    </form>
+
+    <form method="post" asp-action="UpdateTeacherAccount" asp-controller="AdminDashboard" id="editAccountForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="eaId" />
+        <input type="hidden" name="newUsername" id="eaUsername" />
+        <input type="hidden" name="newPassword" id="eaPassword" />
+    </form>
+
+    <form method="post" asp-action="DeleteTeacher" asp-controller="AdminDashboard" id="deleteTeacherForm">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="dtId" />
+    </form>
 
     <script src="~/js/dashboard.js"></script>
 </body>

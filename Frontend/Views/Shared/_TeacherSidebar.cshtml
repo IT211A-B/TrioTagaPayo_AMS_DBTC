@@ -1,4 +1,8 @@
 ﻿@model string
+@{
+    var username = ViewContext.ViewData["Username"]?.ToString() ?? "Teacher";
+    var initials = username.Length >= 2 ? username.Substring(0, 2).ToUpper() : "TC";
+}
 <div class="sidebar">
     <div class="sidebar-brand">
         <img src="~/assets/dbtc.png" alt="Logo">
@@ -25,10 +29,10 @@
     </nav>
 
     <div class="sidebar-user">
-        <div class="user-avatar teacher">CJ</div>
+        <div class="user-avatar teacher">@initials</div>
         <div class="user-info">
-            <div class="uname">Carl Joshua Santos</div>
-            <a href="/Login/Login" class="logout-link">Logout</a>
+            <div class="uname">@username</div>
+            <a href="/Login/Logout" class="logout-link">Logout</a>
         </div>
     </div>
 </div>
