@@ -26,8 +26,11 @@ namespace Attendance_Management_System.Services
             {
                 StudentNo = dto.StudentNo,
                 FirstName = dto.FirstName,
+                MiddleName = dto.MiddleName,
                 LastName = dto.LastName,
-                Email = dto.Email
+                Email = dto.Email,
+                Section = dto.Section,
+                MobileNo = dto.MobileNo
             };
             _context.Students.Add(student);
             await _context.SaveChangesAsync();
@@ -41,8 +44,11 @@ namespace Attendance_Management_System.Services
 
             student.StudentNo = dto.StudentNo;
             student.FirstName = dto.FirstName;
+            student.MiddleName = dto.MiddleName;
             student.LastName = dto.LastName;
             student.Email = dto.Email;
+            student.Section = dto.Section;
+            student.MobileNo = dto.MobileNo;
             await _context.SaveChangesAsync();
             return ToDto(student);
         }
@@ -61,8 +67,11 @@ namespace Attendance_Management_System.Services
             Id = s.Id,
             StudentNo = s.StudentNo,
             FirstName = s.FirstName,
+            MiddleName = s.MiddleName,
             LastName = s.LastName,
             Email = s.Email,
+            Section = s.Section,
+            MobileNo = s.MobileNo,
             CreatedAt = s.CreatedAt
         };
     }

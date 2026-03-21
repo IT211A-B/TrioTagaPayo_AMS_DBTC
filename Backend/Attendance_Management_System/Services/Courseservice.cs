@@ -19,7 +19,8 @@ namespace Attendance_Management_System.Services
 
         public async Task<CourseResponseDto?> GetByIdAsync(int id)
         {
-            var c = await _context.Courses.Include(c => c.Teacher).FirstOrDefaultAsync(c => c.Id == id);
+            var c = await _context.Courses.Include(c => c.Teacher)
+                .FirstOrDefaultAsync(c => c.Id == id);
             return c == null ? null : ToDto(c);
         }
 
@@ -29,6 +30,9 @@ namespace Attendance_Management_System.Services
             {
                 CourseCode = dto.CourseCode,
                 CourseName = dto.CourseName,
+                Units = dto.Units,
+                Section = dto.Section,
+                Schedule = dto.Schedule,
                 TeacherId = dto.TeacherId
             };
             _context.Courses.Add(course);
@@ -39,11 +43,15 @@ namespace Attendance_Management_System.Services
 
         public async Task<CourseResponseDto?> UpdateAsync(int id, UpdateCourseDto dto)
         {
-            var course = await _context.Courses.Include(c => c.Teacher).FirstOrDefaultAsync(c => c.Id == id);
+            var course = await _context.Courses.Include(c => c.Teacher)
+                .FirstOrDefaultAsync(c => c.Id == id);
             if (course == null) return null;
 
             course.CourseCode = dto.CourseCode;
             course.CourseName = dto.CourseName;
+            course.Units = dto.Units;
+            course.Section = dto.Section;
+            course.Schedule = dto.Schedule;
             course.TeacherId = dto.TeacherId;
             await _context.SaveChangesAsync();
             await _context.Entry(course).Reference(c => c.Teacher).LoadAsync();
@@ -64,8 +72,12 @@ namespace Attendance_Management_System.Services
             Id = c.Id,
             CourseCode = c.CourseCode,
             CourseName = c.CourseName,
+            Units = c.Units,
+            Section = c.Section,
+            Schedule = c.Schedule,
             TeacherId = c.TeacherId,
-            TeacherName = c.Teacher != null ? $"{c.Teacher.FirstName} {c.Teacher.LastName}" : "",
+            TeacherName = c.Teacher != null
+                ? $"{c.Teacher.FirstName} {c.Teacher.LastName}" : "",
             CreatedAt = c.CreatedAt
         };
     }
