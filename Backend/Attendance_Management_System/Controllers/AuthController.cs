@@ -32,7 +32,7 @@ namespace Attendance_Management_System.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-                return BadRequest(new { message = "Username and password are required." });
+                return BadRequest(new { message = "Username and password are required." }); //gdgdfgf   
 
             var result = await _authService.LoginAsync(request);
 
