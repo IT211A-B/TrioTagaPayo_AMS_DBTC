@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AMS Students</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom,#006422ce, #020068);
+    color: white;
+}
+
+.sidebar {
+    width: 200px;
+    height: 100vh;
+    background: #07006881;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo { text-align: center; }
+.logo small { color: #aaa; }
+
+.menu { margin-top: 30px; }
+
+.menu button {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    background: transparent;
+    border: none;
+    color: white;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.menu button:hover,
+.menu button.active {
+    background: linear-gradient(to right, #0d0081af, #1e5bff);
+}
+
+/* ===== ADMIN ===== */
+.bottom { margin-top: auto; }
+.logout {
+    color: #ffffff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+    margin-left: 200px;
+    height: 60px;
+    background: #000f61;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+.admin { display: flex; gap: 10px; }
+
+/* ===== MAIN ===== */
+.container {
+    margin-left: 220px;
+    padding: 20px;
+}
+
+.card {
+    background: #02005c8e;
+    padding: 20px;
+    border-radius: 12px;
+}
+
+/* ===== STUDENT UI ===== */
+.header-box {
+    background: #1e5bff;
+    padding: 12px;
+    border-radius: 10px;
+    margin-bottom: 15px;
+}
+
+.action-btn {
+    background: #1e5bff;
+    padding: 10px;
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(5,1fr) auto;
+    gap: 8px;
+    margin: 15px 0;
+}
+
+.form-grid input {
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+}
+
+.table-header, .row {
+    display: grid;
+    grid-template-columns: repeat(3,1fr) auto;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 6px;
+}
+
+.table-header { background:#0a1a5c; }
+.row { background:#112452; }
+
+.edit { background:#333; color:white; }
+.del { background:red; color:white; }
+
+.search-box {
+    margin:20px 0;
+}
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="logo">
+        <h2>CUT13Z3LLL AMS</h2>
+        <small>Attendance Management System</small>
+    </div>
+
+    <div class="menu">
+        <h4>MAIN MENU</h4>
+        <button onclick="window.location.href='Attendance.html'">Attendance</button>
+        <button onclick="window.location.href='Courses.html'">Courses</button>
+        <button class="active">Students</button>
+        <button onclick="window.location.href='Teachers.html'">Teachers</button>
+    </div>
+
+    <div class="bottom">
+        <p>👤 ADMINISTRATOR</p>
+        <p class="logout" onclick="logout()">LOG OUT</p>
+    </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <div class="topbar">
+  <h2>Students</h2>
+  <div>
+    👤 <b>ADMINISTRATOR</b><br>
+    <small>Admin</small>
+  </div>
+</div>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+<div class="card">
+
+    <div class="header-box">Manage New Students</div>
+
+    <button class="action-btn">+ ADD NEW STUDENTS</button>
+
+    <div class="form-grid">
+        <input id="studNo" placeholder="2026-0001">
+        <input id="fname" placeholder="Zee">
+        <input id="mname" placeholder="Meow">
+        <input id="lname" placeholder="East">
+        <input id="section" placeholder="IT-2A">
+        <button onclick="addStudent()">Add</button>
+    </div>
+
+    <div class="search-box">
+        <input id="search" placeholder="🔍 Search Students" style="width:60%;padding:10px;">
+        
+        <select id="filter">
+            <option>All Sections</option>
+            <option>BSIT-1A</option>
+            <option>BSME-1A</option>
+            <option>BSIT-2A</option>
+            <option>BSME-2A</option>
+            <option>BSIT-3A</option>
+            <option>BSME-3A</option>
+            <option>BSIT-4A</option>
+            <option>BSME-4A</option>
+        </select>
+    </div>
+
+    <div class="table-header">
+        <div>STUDENT NO.</div>
+        <div>FULL NAME</div>
+        <div>SECTION</div>
+        <div>ACTIONS</div>
+    </div>
+
+    <div id="list"></div>
+
+</div>
+</div>
+
+<script>
+let students = [];
+
+function logout(){
+    window.location.href="LogIn.html";
+}
+
+function addStudent(){
+    const s={
+        id:studNo.value,
+        name:fname.value+" "+mname.value+" "+lname.value,
+        sec:section.value
+    };
+
+    if(!s.id || !fname.value || !lname.value || !section.value){
+        alert("Fill all fields!");
+        return;
+    }
+
+    students.push(s);
+    render();
+}
+
+function render(){
+    const search=search.value.toLowerCase();
+    const filterVal=filter.value;
+
+    list.innerHTML="";
+
+    students.forEach((s,i)=>{
+        if(
+            (s.id.toLowerCase().includes(search) || s.name.toLowerCase().includes(search)) &&
+            (filterVal==="All Sections" || s.sec===filterVal)
+        ){
+            list.innerHTML+=`
+            <div class="row">
+                <div>${s.id}</div>
+                <div>${s.name}</div>
+                <div style="color:limegreen;">${s.sec}</div>
+                <div>
+                    <button class="edit" onclick="edit(${i})">Edit</button>
+                    <button class="del" onclick="del(${i})">Del</button>
+                </div>
+            </div>`;
+        }
+    });
+}
+
+function edit(i){
+    const s=students[i];
+    studNo.value=s.id;
+    section.value=s.sec;
+
+    const n=s.name.split(" ");
+    fname.value=n[0]||"";
+    mname.value=n[1]||"";
+    lname.value=n[2]||"";
+
+    students.splice(i,1);
+    render();
+}
+
+function del(i){
+    if(confirm("Are you sure to delete it?\n\nThis action cannot be undone.")){
+        students.splice(i,1);
+        render();
+    }
+}
+
+search.oninput=render;
+filter.onchange=render;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AMS Courses</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* ===== GLOBAL ===== */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom,#006422ce, #020068);
+    color: white;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: 200px;
+    height: 100vh;
+    background: #07006881;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo {
+    text-align: center;
+}
+
+.logo small {
+    color: #aaa;
+}
+
+.menu {
+    margin-top: 30px;
+}
+
+.menu button {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    background: transparent;
+    border: none;
+    color: white;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.menu button:hover,
+.menu button.active {
+    background: linear-gradient(to right, #0d0081af, #1e5bff);
+    transform: scale(1.05);
+}
+
+/* ===== ADMIN ===== */
+.bottom {
+    margin-top: auto;
+}
+
+.logout {
+     color: #ffffff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+    margin-left: 200px;
+    height: 60px;
+    background: #000f61;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+.topbar h2 {
+    font-size: 28px;
+    letter-spacing: 3px;
+}
+
+.admin {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ===== MAIN ===== */
+.container {
+    margin-left: 220px;
+    padding: 20px;
+}
+
+.card {
+    background: #02005c8e;
+    padding: 20px;
+    border-radius: 12px;
+}
+.course-header {
+    background: #1e5bff;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: left;
+    font-weight: bold;
+}
+
+.course-actions {
+    display: flex;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+.course-actions button {
+    flex: 1;
+    background: #002280d2;
+    border: none;
+    padding: 10px;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+}
+
+.course-form {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) auto;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.course-form input {
+    padding: 8px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(0,0,0,0.3);
+    color: white;
+}
+
+.course-list-header,
+.course-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr) auto;
+    gap: 8px;
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.course-list-header {
+    background: #0a1a5c;
+    font-weight: bold;
+}
+
+.course-row {
+    background: #112452;
+    margin-top: 6px;
+}
+
+.edit-btn {
+    background: #1e5bff;
+    border: none;
+    padding: 6px 10px;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="logo">
+        
+        <h2>CUT13Z3LLL AMS</h2>
+        <small>Attendance Management System</small>
+    </div>
+
+    <div class="menu">
+        <h4>MAIN MENU</h4>
+        <button onclick="window.location.href='Attendance.html'">Attendance</button>
+        <button class="active">Courses</button>
+        <button onclick="window.location.href='Students.html'">Students</button>
+        <button onclick="window.location.href='Teachers.html'">Teachers</button>
+    </div>
+
+    <div class="bottom">
+        <p>👤 ADMINISTRATOR</p>
+        <p class="logout" onclick="logout()">LOG OUT</p>
+    </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <h2>COURSES</h2>
+    <div class="admin">
+        👤
+        <div>
+            <b>ADMINISTRATOR</b><br>
+            <small>Admin</small>
+        </div>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+
+<div class="card">
+
+    <div class="course-header">Manage Courses / Enrollment</div>
+
+    <div class="course-actions">
+        <button>+ ADD NEW COURSE</button>
+        <button>ENROLL STUDENTS</button>
+    </div>
+
+    <!-- INPUTS -->
+    <div class="course-form">
+        <input id="code" placeholder="COURSE">
+        <input id="title" placeholder="COURSE TITLE">
+        <input id="units" placeholder="UNITS">
+        <input id="section" placeholder="SECTION">
+        <input id="teacher" placeholder="TEACHER">
+        <button class="edit-btn" onclick="addCourse()">Add</button>
+    </div>
+
+    <!-- HEADER -->
+    <div class="course-list-header">
+        <div>COURSE</div>
+        <div>COURSE TITLE</div>
+        <div>UNITS</div>
+        <div>SECTION</div>
+        <div>TEACHER</div>
+        <div>ACTIONS</div>
+    </div>
+
+    <!-- LIST -->
+    <div id="courseList"></div>
+
+</div>
+
+</div>
+
+<script>
+function logout() {
+    window.location.href = "LogIn.html";
+}
+
+/* ADD COURSE */
+function addCourse() {
+    const code = document.getElementById("code").value;
+    const title = document.getElementById("title").value;
+    const units = document.getElementById("units").value;
+    const section = document.getElementById("section").value;
+    const teacher = document.getElementById("teacher").value;
+
+    if (!code || !title || !units || !section || !teacher) {
+        alert("Fill all fields!");
+        return;
+    }
+
+    const list = document.getElementById("courseList");
+
+    const row = document.createElement("div");
+    row.className = "course-row";
+
+    row.innerHTML = `
+        <div>${code}</div>
+        <div>${title}</div>
+        <div>${units}</div>
+        <div>${section}</div>
+        <div>${teacher}</div>
+        <div><button class="edit-btn" onclick="editCourse(this)">Edit</button></div>
+    `;
+
+    list.appendChild(row);
+
+    // clear inputs
+    document.getElementById("code").value = "";
+    document.getElementById("title").value = "";
+    document.getElementById("units").value = "";
+    document.getElementById("section").value = "";
+    document.getElementById("teacher").value = "";
+}
+
+/* EDIT */
+function editCourse(btn) {
+    const row = btn.parentElement.parentElement;
+    const cols = row.querySelectorAll("div");
+
+    document.getElementById("code").value = cols[0].innerText;
+    document.getElementById("title").value = cols[1].innerText;
+    document.getElementById("units").value = cols[2].innerText;
+    document.getElementById("section").value = cols[3].innerText;
+    document.getElementById("teacher").value = cols[4].innerText;
+
+    row.remove();
+}
+</script>
+
+</body>
+</html>

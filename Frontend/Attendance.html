@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AMS Attendance</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+/* ===== GLOBAL ===== */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom,#006422ce, #020068);
+    color: white;
+}
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+    width: 200px;
+    height: 100vh;
+    background: #07006881;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo {
+    text-align: center;
+}
+
+.logo small {
+    color: #aaa;
+}
+
+/* menu */
+.menu {
+    margin-top: 30px;
+}
+
+.menu button {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    background: transparent;
+    border: none;
+    color: white;
+    text-align: left;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.menu button:hover,
+.menu button.active {
+    background: linear-gradient(to right, #0d0081af, #1e5bff);
+    transform: scale(1.05);
+}
+
+/* ===== ADMIN FIX ===== */
+.bottom {
+    margin-top: auto;
+    padding-bottom: 20px;
+}
+
+.bottom p {
+    color: white;
+}
+
+.logout {
+    color: #00cfff;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* ===== TOPBAR ===== */
+.topbar {
+    margin-left: 200px;
+    padding-left: 30px;
+    height: 60px;
+    background: #000f61;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 20px;
+}
+
+/* MORE VISIBLE TITLE */
+.topbar h2 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    color: #ffffff;
+    text-shadow: 0 0 6px rgba(0, 32, 121, 0.8);
+}
+
+/* admin icon */
+.admin {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* ===== MAIN ===== */
+.container {
+    margin-left: 220px;
+    padding: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+.card {
+    background: #02005c8e;
+    padding: 20px;
+    border-radius: 12px;
+    flex: 1;
+}
+
+/* ===== QR BOX ===== */
+.qr-box {
+    width: 300px;
+    height: 200px;
+    margin: auto;
+    border: 2px solid #283d75;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.qr-box::after {
+    content: "";
+    position: absolute;
+    width: 100%;
+    height: 3px;
+    background: #003c8a;
+    animation: scan 2s linear infinite;
+}
+
+@keyframes scan {
+    0% { top: 0; }
+    50% { top: 100%; }
+    100% { top: 0; }
+}
+
+/* ===== TEXT OPACITY ===== */
+.card small {
+    opacity: 0.6;
+}
+
+/* ===== LIST ===== */
+.list {
+    max-height: 200px;
+    overflow-y: auto;
+    margin-top: 10px;
+}
+
+/* scrollbar */
+.list::-webkit-scrollbar {
+    width: 6px;
+}
+.list::-webkit-scrollbar-thumb {
+    background: #082a88;
+    border-radius: 10px;
+}
+
+/* student */
+.student {
+    background: #112452;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 8px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+/* status */
+.status {
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-weight: bold;
+}
+
+.present { background: green; }
+.late { background: yellow; color: black; }
+.absent { background: red; }
+
+/* ===== FORM ===== */
+form input, form select {
+    width: 100%;
+    padding: 8px 10px;
+    margin: 6px 0 12px;
+    border-radius: 6px;
+    border: none;
+    background: rgba(0, 24, 71, 0.65);
+    color: white;
+    box-sizing: border-box;
+}
+
+/* placeholder */
+::placeholder {
+    color: rgba(28, 22, 112, 0.534);
+    font-size: 13px;
+}
+
+/* focus */
+form input:focus,
+form select:focus {
+    color: white;
+    outline: none;
+}
+
+/* buttons */
+form button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.save {
+    background: #1e5bff;
+    color: white;
+}
+
+.reset {
+    background: #333;
+    color: white;
+}
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+    <div class="logo">
+        
+        <h2>CUT13Z3LLL AMS</h2>
+        <small>Attendance Management System</small>
+    </div>
+
+    <div class="menu">
+        <h4>MAIN MENU</h4>
+        <button class="active">Attendance</button>
+        <button onclick="window.location.href='Courses.html'">Courses</button>
+        <button onclick="window.location.href='Students.html'">Students</button>
+        <button onclick="window.location.href='Teachers.html'">Teachers</button>
+    </div>
+
+    <div class="bottom">
+        <p>👤 ADMINISTRATOR</p>
+        <p class="logout" onclick="logout()">LOG OUT</p>
+    </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <h2>ATTENDANCE</h2>
+    <div class="admin">
+        👤
+        <div>
+            <b>ADMINISTRATOR</b><br>
+            <small>Admin</small>
+        </div>
+    </div>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+
+    <!-- QR SECTION -->
+    <div class="card">
+        <h3>QR Attendance Checker</h3>
+
+        <div class="qr-box">
+            <span>QR Scanner</span>
+        </div>
+
+        <small>Automatically checked after filling/scanned</small>
+        <p>Scanned Today - 1 student</p>
+
+        <div class="list" id="scanList">
+            <div class="student">
+                <div>
+                    <b>1. Matthew C.</b><br>
+                    2026 - 0001 | IT-2A | 8:01 AM
+                </div>
+                <div class="status present">P</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FORM -->
+    <div class="card">
+        <h3>Student Attendance Form</h3>
+
+        <form id="attendanceForm">
+            Student ID
+            <input type="text" placeholder="XXXXXXXX">
+
+            Grade Yr/Lvl
+            <select>
+                <option>BSIT-1A</option>
+                <option>BSME-1A</option>
+                <option>BSIT-2A</option>
+                <option>BSME-2A</option>
+                <option>BSIT-3A</option>
+                <option>BSME-3A</option>
+                <option>BSIT-4A</option>
+                <option>BSME-4A</option>
+            </select>
+
+            Full Name
+            <input type="text" placeholder="LastName, FirstName, MiddleName">
+
+            Email Address (Must be DBTC account)
+            <input type="email" placeholder="Enter Email">
+
+            Phone No.
+            <input type="text" placeholder="ex. 09***78*970">
+
+            <button type="submit" class="save">Submit</button>
+            <button type="reset" class="reset">Reset</button>
+        </form>
+
+        <h4 style="margin-top:20px;">Student Filled Out</h4>
+        <div class="list" id="manualList"></div>
+    </div>
+
+</div>
+
+<script>
+/* Sidebar active */
+const buttons = document.querySelectorAll(".menu button");
+
+buttons.forEach(btn => {
+    btn.addEventListener("click", () => {
+        buttons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+    });
+});
+
+/* Logout */
+function logout() {
+    window.location.href = "LogIn.html";
+}
+
+/* ===== FORMAT TIME ===== */
+function formatTime(date) {
+    return date.toLocaleTimeString([], {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    }).replace(" ", "");
+}
+
+/* ===== STATUS LOGIC ===== */
+function getStatusByTime(date) {
+    const minutes = date.getHours() * 60 + date.getMinutes();
+
+    if (minutes >= 360 && minutes <= 450) {
+        return { label: "P", class: "present" };
+    } else if (minutes > 450 && minutes <= 465) {
+        return { label: "L", class: "late" };
+    } else if (minutes > 465 && minutes <= 600) {
+        return { label: "A", class: "absent" };
+    } else {
+        return { label: "-", class: "" };
+    }
+}
+
+/* ===== FORM SUBMIT ===== */
+document.getElementById("attendanceForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const inputs = this.querySelectorAll("input, select");
+
+    const studentID = inputs[0].value || "N/A";
+    const yearLevel = inputs[1].value || "N/A";
+    const fullName = inputs[2].value || "Unknown";
+
+    const now = new Date();
+    const time = formatTime(now);
+    const status = getStatusByTime(now);
+
+    const manualList = document.getElementById("manualList");
+
+    const newEntry = document.createElement("div");
+    newEntry.classList.add("student");
+
+    newEntry.innerHTML = `
+        <div>
+            <b>${fullName}</b><br>
+            ${studentID} | ${yearLevel} | ${time}
+        </div>
+        <div class="status ${status.class}">${status.label}</div>
+    `;
+
+    manualList.appendChild(newEntry);
+    manualList.scrollTop = manualList.scrollHeight;
+
+    alert("Attendance Saved!");
+});
+</script>
+
+</body>
+</html>

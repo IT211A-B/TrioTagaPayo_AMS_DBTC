@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Teachers - AMS</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: linear-gradient(to bottom,#006422ce, #020068);
+    color: white;
+}
+
+.sidebar {
+    width: 200px;
+    height: 100vh;
+    background: #07006881;
+    position: fixed;
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+}
+
+.logo h2 { margin: 5px 0; }
+
+.menu button {
+  width: 100%;
+  margin: 5px 0;
+  padding: 10px;
+  border: none;
+  background: none;
+  color: white;
+  text-align: left;
+  cursor: pointer;
+}
+.menu button:hover,
+.menu button.active {
+    background: linear-gradient(to right, #0d0081af, #1e5bff);
+}
+
+.bottom {
+  position: absolute;
+  bottom: 20px;
+}
+
+/* TOPBAR */
+.topbar {
+    margin-left: 200px;
+    height: 60px;
+    background: #000f61;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+}
+
+/* CONTENT */
+.container {
+  margin-left: 240px;
+  padding: 20px;
+}
+
+.card {
+    background: #02005c8e;
+    padding: 20px;
+    border-radius: 12px;
+}
+/* FORM BASE */
+form input, form select {
+  width: 100%;
+  padding: 8px 10px;
+  margin: 6px 0 12px;
+  border-radius: 6px;
+  border: none;
+  background: rgba(0, 24, 71, 0.65);
+  color: white;
+  box-sizing: border-box;
+}
+
+::placeholder {
+  color: rgba(9, 0, 129, 0.534);
+  font-size: 13px;
+}
+
+/* HORIZONTAL FORM */
+#teacherForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.field {
+  flex: 1 1 150px;
+  min-width: 140px;
+}
+
+#teacherForm input,
+#teacherForm select {
+  padding: 6px;
+  font-size: 12px;
+}
+
+/* BUTTONS */
+form button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.save { background: #1e5bff; color: white; }
+.reset { background: #333; color: white; }
+
+/* SEARCH ROW */
+.search-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.search-row input { flex: 1; }
+.search-row select { width: 150px; }
+
+/* TABLE */
+table {
+  width: 100%;
+  margin-top: 15px;
+  border-collapse: collapse;
+}
+
+th, td {
+  padding: 8px;
+  text-align: left;
+}
+
+button.action {
+  padding: 5px 10px;
+  margin-right: 5px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.edit { background: #4caf50; color: white; }
+.disable { background: orange; color: black; }
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">
+    <h2>CUT13Z3LLL AMS</h2>
+    <small>Attendance Management System</small>
+  </div>
+
+  <div class="menu">
+    <h4>MAIN MENU</h4>
+    <button onclick="window.location.href='Attendance.html'">Attendance</button>
+        <button onclick="window.location.href='Courses.html'">Courses</button>
+        <button onclick="window.location.href='Students.html'">Students</button>
+        <button class="active">Teachers</button>
+  </div>
+
+  <div class="bottom">
+    <p>👤 ADMINISTRATOR</p>
+    <p onclick="logout()">LOG OUT</p>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <h2>TEACHERS</h2>
+  <div>
+    👤 <b>ADMINISTRATOR</b><br>
+    <small>Admin</small>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="container">
+  <div class="card">
+    <h3>Manage Teachers</h3>
+
+    <!-- FORM -->
+    <form id="teacherForm">
+
+      <div class="field">
+        <label>Teacher ID</label>
+        <input type="text" id="teacherID" readonly>
+      </div>
+
+      <div class="field">
+        <label>First Name</label>
+        <input type="text" id="firstName" placeholder="Enter First Name" required>
+      </div>
+
+      <div class="field">
+        <label>Last Name</label>
+        <input type="text" id="lastName" placeholder="Enter Last Name" required>
+      </div>
+
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="email" placeholder="Enter Email" required>
+      </div>
+
+      <div class="field">
+        <label>Status</label>
+        <select id="status">
+          <option value="Active">Active</option>
+          <option value="Not Active">Not Active</option>
+        </select>
+      </div>
+
+      <div class="field" style="align-self:end;">
+        <button type="submit" class="save">Save</button>
+        <button type="reset" class="reset">Reset</button>
+      </div>
+
+    </form>
+
+    <!-- SEARCH + FILTER -->
+    <div class="search-row">
+      <input type="text" id="searchBox" placeholder="Search Teacher ID (TCH-0001)">
+
+      <select id="filterStatus">
+        <option value="All">All Teachers</option>
+        <option value="Active">Active</option>
+        <option value="Not Active">Not Active</option>
+      </select>
+    </div>
+
+    <!-- TABLE -->
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Full Name</th>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="teacherTable"></tbody>
+    </table>
+
+  </div>
+</div>
+
+<script>
+
+/* LOGOUT */
+function logout() {
+  window.location.href = "LogIn.html";
+}
+
+/* MENU ACTIVE */
+const buttons = document.querySelectorAll(".menu button");
+buttons.forEach(btn => {
+  btn.addEventListener("click", () => {
+    buttons.forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+/* DATA */
+let teachers = [];
+let editIndex = null;
+let counter = 1;
+
+/* GENERATE ID */
+function generateID() {
+  return "TCH-" + String(counter++).padStart(4, "0");
+}
+
+teacherID.value = generateID();
+
+/* SAVE */
+teacherForm.addEventListener("submit", function(e){
+  e.preventDefault();
+
+  const teacher = {
+    id: teacherID.value,
+    first: firstName.value,
+    last: lastName.value,
+    email: email.value,
+    status: status.value
+  };
+
+  if (editIndex !== null) {
+    teachers[editIndex] = teacher;
+    editIndex = null;
+  } else {
+    teachers.push(teacher);
+  }
+
+  this.reset();
+  teacherID.value = generateID();
+  displayTeachers(teachers);
+});
+
+/* DISPLAY */
+function displayTeachers(data) {
+  teacherTable.innerHTML = "";
+
+  data.forEach((t, i) => {
+    teacherTable.innerHTML += `
+      <tr>
+        <td>${t.id}</td>
+        <td>${t.last}, ${t.first}</td>
+        <td>${t.email}</td>
+        <td style="color:${t.status==='Active'?'#00ff88':'orange'}">${t.status}</td>
+        <td>
+          <button class="action edit" onclick="editTeacher(${i})">Edit</button>
+          <button class="action disable" onclick="toggleStatus(${i})">
+            ${t.status==='Active'?'Disable':'Enable'}
+          </button>
+        </td>
+      </tr>
+    `;
+  });
+}
+
+/* EDIT */
+function editTeacher(i) {
+  const t = teachers[i];
+  teacherID.value = t.id;
+  firstName.value = t.first;
+  lastName.value = t.last;
+  email.value = t.email;
+  status.value = t.status;
+
+  editIndex = i;
+}
+
+/* TOGGLE STATUS */
+function toggleStatus(i) {
+  teachers[i].status =
+    teachers[i].status === "Active" ? "Not Active" : "Active";
+
+  displayTeachers(teachers);
+}
+
+/* SEARCH + FILTER */
+searchBox.addEventListener("input", filterTeachers);
+filterStatus.addEventListener("change", filterTeachers);
+
+function filterTeachers() {
+  const searchVal = searchBox.value.toLowerCase();
+  const statusVal = filterStatus.value;
+
+  const filtered = teachers.filter(t => {
+    const matchID = t.id.toLowerCase().includes(searchVal);
+    const matchStatus = statusVal === "All" || t.status === statusVal;
+    return matchID && matchStatus;
+  });
+
+  displayTeachers(filtered);
+}
+
+</script>
+
+</body>
+</html>
