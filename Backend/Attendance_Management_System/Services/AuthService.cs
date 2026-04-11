@@ -1,94 +1,54 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
-using Attendance_Management_System.DBCONTEXT;
-using Attendance_Management_System.Interfacess;
+﻿using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
+using Attendance_Management_System.Repositories.Interfaces;
 
 namespace Attendance_Management_System.Services
 {
     public class AuthService : IAuthService
     {
-        private readonly AppDbContext _context;
-        private readonly IConfiguration _config;
+        private readonly IUserRepository _userRepository;
+        private readonly IPasswordHasher _hasher;
+        private readonly IJwtTokenGenerator _tokenGenerator;
 
-        public AuthService(AppDbContext context, IConfiguration config)
+        public AuthService(
+            IUserRepository userRepository,
+            IPasswordHasher hasher,
+            IJwtTokenGenerator tokenGenerator)
         {
-            _context = context;
-            _config = config;
-        }
-
-        // Hash password using SHA256
-        public static string HashPassword(string password)
-        {
-            using var sha256 = SHA256.Create();
-            var bytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password));
-            return Convert.ToBase64String(bytes);
+            _userRepository = userRepository;
+            _hasher = hasher;
+            _tokenGenerator = tokenGenerator;
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
         {
-            var hashedPassword = HashPassword(request.Password);
-
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Username == request.Username && u.PasswordHash == hashedPassword);
+            var user = await _userRepository.GetByUsernameAndPasswordAsync(
+                request.Username, _hasher.Hash(request.Password));
 
             if (user == null) return null;
 
-            var token = GenerateJwtToken(user);
-            var expiration = DateTime.UtcNow.AddHours(8);
-
             return new LoginResponse
             {
-                Token = token,
+                Token = _tokenGenerator.Generate(user),
                 Username = user.Username,
                 Role = user.Role,
-                Expiration = expiration
+                Expiration = DateTime.UtcNow.AddHours(8)
             };
         }
 
         public async Task SeedAdminAsync()
         {
-            // Only seed if no users exist
-            if (await _context.Users.AnyAsync()) return;
+            if (await _userRepository.AnyAsync(_ => true)) return;
 
             var admin = new User
             {
                 Username = "admin",
-                PasswordHash = HashPassword("admin123"),
+                PasswordHash = _hasher.Hash("admin123"),
                 Role = "Admin",
                 CreatedAt = DateTime.UtcNow
             };
-
-            _context.Users.Add(admin);
-            await _context.SaveChangesAsync();
-        }
-
-        private string GenerateJwtToken(User user)
-        {
-            var jwtKey = _config["Jwt:Key"] ?? "DefaultSuperSecretKey123456789012";
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
-            var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
-            {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Name, user.Username),
-                new Claim(ClaimTypes.Role, user.Role),
-            };
-
-            var token = new JwtSecurityToken(
-                issuer: _config["Jwt:Issuer"] ?? "AttendanceSystem",
-                audience: _config["Jwt:Audience"] ?? "AttendanceSystem",
-                claims: claims,
-                expires: DateTime.UtcNow.AddHours(8),
-                signingCredentials: credentials
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            await _userRepository.AddAsync(admin);
+            await _userRepository.SaveChangesAsync();
         }
     }
 }

@@ -145,4 +145,4 @@ namespace Attendance_Management_System.Controllers
             return deleted ? NoContent() : NotFound(new { message = $"Attendance record {id} not found." });
         }
     }
-}
+}   

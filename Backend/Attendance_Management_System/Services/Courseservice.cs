@@ -1,26 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Attendance_Management_System.DBCONTEXT;
-using Attendance_Management_System.DTOs;
+﻿using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
+using Attendance_Management_System.Repositories.Interfaces;
 
 namespace Attendance_Management_System.Services
 {
     public class CourseService : ICourseService
     {
-        private readonly AppDbContext _context;
-        public CourseService(AppDbContext context) => _context = context;
+        private readonly ICourseRepository _courseRepository;
 
-        public async Task<IEnumerable<CourseResponseDto>> GetAllAsync() =>
-            await _context.Courses
-                .Include(c => c.Teacher)
-                .Select(c => ToDto(c))
-                .ToListAsync();
+        public CourseService(ICourseRepository courseRepository) =>
+            _courseRepository = courseRepository;
+
+        public async Task<IEnumerable<CourseResponseDto>> GetAllAsync()
+        {
+            var courses = await _courseRepository.GetAllWithTeacherAsync();
+            return courses.Select(ToDto);
+        }
 
         public async Task<CourseResponseDto?> GetByIdAsync(int id)
         {
-            var c = await _context.Courses.Include(c => c.Teacher)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var c = await _courseRepository.GetByIdWithTeacherAsync(id);
             return c == null ? null : ToDto(c);
         }
 
@@ -35,16 +35,16 @@ namespace Attendance_Management_System.Services
                 Schedule = dto.Schedule,
                 TeacherId = dto.TeacherId
             };
-            _context.Courses.Add(course);
-            await _context.SaveChangesAsync();
-            await _context.Entry(course).Reference(c => c.Teacher).LoadAsync();
-            return ToDto(course);
+            await _courseRepository.AddAsync(course);
+            await _courseRepository.SaveChangesAsync();
+
+            var saved = await _courseRepository.GetByIdWithTeacherAsync(course.Id);
+            return ToDto(saved!);
         }
 
         public async Task<CourseResponseDto?> UpdateAsync(int id, UpdateCourseDto dto)
         {
-            var course = await _context.Courses.Include(c => c.Teacher)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var course = await _courseRepository.GetByIdWithTeacherAsync(id);
             if (course == null) return null;
 
             course.CourseCode = dto.CourseCode;
@@ -53,17 +53,21 @@ namespace Attendance_Management_System.Services
             course.Section = dto.Section;
             course.Schedule = dto.Schedule;
             course.TeacherId = dto.TeacherId;
-            await _context.SaveChangesAsync();
-            await _context.Entry(course).Reference(c => c.Teacher).LoadAsync();
-            return ToDto(course);
+
+            _courseRepository.Update(course);
+            await _courseRepository.SaveChangesAsync();
+
+            var updated = await _courseRepository.GetByIdWithTeacherAsync(id);
+            return ToDto(updated!);
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var course = await _context.Courses.FindAsync(id);
+            var course = await _courseRepository.GetByIdAsync(id);
             if (course == null) return false;
-            _context.Courses.Remove(course);
-            await _context.SaveChangesAsync();
+
+            _courseRepository.Remove(course);
+            await _courseRepository.SaveChangesAsync();
             return true;
         }
 
@@ -76,8 +80,7 @@ namespace Attendance_Management_System.Services
             Section = c.Section,
             Schedule = c.Schedule,
             TeacherId = c.TeacherId,
-            TeacherName = c.Teacher != null
-                ? $"{c.Teacher.FirstName} {c.Teacher.LastName}" : "",
+            TeacherName = c.Teacher != null ? $"{c.Teacher.FirstName} {c.Teacher.LastName}" : "",
             CreatedAt = c.CreatedAt
         };
     }
