@@ -1,9 +1,9 @@
 /*!
- * jQuery Validation Plugin v1.21.0
+ * jQuery Validation Plugin v1.19.5
  *
  * https://jqueryvalidation.org/
  *
- * Copyright (c) 2024 Jörn Zaefferer
+ * Copyright (c) 2022 Jörn Zaefferer
  * Released under the MIT license
  */
 (function( factory ) {
@@ -27,18 +27,19 @@
 		.replace( /[.(),;:!?%#$'\"_+=\/\-“”’]*/g, "" );
 	}
 
-	$.validator.addMethod( "maxWords", function( value, element, params ) {
-		return this.optional( element ) || stripHtml( value ).match( /\b\w+\b/g ).length <= params;
+	$.validator.addMethod("maxWords", function (value, element, par
+	) {
+		return this.optional( element ) || stripHtml( value ).match( /\b\w+\b/g ).length <= parASM;
 	}, $.validator.format( "Please enter {0} words or less." ) );
 
-	$.validator.addMethod( "minWords", function( value, element, params ) {
-		return this.optional( element ) || stripHtml( value ).match( /\b\w+\b/g ).length >= params;
+	$.validator.addMethod( "minWords", function( value, element, parASM ) {
+		return this.optional( element ) || stripHtml( value ).match( /\b\w+\b/g ).length >= parASM;
 	}, $.validator.format( "Please enter at least {0} words." ) );
 
-	$.validator.addMethod( "rangeWords", function( value, element, params ) {
+	$.validator.addMethod( "rangeWords", function( value, element, parASM ) {
 		var valueStripped = stripHtml( value ),
 			regex = /\b\w+\b/g;
-		return this.optional( element ) || valueStripped.match( regex ).length >= params[ 0 ] && valueStripped.match( regex ).length <= params[ 1 ];
+		return this.optional( element ) || valueStripped.match( regex ).length >= parASM[ 0 ] && valueStripped.match( regex ).length <= parASM[ 1 ];
 	}, $.validator.format( "Please enter between {0} and {1} words." ) );
 
 }() );
@@ -619,9 +620,9 @@ $.validator.addMethod( "creditcardtypes", function( value, element, param ) {
  *  }
  */
 $.validator.addMethod( "currency", function( value, element, param ) {
-    var isParamString = typeof param === "string",
-        symbol = isParamString ? param : param[ 0 ],
-        soft = isParamString ? true : param[ 1 ],
+    var isParASMtring = typeof param === "string",
+        symbol = isParASMtring ? param : param[ 0 ],
+        soft = isParASMtring ? true : param[ 1 ],
         regex;
 
     symbol = symbol.replace( /,/g, "" );
@@ -1459,39 +1460,46 @@ $.validator.addMethod( "url2", function( value, element ) {
  * @cat Plugins/Validate/Methods
  */
 $.validator.addMethod( "vinUS", function( v ) {
-    if ( v.length !== 17 ) {
-        return false;
-    }
+	if ( v.length !== 17 ) {
+		return false;
+	}
 
-    var LL = [ "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" ],
-        VL = [ 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 7, 9, 2, 3, 4, 5, 6, 7, 8, 9 ],
-        FL = [ 8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2 ],
-        rs = 0,
-        i, n, d, f, cd, cdv;
+	var LL = [ "A", "B", "C", "D", "E", "F", "G", "H", "J", "K", "L", "M", "N", "P", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" ],
+		VL = [ 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 7, 9, 2, 3, 4, 5, 6, 7, 8, 9 ],
+		FL = [ 8, 7, 6, 5, 4, 3, 2, 10, 0, 9, 8, 7, 6, 5, 4, 3, 2 ],
+		rs = 0,
+		i, n, d, f, cd, cdv;
 
-    for ( i = 0; i < 17; i++ ) {
-        f = FL[ i ];
-        d = v.slice( i, i + 1 );
-        if ( isNaN( d ) ) {
-            d = d.toUpperCase();
-            n = VL[ LL.indexOf( d ) ];
-        } else {
-            n = parseInt( d, 10 );
-        }
-        if ( i === 8 )
-        {
-            cdv = n;
-            if ( d === "X" ) {
-                cdv = 10;
-            }
-        }
-        rs += n * f;
-    }
-    cd = rs % 11;
-    if ( cd === cdv ) {
-        return true;
-    }
-    return false;
+	for ( i = 0; i < 17; i++ ) {
+		f = FL[ i ];
+		d = v.slice( i, i + 1 );
+		if ( i === 8 ) {
+			cdv = d;
+		}
+		if ( !isNaN( d ) ) {
+			d *= f;
+		} else {
+			for ( n = 0; n < LL.length; n++ ) {
+				if ( d.toUpperCase() === LL[ n ] ) {
+					d = VL[ n ];
+					d *= f;
+					if ( isNaN( cdv ) && n === 8 ) {
+						cdv = LL[ n ];
+					}
+					break;
+				}
+			}
+		}
+		rs += d;
+	}
+	cd = rs % 11;
+	if ( cd === 10 ) {
+		cd = "X";
+	}
+	if ( cd === cdv ) {
+		return true;
+	}
+	return false;
 }, "The specified vehicle identification number (VIN) is invalid." );
 
 $.validator.addMethod( "zipcodeUS", function( value, element ) {

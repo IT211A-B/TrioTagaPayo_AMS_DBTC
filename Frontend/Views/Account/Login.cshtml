@@ -1,0 +1,157 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Sign In — 3TagaPayu";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+    <link rel="stylesheet" href="~/css/login.css" />
+</head>
+<body>
+
+    <!-- =============================================
+         TOP-LEFT: School badge (logo + school name)
+         ============================================= -->
+    <div class="school-badge">
+        <img src="~/images/logo.png" alt="School Logo" />
+        <div class="school-badge-text">
+            <strong>Don Bosco Technical College</strong>
+            <span>Cebu City, Philippines</span>
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         CENTER: The login card
+         ============================================= -->
+    <div class="login-center">
+        <div class="login-card">
+
+            <!-- Logo circle -->
+            <div class="logo-circle">
+                <img src="~/images/logo.png" alt="ASM Logo" />
+            </div>
+
+            <p class="card-title">Attendance System</p>
+            <p class="card-sub">3TagaPayu &middot; 2nd Year BSIT</p>
+
+            <!-- Glass box -->
+            <div class="login-box">
+                <h2>Sign In</h2>
+
+                @* Show error only if login failed *@
+                @if (ViewBag.ErrorMessage != null)
+                {
+                    <div class="error-msg">
+                        @ViewBag.ErrorMessage
+                    </div>
+                }
+
+                <form method="post" action="/Account/Login" id="loginForm">
+                    @Html.AntiForgeryToken()
+
+                    <!-- Username -->
+                    <div class="input-group">
+                        <span class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                                <circle cx="12" cy="7" r="4" />
+                            </svg>
+                        </span>
+                        <input type="text"
+                               name="username"
+                               id="usernameField"
+                               placeholder="Username / ID"
+                               value="@ViewBag.LastUsername"
+                               autocomplete="off" />
+                    </div>
+
+                    <!-- Password -->
+                    <div class="input-group">
+                        <span class="input-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="11" rx="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                        </span>
+                        <input type="password"
+                               name="password"
+                               id="passwordField"
+                               placeholder="Password"
+                               autocomplete="off" />
+                        <!-- Eye toggle -->
+                        <button type="button" class="eye-btn" onclick="togglePassword(this)" title="Show or hide password">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <!-- Login button — shows a small spinner when clicked -->
+                    <button type="submit" class="login-btn" id="loginBtn">
+                        <span class="btn-text">Login</span>
+                        <span class="btn-spinner" id="btnSpinner"></span>
+                    </button>
+
+                </form>
+
+                <p class="forgot-link">Forgot Password?</p>
+
+                <!-- Demo credentials hint -->
+                <div class="hint-box">
+                    <strong>Admin:</strong> ADMIN-001 &nbsp;/&nbsp; admin123<br />
+                    <strong>Teachers:</strong> TCH-0001 &nbsp;|&nbsp; TCH-0002 &nbsp;|&nbsp; TCH-0003<br />
+                    <span>Password: teacher1, teacher2, teacher3</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+
+    <!-- =============================================
+         BOTTOM-LEFT: Scripture quote
+         ============================================= -->
+    <div class="scripture">
+        &ldquo;The Lord is my Shepherd, I shall not Fear.&rdquo;
+        <span>&mdash; Psalm 23:1</span>
+    </div>
+
+
+    <script>
+        // ---- Show / hide password ----
+        function togglePassword(btn) {
+            var field = document.getElementById('passwordField');
+
+            if (field.type === 'password') {
+                field.type = 'text';
+                btn.classList.add('eye-active');
+            } else {
+                field.type = 'password';
+                btn.classList.remove('eye-active');
+            }
+        }
+
+        // ---- Button loading state when form is submitted ----
+        document.getElementById('loginForm').addEventListener('submit', function () {
+            var btn     = document.getElementById('loginBtn');
+            var text    = btn.querySelector('.btn-text');
+            var spinner = document.getElementById('btnSpinner');
+
+            // Hide the "Login" text, show the spinner
+            text.style.display    = 'none';
+            spinner.style.display = 'inline-block';
+
+            // Disable so it can't be double-clicked
+            btn.disabled = true;
+            btn.classList.add('btn-loading');
+        });
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,139 @@
+﻿@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Attendance";
+    ViewData["PageTitle"] = "Attendance";
+}
+
+<div class="stats-row">
+    <div class="stat-card">
+        <p class="stat-label">Scanned Today</p>
+        <p class="stat-value">2</p>
+        <p class="stat-sub">of 7 enrolled</p>
+        <span class="stat-pill pill-green">↑ 2 present</span>
+    </div>
+    <div class="stat-card">
+        <p class="stat-label">Present</p>
+        <p class="stat-value">2</p>
+        <span class="stat-pill pill-green">On time</span>
+    </div>
+    <div class="stat-card">
+        <p class="stat-label">Late</p>
+        <p class="stat-value">1</p>
+        <span class="stat-pill pill-amber">After cutoff</span>
+    </div>
+    <div class="stat-card">
+        <p class="stat-label">Absent</p>
+        <p class="stat-value">0</p>
+        <span class="stat-pill pill-blue">All accounted</span>
+    </div>
+</div>
+
+
+<!-- =============================================
+     TWO COLUMNS: QR Scanner  |  Student List
+     ============================================= -->
+<div class="grid-2">
+
+    <!-- Left — QR Scanner card -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">QR Attendance Scanner</span>
+            <span class="card-badge">Auto-verify</span>
+        </div>
+        <div class="card-body">
+
+            <!-- QR placeholder box -->
+            <div class="qr-zone">
+                <svg class="qr-icon" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="8" y="8" width="20" height="20" rx="2" />
+                    <rect x="36" y="8" width="20" height="20" rx="2" />
+                    <rect x="8" y="36" width="20" height="20" rx="2" />
+                    <rect x="13" y="13" width="10" height="10" rx="1" fill="currentColor" stroke="none" />
+                    <rect x="41" y="13" width="10" height="10" rx="1" fill="currentColor" stroke="none" />
+                    <rect x="13" y="41" width="10" height="10" rx="1" fill="currentColor" stroke="none" />
+                    <line x1="36" y1="36" x2="36" y2="40" />
+                    <line x1="40" y1="36" x2="44" y2="36" />
+                    <line x1="44" y1="40" x2="56" y2="40" />
+                    <line x1="52" y1="44" x2="56" y2="44" />
+                    <line x1="40" y1="48" x2="44" y2="48" />
+                    <line x1="44" y1="52" x2="56" y2="52" />
+                    <line x1="48" y1="44" x2="48" y2="56" />
+                </svg>
+                <span class="qr-hint">Align student QR code<br />within the frame to scan</span>
+            </div>
+
+            <p style="font-size:12px; color:var(--text-muted); text-align:center; margin-bottom:14px;">
+                Attendance is logged automatically upon successful scan
+            </p>
+
+            <!-- List of already-scanned students today -->
+            <p class="scanned-heading">Scanned Today &mdash; <strong>2 students</strong></p>
+
+            <div class="attend-entry">
+                <div class="attend-num">1</div>
+                <div class="attend-info">
+                    <p class="attend-name">Santos, Carl Joshua</p>
+                    <p class="attend-meta">2026-0001 &middot; 3TagaPayu</p>
+                </div>
+                <span class="attend-time">7:58 AM</span>
+                <div class="status-badge status-P">P</div>
+            </div>
+
+            <div class="attend-entry">
+                <div class="attend-num">2</div>
+                <div class="attend-info">
+                    <p class="attend-name">Moreno, Anthony Josh</p>
+                    <p class="attend-meta">2026-0002 &middot; 3TagaPayu</p>
+                </div>
+                <span class="attend-time">10:05 AM</span>
+                <div class="status-badge status-L">L</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Right — Full student attendance list -->
+    <div class="card">
+        <div class="card-header">
+            <span class="card-title">Student Attendance List</span>
+            <span class="card-badge">3TagaPayu &middot; Today</span>
+        </div>
+        <div class="card-body" style="padding: 0;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student ID</th>
+                        <th>Student Name</th>
+                        <th>Section</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="table-id">2026-0001</td>
+                        <td><strong>Santos, Carl Joshua</strong></td>
+                        <td><span class="table-section">3TagaPayu</span></td>
+                        <td class="table-id">7:58 AM</td>
+                        <td><div class="status-badge status-P">P</div></td>
+                    </tr>
+                    <tr>
+                        <td class="table-id">2026-0002</td>
+                        <td><strong>Moreno, Anthony Josh</strong></td>
+                        <td><span class="table-section">3TagaPayu</span></td>
+                        <td class="table-id">10:05 AM</td>
+                        <td><div class="status-badge status-L">L</div></td>
+                    </tr>
+                    <tr>
+                        <td class="table-id">2026-0003</td>
+                        <td><strong>Rebese, Vincent</strong></td>
+                        <td><span class="table-section">3TagaPayu</span></td>
+                        <td class="table-id">&mdash;</td>
+                        <td><div class="status-badge status-A">A</div></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>

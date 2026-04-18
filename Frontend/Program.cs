@@ -1,35 +1,40 @@
 var builder = WebApplication.CreateBuilder(args);
+
+// Add MVC
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddHttpClient("BackendApi", client =>
-{
-    client.BaseAddress = new Uri("https://localhost:7159/");
-})
-.ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-{
-    ServerCertificateCustomValidationCallback =
-        HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
-});
-
-builder.Services.AddDistributedMemoryCache();
+// Add Session support (needed for login)
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromHours(8);
+    options.IdleTimeout = TimeSpan.FromMinutes(60);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
 });
 
+// Register ApiService and HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient<ASM.Services.ApiService>();
+
 var app = builder.Build();
-app.UseStatusCodePagesWithReExecute("/Error/{0}");
+
+// Standard middleware
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+}
+
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+
+// Session must go BEFORE authorization
 app.UseSession();
 app.UseAuthorization();
 
+// Default route — go to Login first
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Login}/{action=Login}/{id?}");
+    pattern: "{controller=Account}/{action=Login}/{id?}");
 
 app.Run();
