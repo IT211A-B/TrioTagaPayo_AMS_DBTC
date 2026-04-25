@@ -12,5 +12,15 @@
         public string Username { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
         public DateTime Expiration { get; set; }
+
+        // ✅ NEW
+        public string RefreshToken { get; set; } = string.Empty;
+        public DateTime RefreshTokenExpiry { get; set; }
+    }
+
+    // ✅ NEW — para sa POST /api/Auth/refresh
+    public class RefreshTokenRequest
+    {
+        public string RefreshToken { get; set; } = string.Empty;
     }
 }

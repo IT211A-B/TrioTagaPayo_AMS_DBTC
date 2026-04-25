@@ -7,6 +7,7 @@ namespace Attendance_Management_System.Repositories.Interfaces
     /// </summary>
     public interface IUserRepository : IGenericRepository<User>
     {
+        // ✅ This is enough — FindAsync + AnyAsync already in IGenericRepository
         Task<User?> GetByUsernameAndPasswordAsync(string username, string passwordHash);
     }
 }

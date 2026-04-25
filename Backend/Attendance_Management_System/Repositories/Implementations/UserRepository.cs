@@ -13,9 +13,13 @@ namespace Attendance_Management_System.Repositories.Implementations
     {
         public UserRepository(AppDbContext context) : base(context) { }
 
-        /// <summary>Finds a user by matching username and hashed password — used for login.</summary>
+        /// <summary>
+        /// Finds a user by matching username and hashed password — used for login.
+        /// </summary>
         public async Task<User?> GetByUsernameAndPasswordAsync(string username, string passwordHash) =>
             await _context.Users
                 .FirstOrDefaultAsync(u => u.Username == username && u.PasswordHash == passwordHash);
+
+        // ✅ FindAsync + AnyAsync — inherited from GenericRepository, no need to re-declare
     }
 }

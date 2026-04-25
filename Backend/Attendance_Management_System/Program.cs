@@ -1,5 +1,3 @@
-// Program.cs — FIXED (removed duplicate EmailJSHelper registration)
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -7,6 +5,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Attendance_Management_System.DBCONTEXT;
 using Attendance_Management_System.Helpers;
+using Attendance_Management_System.Hubs;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Middlewares;
 using Attendance_Management_System.Repositories.Interfaces;
@@ -40,14 +39,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // =============================================
-// ? NEW: EmailJS — config + typed HttpClient
-// AddHttpClient<EmailJSHelper>() is enough.
-// Do NOT also call AddScoped<EmailJSHelper>()
-// — that causes a double-registration conflict.
+// EmailJS
 // =============================================
 builder.Services.Configure<EmailJSOptions>(
     builder.Configuration.GetSection("EmailJS"));
-builder.Services.AddHttpClient<EmailJSHelper>(); // ? this one only
+builder.Services.AddHttpClient<EmailJSHelper>();
 
 // =============================================
 // Register Repositories
@@ -62,6 +58,8 @@ builder.Services.AddScoped<IAttendanceRepository>(sp => sp.GetRequiredService<At
 builder.Services.AddScoped<IAttendanceFilterRepository>(sp => sp.GetRequiredService<AttendanceRepository>());
 builder.Services.AddScoped<IAttendanceBulkRepository>(sp => sp.GetRequiredService<AttendanceRepository>());
 
+builder.Services.AddScoped<IQRSessionRepository, QRSessionRepository>();
+
 // =============================================
 // Register Services
 // =============================================
@@ -72,7 +70,11 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+builder.Services.AddScoped<IQRService, QRService>();
 
+// =============================================
+// JWT Authentication
+// =============================================
 var jwtKey = builder.Configuration["Jwt:Key"]!;
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -88,6 +90,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
+
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                // ? PRIORITY 1: Cookie — para sa browser clients
+                var cookieToken = context.Request.Cookies["accessToken"];
+                if (!string.IsNullOrEmpty(cookieToken))
+                {
+                    context.Token = cookieToken;
+                    return Task.CompletedTask;
+                }
+
+                // ? PRIORITY 2: SignalR query string — para sa WebSocket
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) &&
+                    path.StartsWithSegments("/hubs/attendance"))
+                {
+                    context.Token = accessToken;
+                }
+
+                // ? PRIORITY 3: Bearer header — para sa mobile/Swagger
+                // (default behavior na sa JwtBearer — wala na need i-handle)
+
+                return Task.CompletedTask;
+            }
+        };
     });
 
 builder.Services.AddCors(options =>
@@ -95,6 +125,16 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
         policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
 });
+
+// =============================================
+// Rate Limiting
+// =============================================
+builder.Services.AddAppRateLimiting();
+
+// =============================================
+// SignalR
+// =============================================
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -139,6 +179,9 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+// =============================================
+// Build + Middleware Pipeline
+// =============================================
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -157,7 +200,12 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseCors("AllowAll");
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+
+// SignalR endpoint
+app.MapHub<AttendanceHub>("/hubs/attendance");
+
 app.Run();

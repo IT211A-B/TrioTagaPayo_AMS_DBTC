@@ -1,6 +1,7 @@
-﻿// Services/AttendanceService.cs — FINAL with EmailJS integrated
+﻿using Microsoft.AspNetCore.SignalR;
 using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Helpers;
+using Attendance_Management_System.Hubs;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
 using Attendance_Management_System.Repositories.Interfaces;
@@ -13,17 +14,20 @@ namespace Attendance_Management_System.Services
         private readonly IAttendanceFilterRepository _filterRepository;
         private readonly IAttendanceBulkRepository _bulkRepository;
         private readonly EmailJSHelper _emailJS;
+        private readonly IHubContext<AttendanceHub> _hub; // ✅ NEW
 
         public AttendanceService(
             IAttendanceRepository attendanceRepository,
             IAttendanceFilterRepository filterRepository,
             IAttendanceBulkRepository bulkRepository,
-            EmailJSHelper emailJS)
+            EmailJSHelper emailJS,
+            IHubContext<AttendanceHub> hub) // ✅ NEW
         {
             _attendanceRepository = attendanceRepository;
             _filterRepository = filterRepository;
             _bulkRepository = bulkRepository;
             _emailJS = emailJS;
+            _hub = hub; // ✅ NEW
         }
 
         // ── READ ──────────────────────────────────────────────────────────
@@ -75,11 +79,13 @@ namespace Attendance_Management_System.Services
             await _attendanceRepository.AddAsync(attendance);
             await _attendanceRepository.SaveChangesAsync();
 
-            // Reload with Student + Course navigation properties included
             var saved = await _attendanceRepository.GetByIdWithDetailsAsync(attendance.Id);
 
-            // ✅ Fire email — does NOT block the API response
+            // ✅ Fire email — non-blocking
             _ = NotifyStudentAsync(saved!);
+
+            // ✅ Fire SignalR — real-time update sa frontend
+            await NotifyHubAsync(saved!, "manual");
 
             return ToDto(saved!);
         }
@@ -104,9 +110,12 @@ namespace Attendance_Management_System.Services
             var ids = attendances.Select(a => a.Id).ToList();
             var saved = (await _bulkRepository.GetByIdsWithDetailsAsync(ids)).ToList();
 
-            // ✅ Send email to EVERY student in the bulk save
+            // ✅ Email + SignalR para sa EVERY student sa bulk
             foreach (var record in saved)
+            {
                 _ = NotifyStudentAsync(record);
+                await NotifyHubAsync(record, "manual");
+            }
 
             return saved.Select(ToDto);
         }
@@ -143,10 +152,6 @@ namespace Attendance_Management_System.Services
 
         // ── PRIVATE HELPERS ───────────────────────────────────────────────
 
-        /// <summary>
-        /// Reads the Student email from the already-loaded navigation property
-        /// and calls EmailJSHelper. Never throws — email failure is non-fatal.
-        /// </summary>
         private async Task NotifyStudentAsync(Attendance attendance)
         {
             var student = attendance.Student;
@@ -165,6 +170,37 @@ namespace Attendance_Management_System.Services
                 date: attendance.Date,
                 timeRecorded: attendance.CreatedAt
             );
+        }
+
+        /// <summary>
+        /// Sends a real-time SignalR notification to:
+        ///   - "course_{courseId}" group  → teacher's dashboard
+        ///   - "admin" group              → admin's global feed
+        /// </summary>
+        private async Task NotifyHubAsync(Attendance attendance, string source)
+        {
+            var notification = new AttendanceNotificationDto
+            {
+                AttendanceId = attendance.Id,
+                StudentName = $"{attendance.Student?.LastName}, {attendance.Student?.FirstName}",
+                StudentNo = attendance.Student?.StudentNo ?? "",
+                CourseName = attendance.Course?.CourseName ?? "",
+                Section = attendance.Student?.Section ?? "",
+                Status = attendance.Status,
+                Date = attendance.Date,
+                Timestamp = attendance.CreatedAt,
+                Source = source
+            };
+
+            // ✅ Notify teacher watching this course
+            await _hub.Clients
+                .Group($"course_{attendance.CourseId}")
+                .SendAsync("AttendanceRecorded", notification);
+
+            // ✅ Notify admin global feed
+            await _hub.Clients
+                .Group("admin")
+                .SendAsync("AttendanceRecorded", notification);
         }
 
         private static AttendanceResponseDto ToDto(Attendance a) => new()
