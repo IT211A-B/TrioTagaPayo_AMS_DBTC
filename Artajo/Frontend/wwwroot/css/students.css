@@ -1,0 +1,58 @@
+﻿/* students.css — Wireframe v9 redesign */
+
+/* Avatar override: round avatars with pink glow on hover */
+.student-cell .avatar {
+    border-radius: 50%;
+    border: 1px solid rgba(56,189,248,0.2);
+    transition: box-shadow 0.15s;
+}
+
+.table-row:hover .student-cell .avatar {
+    box-shadow: 0 0 10px rgba(216,27,96,0.3);
+}
+
+/* Attendance mini bar */
+.attend-mini {
+    width: 72px;
+    height: 4px;
+    background: var(--faint);
+    overflow: hidden;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 6px;
+}
+
+.attend-bar {
+    display: block;
+    height: 100%;
+    background: var(--green);
+}
+
+.attend-bar-low {
+    background: var(--red);
+}
+
+.attend-pct {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text2);
+    vertical-align: middle;
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Profile view avatar: circular */
+.profile-avatar {
+    border-radius: 50% !important;
+}
+
+/* View details */
+.view-label {
+    color: var(--text2);
+    font-size: 12px;
+}
+
+.view-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}

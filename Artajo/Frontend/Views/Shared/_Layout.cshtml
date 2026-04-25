@@ -1,0 +1,109 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — AMS</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="~/css/toast.css" />
+    @RenderSection("PageStyles", required: false)
+</head>
+<body>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <img src="~/images/logo.png" alt="3TagaPayu" />
+            </div>
+            <span class="brand-name">3TagaPayu</span>
+        </div>
+
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Main Menu</span>
+
+            <a href="@Url.Action("Dashboard", "Admin")"
+               class="nav-link @(ViewData["ActivePage"]?.ToString() == "Dashboard" ? "active" : "")">
+                <span class="nav-icon">⊞</span>
+                <span class="nav-label">Dashboard</span>
+            </a>
+            <a href="@Url.Action("Attendance", "Admin")"
+               class="nav-link @(ViewData["ActivePage"]?.ToString() == "Attendance" ? "active" : "")">
+                <span class="nav-icon">◷</span>
+                <span class="nav-label">Attendance</span>
+            </a>
+            <a href="@Url.Action("Students", "Admin")"
+               class="nav-link @(ViewData["ActivePage"]?.ToString() == "Students" ? "active" : "")">
+                <span class="nav-icon">◍</span>
+                <span class="nav-label">Students</span>
+            </a>
+            <a href="@Url.Action("Teachers", "Admin")"
+               class="nav-link @(ViewData["ActivePage"]?.ToString() == "Teachers" ? "active" : "")">
+                <span class="nav-icon">◈</span>
+                <span class="nav-label">Teachers</span>
+            </a>
+            <a href="@Url.Action("Courses", "Admin")"
+               class="nav-link @(ViewData["ActivePage"]?.ToString() == "Courses" ? "active" : "")">
+                <span class="nav-icon">◧</span>
+                <span class="nav-label">Courses</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="@Url.Action("Logout", "Account")" class="nav-link logout-link">
+                <span class="nav-icon">⇥</span>
+                <span class="nav-label">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <!-- MAIN -->
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="hamburger" onclick="toggleSidebar()">
+                    <span></span><span></span><span></span>
+                </button>
+                <h1 class="topbar-title">@ViewData["PageTitle"]</h1>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-admin">
+                    <div class="admin-avatar">
+                        @(Context.Session.GetString("Username")?.FirstOrDefault().ToString().ToUpper() ?? "A")
+                    </div>
+                    <span class="admin-name">@(Context.Session.GetString("Username") ?? "Admin")</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="page-content">@RenderBody()</main>
+    </div>
+
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="~/js/site.js"></script>
+    <script src="~/js/toast.js"></script>
+
+    @if (TempData["Success"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>showToast('@Html.Raw(TempData["Success"])','success'));</script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>showToast('@Html.Raw(TempData["Error"])','error'));</script>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>showToast('@Html.Raw(TempData["Warning"])','warning'));</script>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>showToast('@Html.Raw(TempData["Info"])','info'));</script>
+    }
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>
