@@ -1,471 +1,398 @@
-﻿@{
+﻿@model AMS.ViewModels.StudentsPageViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Students";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["PageTitle"] = "Students";
 }
 
+<!-- HEADER -->
 <div class="page-header">
     <div>
         <h2>Students</h2>
         <p>All enrolled students this semester</p>
     </div>
     <div class="page-header-actions">
-        <button class="btn-secondary" onclick="exportTable()">&#8681; Export</button>
         <button class="btn-primary" onclick="openAddModal()">+ Add Student</button>
     </div>
 </div>
 
-<!-- Summary pills -->
+<!-- SUMMARY -->
 <div class="summary-bar">
-    <div class="summary-pill">
-        <span class="summary-dot dot-blue"></span>
-        <span>7 Total Students</span>
-    </div>
-    <div class="summary-pill">
-        <span class="summary-dot dot-green"></span>
-        <span>6 Active</span>
-    </div>
-    <div class="summary-pill">
-        <span class="summary-dot dot-red"></span>
-        <span>1 Inactive</span>
-    </div>
+    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong id="totalCount">@Model.TotalCount</strong></div>
 </div>
 
-<!-- Search and filter -->
-<div class="table-toolbar" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px;">
-    <input type="text" class="search-input" id="searchInput" placeholder="Search by name or ID..." onkeyup="filterTable()" />
-    <select class="filter-select" id="filterYear" onchange="filterTable()">
-        <option value="">All Year Levels</option>
-        <option value="1st Year">1st Year</option>
-        <option value="2nd Year">2nd Year</option>
-        <option value="3rd Year">3rd Year</option>
-        <option value="4th Year">4th Year</option>
-    </select>
-    <select class="filter-select" id="filterSection" onchange="filterTable()">
-        <option value="">All Sections</option>
-        <option value="A">Section A</option>
-        <option value="B">Section B</option>
-        <option value="C">Section C</option>
-    </select>
+<!-- FILTERS -->
+<div class="filter-bar">
+    <input type="text" id="searchInput" class="search-input"
+           placeholder="Search by name, student no, or email..."
+           value="@Model.Search" oninput="handleSearch()" />
+    <input type="text" id="sectionInput" class="filter-input"
+           placeholder="Filter by section..."
+           value="@Model.SectionFilter" oninput="handleSearch()" />
 </div>
 
-<!-- Students table -->
-<div class="table-card">
-    <table class="data-table" id="studentsTable">
+<!-- TABLE -->
+<div class="table-wrapper">
+    <table class="data-table">
         <thead>
             <tr>
-                <th>Student ID</th>
-                <th>Full Name</th>
-                <th>Year Level</th>
-                <th>Section</th>
-                <th>Courses</th>
-                <th>Attendance</th>
-                <th>Status</th>
+                <th>Student</th>
+                <th class="hide-sm">Student No</th>
+                <th class="hide-sm">Section</th>
+                <th class="hide-md">Mobile</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-
-            <!-- 1. Joshua Carl Santos -->
-            <tr>
-                <td class="table-id">2026-0001</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #1A56C4, #0F3E9E);">JS</div>
-                        <div>
-                            <div class="student-fullname">Joshua Carl Santos</div>
-                            <div class="student-email">j.santos@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td>3rd Year</td>
-                <td><span class="table-section">3TagaPayu</span></td>
-                <td>5</td>
-                <td>
-                    <div class="attend-mini"><span class="attend-bar" style="width:92%"></span></div>
-                    <span class="attend-pct">92%</span>
-                </td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('Joshua Carl Santos','2026-0001','3rd Year','3TagaPayu','92%')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('2026-0001','Joshua Carl Santos','3rd Year','3TagaPayu')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('Joshua Carl Santos')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
-            <!-- 2. Vincent Rebese -->
-            <tr>
-                <td class="table-id">2026-0002</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #0F7A4F, #095c3a);">VR</div>
-                        <div>
-                            <div class="student-fullname">Vincent Rebese</div>
-                            <div class="student-email">v.rebese@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td>3rd Year</td>
-                <td><span class="table-section">3TagaPayu</span></td>
-                <td>5</td>
-                <td>
-                    <div class="attend-mini"><span class="attend-bar attend-bar-low" style="width:58%"></span></div>
-                    <span class="attend-pct" style="color:var(--red);">58%</span>
-                </td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('Vincent Rebese','2026-0002','3rd Year','3TagaPayu','58%')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('2026-0002','Vincent Rebese','3rd Year','3TagaPayu')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('Vincent Rebese')">Delete</button>
-                    </div>
+        <tbody id="studentsBody">
+            @if (Model.Students.Any())
+            {
+                @foreach (var s in Model.Students)
+                {
+                    <tr class="table-row fade-in-row" id="row-@s.DbId">
+                        <td>
+                            <div class="student-cell">
+                                <div class="avatar" style="background:@s.AvatarColor">@s.Initials</div>
+                                <div>
+                                    <p class="cell-name">@s.FullName</p>
+                                    <p class="cell-sub">@s.Email</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm"><span class="id-badge">@s.StudentNo</span></td>
+                        <td class="hide-sm">@s.Section</td>
+                        <td class="hide-md">@s.MobileNo</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-view"
+                                        onclick="viewStudent(@s.DbId,'@Html.Raw(s.FullName)','@s.StudentNo','@s.Email','@s.Section','@s.MobileNo')">
+                                    View
+                                </button>
+                                <button class="btn-sm btn-edit"
+                                        onclick="editStudent(@s.DbId,'@s.StudentNo','@Html.Raw(s.FirstName)','@Html.Raw(s.MiddleName)','@Html.Raw(s.LastName)','@s.Email','@s.Section','@s.MobileNo')">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-delete"
+                                        onclick="confirmDelete(@s.DbId,'@Html.Raw(s.FullName)')">
+                                    Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr id="emptyRow">
+                    <td colspan="5">
+                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
+                        {
+                            Icon = "◍", Title = "No students found",
+                                        Message = "Try a different search or add a new student."
+                                        })
                 </td>
             </tr>
-
-            <!-- 3. Keith Lopez -->
-            <tr>
-                <td class="table-id">2026-0003</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #B06000, #8a4900);">KL</div>
-                        <div>
-                            <div class="student-fullname">Keith Lopez</div>
-                            <div class="student-email">k.lopez@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td>3rd Year</td>
-                <td><span class="table-section">3TagaPayu</span></td>
-                <td>5</td>
-                <td>
-                    <div class="attend-mini"><span class="attend-bar" style="width:85%"></span></div>
-                    <span class="attend-pct">85%</span>
-                </td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('Keith Lopez','2026-0003','3rd Year','3TagaPayu','85%')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('2026-0003','Keith Lopez','3rd Year','3TagaPayu')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('Keith Lopez')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
-            <!-- 4. Anthony Josh Moreno -->
-            <tr>
-                <td class="table-id">2026-0004</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #7C3AED, #5B21B6);">AM</div>
-                        <div>
-                            <div class="student-fullname">Anthony Josh Moreno</div>
-                            <div class="student-email">a.moreno@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td>3rd Year</td>
-                <td><span class="table-section">3TagaPayu</span></td>
-                <td>5</td>
-                <td>
-                    <div class="attend-mini"><span class="attend-bar" style="width:76%"></span></div>
-                    <span class="attend-pct">76%</span>
-                </td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('Anthony Josh Moreno','2026-0004','3rd Year','3TagaPayu','76%')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('2026-0004','Anthony Josh Moreno','3rd Year','3TagaPayu')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('Anthony Josh Moreno')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
-            <!-- 5. Kevin Villacorte -->
-            <tr>
-                <td class="table-id">2026-0005</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #0891B2, #0E7490);">KV</div>
-                        <div>
-                            <div class="student-fullname">Kevin Villacorte</div>
-                            <div class="student-email">k.villacorte@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td>3rd Year</td>
-                <td><span class="table-section">3TagaPayu</span></td>
-                <td>5</td>
-                <td>
-                    <div class="attend-mini"><span class="attend-bar" style="width:90%"></span></div>
-                    <span class="attend-pct">90%</span>
-                </td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('Kevin Villacorte','2026-0005','3rd Year','3TagaPayu','90%')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('2026-0005','Kevin Villacorte','3rd Year','3TagaPayu')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('Kevin Villacorte')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
-            <!-- 6. Clyde Parba -->
-            <tr>
-                <td class="table-id">2026-0006</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #B52B2B, #8a1e1e);">CP</div>
-                        <div>
-                            <div class="student-fullname">Clyde Parba</div>
-                            <div class="student-email">c.parba@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td>3rd Year</td>
-                <td><span class="table-section">3TagaPayu</span></td>
-                <td>5</td>
-                <td>
-                    <div class="attend-mini"><span class="attend-bar attend-bar-low" style="width:65%"></span></div>
-                    <span class="attend-pct" style="color:var(--red);">65%</span>
-                </td>
-                <td><span class="badge badge-inactive">Inactive</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('Clyde Parba','2026-0006','3rd Year','3TagaPayu','65%')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('2026-0006','Clyde Parba','3rd Year','3TagaPayu')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('Clyde Parba')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
-            <!-- 7. Wilken Montebon -->
-            <tr>
-                <td class="table-id">2026-0007</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #065F46, #047857);">WM</div>
-                        <div>
-                            <div class="student-fullname">Wilken Montebon</div>
-                            <div class="student-email">w.montebon@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td>3rd Year</td>
-                <td><span class="table-section">3TagaPayu</span></td>
-                <td>5</td>
-                <td>
-                    <div class="attend-mini"><span class="attend-bar" style="width:88%"></span></div>
-                    <span class="attend-pct">88%</span>
-                </td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('Wilken Montebon','2026-0007','3rd Year','3TagaPayu','88%')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('2026-0007','Wilken Montebon','3rd Year','3TagaPayu')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('Wilken Montebon')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
+                        }
         </tbody>
     </table>
+    <!-- Lazy load sentinel -->
+    <div id="loadSentinel"></div>
+    <div class="lazy-spinner" id="lazySpinner" style="display:none;"><div class="spinner-ring"></div></div>
 </div>
 
-
-<!-- ===================== ADD / EDIT MODAL ===================== -->
+<!-- ADD / EDIT MODAL -->
 <div class="modal-overlay" id="studentModal">
-    <div class="modal-box">
+    <div class="modal-card">
         <div class="modal-header">
-            <h2 id="modalTitle">Add Student</h2>
-            <button class="modal-close" onclick="closeModal()">&#10005;</button>
+            <h3 id="modalTitle">Add Student</h3>
+            <button class="modal-close" onclick="closeModal('studentModal')">×</button>
         </div>
         <div class="modal-body">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="dbId" />
             <div class="form-group">
-                <label>Student ID</label>
-                <input type="text" id="fldId" placeholder="e.g. 2026-0001" />
+                <label>Student No <span class="req">*</span></label>
+                <input type="text" id="studentNo" class="form-input" placeholder="e.g. 2026-0001" required />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>First Name <span class="req">*</span></label>
+                    <input type="text" id="firstName" class="form-input" placeholder="e.g. Joshua" required />
+                </div>
+                <div class="form-group">
+                    <label>Last Name <span class="req">*</span></label>
+                    <input type="text" id="lastName" class="form-input" placeholder="e.g. Santos" required />
+                </div>
             </div>
             <div class="form-group">
-                <label>Full Name</label>
-                <input type="text" id="fldName" placeholder="e.g. Joshua Carl Santos" />
+                <label>Middle Name</label>
+                <input type="text" id="middleName" class="form-input" placeholder="Optional" />
             </div>
             <div class="form-group">
-                <label>Email</label>
-                <input type="email" id="fldEmail" placeholder="e.g. j.santos@@school.edu" />
+                <label>Email <span class="req">*</span></label>
+                <input type="email" id="email" class="form-input" placeholder="student@email.com" required />
             </div>
-            <div class="form-group">
-                <label>Year Level</label>
-                <select id="fldYear">
-                    <option value="">-- Select Year --</option>
-                    <option>1st Year</option>
-                    <option>2nd Year</option>
-                    <option>3rd Year</option>
-                    <option>4th Year</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Section</label>
-                <input type="text" id="fldSection" placeholder="e.g. 3TagaPayu" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Section <span class="req">*</span></label>
+                    <input type="text" id="section" class="form-input" placeholder="e.g. 3TagaPayu" required />
+                </div>
+                <div class="form-group">
+                    <label>Mobile No</label>
+                    <input type="text" id="mobileNo" class="form-input" placeholder="09XX-XXX-XXXX" />
+                </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-            <button class="btn-primary" onclick="saveModal()">Save Student</button>
+            <button class="btn-secondary" onclick="closeModal('studentModal')">Cancel</button>
+            <button class="btn-primary" id="saveBtn" onclick="submitStudent()">Save Student</button>
         </div>
     </div>
 </div>
 
-
-<!-- ===================== VIEW MODAL ===================== -->
+<!-- VIEW MODAL -->
 <div class="modal-overlay" id="viewModal">
-    <div class="modal-box">
+    <div class="modal-card">
         <div class="modal-header">
-            <h2>Student Profile</h2>
-            <button class="modal-close" onclick="closeViewModal()">&#10005;</button>
+            <h3>Student Profile</h3>
+            <button class="modal-close" onclick="closeModal('viewModal')">×</button>
         </div>
-        <div class="modal-body">
-            <div class="view-student-top">
-                <div class="view-avatar" id="viewAvatar">JS</div>
-                <div>
-                    <div class="view-name" id="viewName">Joshua Carl Santos</div>
-                    <div class="view-id" id="viewStudentId">2026-0001</div>
-                </div>
-            </div>
-            <div class="view-details">
-                <div class="view-row">
-                    <span class="view-label">Year Level</span>
-                    <span class="view-value" id="viewYear">3rd Year</span>
-                </div>
-                <div class="view-row">
-                    <span class="view-label">Section</span>
-                    <span class="view-value" id="viewSection">3TagaPayu</span>
-                </div>
-                <div class="view-row">
-                    <span class="view-label">Attendance Rate</span>
-                    <span class="view-value" id="viewAttend">92%</span>
-                </div>
-            </div>
-        </div>
+        <div class="modal-body" id="viewBody"></div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+            <button class="btn-primary" onclick="closeModal('viewModal')">Close</button>
         </div>
     </div>
 </div>
 
-
-<!-- ===================== DELETE MODAL ===================== -->
+<!-- DELETE MODAL -->
 <div class="modal-overlay" id="deleteModal">
-    <div class="modal-box modal-small">
+    <div class="modal-card modal-sm">
         <div class="modal-header">
-            <h2>Remove Student</h2>
-            <button class="modal-close" onclick="closeDeleteModal()">&#10005;</button>
+            <h3>Delete Student</h3>
+            <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
         </div>
         <div class="modal-body">
-            <p>Are you sure you want to remove <strong id="deleteName"></strong>? This action cannot be undone.</p>
+            <p>Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-            <button class="btn-danger-solid" onclick="closeDeleteModal()">Yes, Remove</button>
+            <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="btn-danger" id="confirmDeleteBtn" onclick="submitDelete()">Yes, Delete</button>
         </div>
     </div>
 </div>
-
 
 @section Scripts {
     <script>
+        // ── State ────────────────────────────────────────────────
+        let currentPage  = @Model.CurrentPage;
+        const totalPages = @Model.TotalPages;
+        let isLoading    = false;
+        let searchTimer  = null;
+        let isEditing    = false;
+        let pendingDeleteId = null;
 
-        // ---- Search & Filter ----
-        function filterTable() {
-            var search  = document.getElementById("searchInput").value.toLowerCase();
-            var year    = document.getElementById("filterYear").value.toLowerCase();
-            var section = document.getElementById("filterSection").value.toLowerCase();
-            var rows    = document.querySelectorAll("#studentsTable tbody tr");
+        // ── CSRF token (needed for fetch AJAX) ───────────────────
+        const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-            rows.forEach(function (row) {
-                var text       = row.innerText.toLowerCase();
-                var rowYear    = row.cells[2].innerText.toLowerCase();
-                var rowSection = row.cells[3].innerText.toLowerCase();
+        // ── Lazy loading via IntersectionObserver ────────────────
+        new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting && !isLoading && currentPage < totalPages) loadMore();
+        }, { threshold: 0.1 }).observe(document.getElementById('loadSentinel'));
 
-                var okSearch  = text.includes(search);
-                var okYear    = year === "" || rowYear.includes(year);
-                var okSection = section === "" || rowSection.includes(section);
-
-                row.style.display = (okSearch && okYear && okSection) ? "" : "none";
-            });
-        }
-
-        // ---- Add Modal ----
-        function openAddModal() {
-            document.getElementById("modalTitle").innerText = "Add Student";
-            document.getElementById("fldId").value      = "";
-            document.getElementById("fldName").value    = "";
-            document.getElementById("fldEmail").value   = "";
-            document.getElementById("fldYear").value    = "";
-            document.getElementById("fldSection").value = "";
-            document.getElementById("studentModal").classList.add("active");
-        }
-
-        // ---- Edit Modal ----
-        function openEditModal(id, name, year, section) {
-            document.getElementById("modalTitle").innerText = "Edit Student";
-            document.getElementById("fldId").value      = id;
-            document.getElementById("fldName").value    = name;
-            document.getElementById("fldEmail").value   = "";
-            document.getElementById("fldYear").value    = year;
-            document.getElementById("fldSection").value = section;
-            document.getElementById("studentModal").classList.add("active");
-        }
-
-        function closeModal() {
-            document.getElementById("studentModal").classList.remove("active");
-        }
-
-        function saveModal() {
-            alert("Student saved! (Connect to your controller here)");
-            closeModal();
-        }
-
-        // ---- View Modal ----
-        function openViewModal(name, id, year, section, attend) {
-            var parts    = name.trim().split(" ");
-            var initials = parts[0][0] + parts[parts.length - 1][0];
-
-            document.getElementById("viewAvatar").innerText    = initials.toUpperCase();
-            document.getElementById("viewName").innerText      = name;
-            document.getElementById("viewStudentId").innerText = id;
-            document.getElementById("viewYear").innerText      = year;
-            document.getElementById("viewSection").innerText   = section;
-            document.getElementById("viewAttend").innerText    = attend;
-            document.getElementById("viewModal").classList.add("active");
-        }
-
-        function closeViewModal() {
-            document.getElementById("viewModal").classList.remove("active");
-        }
-
-        // ---- Delete Modal ----
-        function confirmDelete(name) {
-            document.getElementById("deleteName").innerText = name;
-            document.getElementById("deleteModal").classList.add("active");
-        }
-
-        function closeDeleteModal() {
-            document.getElementById("deleteModal").classList.remove("active");
-        }
-
-        // ---- Export placeholder ----
-        function exportTable() {
-            alert("Export feature — connect to your controller here.");
-        }
-
-        // ---- Close modal when clicking outside ----
-        document.querySelectorAll(".modal-overlay").forEach(function (overlay) {
-            overlay.addEventListener("click", function (e) {
-                if (e.target === overlay) {
-                    overlay.classList.remove("active");
+        async function loadMore() {
+            isLoading = true;
+            document.getElementById('lazySpinner').style.display = 'flex';
+            const s   = document.getElementById('searchInput').value;
+            const sec = document.getElementById('sectionInput').value;
+            try {
+                const res  = await fetch(`/Admin/StudentsPartial?page=${currentPage + 1}&search=${encodeURIComponent(s)}&section=${encodeURIComponent(sec)}`);
+                const html = await res.text();
+                if (html.trim()) {
+                    document.getElementById('studentsBody').insertAdjacentHTML('beforeend', html);
+                    currentPage++;
                 }
-            });
-        });
+            } catch { Toast.error('Failed to load more students.'); }
+            finally  { isLoading = false; document.getElementById('lazySpinner').style.display = 'none'; }
+        }
 
+        // ── Search — AJAX fetch instead of page redirect ─────────
+        function handleSearch() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(async () => {
+                const s   = document.getElementById('searchInput').value;
+                const sec = document.getElementById('sectionInput').value;
+                try {
+                    const res  = await fetch(`/Admin/StudentsPartial?page=1&search=${encodeURIComponent(s)}&section=${encodeURIComponent(sec)}`);
+                    const html = await res.text();
+                    document.getElementById('studentsBody').innerHTML = html || emptyRow();
+                    currentPage = 1;
+                } catch { Toast.error('Search failed.'); }
+            }, 350);
+        }
+
+        function emptyRow() {
+            return `<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(255,255,255,0.35)">No students found.</td></tr>`;
+        }
+
+        // ── Modals ───────────────────────────────────────────────
+        function openAddModal() {
+            isEditing = false;
+            document.getElementById('modalTitle').textContent = 'Add Student';
+            clearForm();
+            openModal('studentModal');
+        }
+
+        function editStudent(id, sno, fn, mn, ln, email, section, mobile) {
+            isEditing = true;
+            document.getElementById('modalTitle').textContent = 'Edit Student';
+            document.getElementById('dbId').value       = id;
+            document.getElementById('studentNo').value  = sno;
+            document.getElementById('firstName').value  = fn;
+            document.getElementById('middleName').value = mn;
+            document.getElementById('lastName').value   = ln;
+            document.getElementById('email').value      = email;
+            document.getElementById('section').value    = section;
+            document.getElementById('mobileNo').value   = mobile;
+            openModal('studentModal');
+        }
+
+        function viewStudent(id, name, sno, email, section, mobile) {
+            document.getElementById('viewBody').innerHTML = `
+                <div class="profile-view">
+                    <div class="profile-avatar">${name.charAt(0)}</div>
+                    <h3 class="profile-name">${name}</h3>
+                    <p class="profile-id">${sno}</p>
+                    <div class="profile-details">
+                        <div class="detail-row"><span class="detail-label">Email</span><span>${email}</span></div>
+                        <div class="detail-row"><span class="detail-label">Section</span><span>${section}</span></div>
+                        <div class="detail-row"><span class="detail-label">Mobile</span><span>${mobile || '—'}</span></div>
+                    </div>
+                </div>`;
+            openModal('viewModal');
+        }
+
+        function confirmDelete(id, name) {
+            pendingDeleteId = id;
+            document.getElementById('deleteName').textContent = name;
+            openModal('deleteModal');
+        }
+
+        // ── AJAX Submit ──────────────────────────────────────────
+        async function submitStudent() {
+            const fn  = document.getElementById('firstName').value.trim();
+            const ln  = document.getElementById('lastName').value.trim();
+            const em  = document.getElementById('email').value.trim();
+            const sno = document.getElementById('studentNo').value.trim();
+            const sec = document.getElementById('section').value.trim();
+
+            if (!fn || !ln || !em || !sno || !sec) {
+                Toast.warning('Please fill in all required fields.');
+                return;
+            }
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled    = true;
+            btn.textContent = 'Saving...';
+
+            const id      = document.getElementById('dbId').value;
+            const url     = isEditing ? '/Admin/UpdateStudent' : '/Admin/AddStudent';
+            const payload = new URLSearchParams({
+                __RequestVerificationToken: antiForgery,
+                id,
+                studentNo:  sno,
+                firstName:  fn,
+                middleName: document.getElementById('middleName').value.trim(),
+                lastName:   ln,
+                email:      em,
+                section:    sec,
+                mobileNo:   document.getElementById('mobileNo').value.trim(),
+            });
+
+            try {
+                const res  = await fetch(url, {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body:    payload
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    Toast.success(data.message);
+                    closeModal('studentModal');
+                    // Reload the table rows to reflect changes
+                    await refreshTable();
+                } else {
+                    Toast.error(data.message);
+                }
+            } catch {
+                Toast.error('An unexpected error occurred.');
+            } finally {
+                btn.disabled    = false;
+                btn.textContent = 'Save Student';
+            }
+        }
+
+        async function submitDelete() {
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled    = true;
+            btn.textContent = 'Deleting...';
+
+            const payload = new URLSearchParams({
+                __RequestVerificationToken: antiForgery,
+                id: pendingDeleteId
+            });
+
+            try {
+                const res  = await fetch('/Admin/DeleteStudent', {
+                    method:  'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body:    payload
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    Toast.success(data.message);
+                    closeModal('deleteModal');
+                    // Remove the row from the DOM instantly — no reload needed
+                    const row = document.getElementById(`row-${pendingDeleteId}`);
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    }
+                } else {
+                    Toast.error(data.message);
+                }
+            } catch {
+                Toast.error('An unexpected error occurred.');
+            } finally {
+                btn.disabled    = false;
+                btn.textContent = 'Yes, Delete';
+            }
+        }
+
+        // Reload table without full page refresh
+        async function refreshTable() {
+            const s   = document.getElementById('searchInput').value;
+            const sec = document.getElementById('sectionInput').value;
+            const res  = await fetch(`/Admin/StudentsPartial?page=1&search=${encodeURIComponent(s)}&section=${encodeURIComponent(sec)}`);
+            const html = await res.text();
+            document.getElementById('studentsBody').innerHTML = html || emptyRow();
+            currentPage = 1;
+        }
+
+        // ── Helpers ──────────────────────────────────────────────
+        function clearForm() {
+            ['dbId','studentNo','firstName','middleName','lastName','email','section','mobileNo']
+                .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+        }
+
+        function openModal(id)  { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+        document.querySelectorAll('.modal-overlay').forEach(o =>
+            o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+        });
     </script>
 }

@@ -1,354 +1,372 @@
-﻿@{
-    ViewData["Title"] = "Teachers";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+﻿@model AMS.ViewModels.TeachersPageViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"]     = "Teachers";
+    ViewData["PageTitle"] = "Teachers";
 }
 
 <div class="page-header">
     <div>
         <h2>Teachers</h2>
-        <p>Manage all registered faculty members</p>
+        <p>Manage all registered teachers</p>
     </div>
-    <div class="page-header-actions">
-        <button class="btn-primary" onclick="openAddModal()">+ Add Teacher</button>
-    </div>
+    <button class="btn-primary" onclick="openAddModal()">+ Add Teacher</button>
 </div>
 
-<!-- Summary pills -->
 <div class="summary-bar">
-    <div class="summary-pill">
-        <span class="summary-dot dot-blue"></span>
-        <span>3 Total Teachers</span>
-    </div>
-    <div class="summary-pill">
-        <span class="summary-dot dot-green"></span>
-        <span>2 Active</span>
-    </div>
-    <div class="summary-pill">
-        <span class="summary-dot dot-red"></span>
-        <span>1 Inactive</span>
-    </div>
+    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong>@Model.TotalCount</strong></div>
+    <div class="summary-pill"><span class="pill-dot dot-green"></span>Active: <strong>@Model.ActiveCount</strong></div>
+    <div class="summary-pill"><span class="pill-dot dot-red"></span>Inactive: <strong>@Model.InactiveCount</strong></div>
 </div>
 
-<!-- Search and Filter Bar -->
-<div class="table-toolbar" style="background:#fff; border:1px solid var(--border); border-radius:var(--radius-lg); margin-bottom:16px;">
-    <input type="text" class="search-input" id="searchInput" placeholder="Search by name or ID..." onkeyup="filterTable()" />
-    <select class="filter-select" id="deptFilter" onchange="filterTable()">
-        <option value="">All Departments</option>
-        <option value="BSIT">BSIT</option>
-        <option value="BSCS">BSCS</option>
-        <option value="BSED">BSED</option>
-        <option value="BSBA">BSBA</option>
-        <option value="BSHRM">BSHRM</option>
-    </select>
-    <select class="filter-select" id="statusFilter" onchange="filterTable()">
+<div class="filter-bar">
+    <input type="text" id="searchInput" class="search-input"
+           placeholder="Search by name or teacher no..."
+           value="@Model.Search" oninput="handleSearch()" />
+    <select id="statusFilter" class="filter-select" onchange="handleSearch()">
         <option value="">All Status</option>
-        <option value="Active">Active</option>
-        <option value="Inactive">Inactive</option>
+        <option value="Active" selected="@(Model.StatusFilter == "Active")">Active</option>
+        <option value="Inactive" selected="@(Model.StatusFilter == "Inactive")">Inactive</option>
     </select>
 </div>
 
-<!-- Teachers Table -->
-<div class="table-card">
-    <table class="data-table" id="teachersTable">
+<div class="table-wrapper">
+    <table class="data-table">
         <thead>
             <tr>
-                <th>Teacher ID</th>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Subjects</th>
-                <th>Contact</th>
+                <th>Teacher</th>
+                <th class="hide-sm">Teacher No</th>
+                <th class="hide-sm">Courses</th>
+                <th class="hide-md">Account</th>
                 <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-
-            <!-- 1. James Maano -->
-            <tr>
-                <td class="table-id">TCH-001</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #1A56C4, #0F3E9E);">JM</div>
-                        <div>
-                            <div class="student-fullname">Mr. James Maano</div>
-                            <div class="student-email">j.maano@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="dept-badge bsit">BSIT</span></td>
-                <td>4 Subjects</td>
-                <td>09171234501</td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('TCH-001','Mr. James Maano','j.maano@@school.edu','BSIT','4 Subjects','09171234501','Active','JM')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('TCH-001','James','Maano','j.maano@@school.edu','BSIT','09171234501','Active')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('TCH-001','Mr. James Maano')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
-            <!-- 2. Armanes Artajo -->
-            <tr>
-                <td class="table-id">TCH-002</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #0F7A4F, #095c3a);">AA</div>
-                        <div>
-                            <div class="student-fullname">Mr. Armanes Artajo</div>
-                            <div class="student-email">a.artajo@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="dept-badge bscs">BSCS</span></td>
-                <td>3 Subjects</td>
-                <td>09281234502</td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('TCH-002','Mr. Armanes Artajo','a.artajo@@school.edu','BSCS','3 Subjects','09281234502','Active','AA')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('TCH-002','Armanes','Artajo','a.artajo@@school.edu','BSCS','09281234502','Active')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('TCH-002','Mr. Armanes Artajo')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
-            <!-- 3. Rimark Rafel Moreno -->
-            <tr>
-                <td class="table-id">TCH-003</td>
-                <td>
-                    <div class="student-name-cell">
-                        <div class="student-avatar" style="background: linear-gradient(135deg, #B06000, #8a4900);">RM</div>
-                        <div>
-                            <div class="student-fullname">Mr. Rimark Rafel Moreno</div>
-                            <div class="student-email">r.moreno@@school.edu</div>
-                        </div>
-                    </div>
-                </td>
-                <td><span class="dept-badge bsed">BSED</span></td>
-                <td>2 Subjects</td>
-                <td>09391234503</td>
-                <td><span class="badge badge-inactive">Inactive</span></td>
-                <td>
-                    <div class="table-actions">
-                        <button class="btn-sm btn-view" onclick="openViewModal('TCH-003','Mr. Rimark Rafel Moreno','r.moreno@@school.edu','BSED','2 Subjects','09391234503','Inactive','RM')">View</button>
-                        <button class="btn-sm btn-edit" onclick="openEditModal('TCH-003','Rimark','Moreno','r.moreno@@school.edu','BSED','09391234503','Inactive')">Edit</button>
-                        <button class="btn-sm btn-del" onclick="confirmDelete('TCH-003','Mr. Rimark Rafel Moreno')">Delete</button>
-                    </div>
-                </td>
-            </tr>
-
+        <tbody id="teachersBody">
+            @if (Model.Teachers.Any())
+            {
+                @foreach (var t in Model.Teachers)
+                {
+                    <tr class="table-row fade-in-row" id="row-@t.DbId">
+                        <td>
+                            <div class="student-cell">
+                                <div class="avatar" style="background:@t.AvatarColor">@t.Initials</div>
+                                <div>
+                                    <p class="cell-name">@t.FullName</p>
+                                    <p class="cell-sub">@t.Email</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm"><span class="id-badge">@t.TeacherNo</span></td>
+                        <td class="hide-sm">@t.CourseCount course(s)</td>
+                        <td class="hide-md">
+                            @if (t.HasAccount)
+                            {
+                                <span class="status-badge badge-active">@t.Username</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-inactive">No account</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="status-badge @(t.IsActive ? "badge-active" : "badge-inactive")">@t.Status</span>
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-view"
+                                    onclick="viewTeacher(@t.DbId,'@Html.Raw(t.FullName)','@t.TeacherNo','@t.Email','@t.CourseCount','@t.Username','@t.IsActive.ToString().ToLower()')">View</button>
+                                <button class="btn-sm btn-edit"
+                                    onclick="editTeacher(@t.DbId,'@t.TeacherNo','@Html.Raw(t.FirstName)','@Html.Raw(t.LastName)','@t.Email')">Edit</button>
+                                <button class="btn-sm btn-delete"
+                                    onclick="confirmDelete(@t.DbId,'@Html.Raw(t.FullName)')">Delete</button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6">
+                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
+                        {
+                            Icon = "◈", Title = "No teachers found",
+                            Message = "Try a different search or add a new teacher."
+                        })
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
+    <div id="loadSentinel"></div>
+    <div class="lazy-spinner" id="lazySpinner" style="display:none;"><div class="spinner-ring"></div></div>
 </div>
 
-
-<!-- ===================== ADD / EDIT MODAL ===================== -->
+<!-- ADD / EDIT MODAL -->
 <div class="modal-overlay" id="teacherModal">
-    <div class="modal-box">
+    <div class="modal-card">
         <div class="modal-header">
-            <h2 id="modalTitle">Add Teacher</h2>
-            <button class="modal-close" onclick="closeModal()">&#10005;</button>
+            <h3 id="modalTitle">Add Teacher</h3>
+            <button class="modal-close" onclick="closeModal('teacherModal')">×</button>
         </div>
         <div class="modal-body">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="dbId" />
             <div class="form-group">
-                <label>First Name</label>
-                <input type="text" id="fldFirst" placeholder="e.g. James" />
+                <label>Teacher No <span class="req">*</span></label>
+                <input type="text" id="teacherNo" class="form-input" placeholder="e.g. TCH-001" required />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>First Name <span class="req">*</span></label>
+                    <input type="text" id="firstName" class="form-input" placeholder="e.g. James" required />
+                </div>
+                <div class="form-group">
+                    <label>Last Name <span class="req">*</span></label>
+                    <input type="text" id="lastName" class="form-input" placeholder="e.g. Maano" required />
+                </div>
             </div>
             <div class="form-group">
-                <label>Last Name</label>
-                <input type="text" id="fldLast" placeholder="e.g. Maano" />
+                <label>Email <span class="req">*</span></label>
+                <input type="email" id="email" class="form-input" placeholder="teacher@school.edu" required />
             </div>
-            <div class="form-group">
-                <label>Email Address</label>
-                <input type="email" id="fldEmail" placeholder="e.g. j.maano@@school.edu" />
-            </div>
-            <div class="form-group">
-                <label>Department</label>
-                <select id="fldDept">
-                    <option value="">-- Select Department --</option>
-                    <option value="BSIT">BSIT</option>
-                    <option value="BSCS">BSCS</option>
-                    <option value="BSED">BSED</option>
-                    <option value="BSBA">BSBA</option>
-                    <option value="BSHRM">BSHRM</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Contact Number</label>
-                <input type="text" id="fldContact" placeholder="e.g. 09171234501" />
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select id="fldStatus">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                </select>
+            <div id="accountFields">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Username <span class="req">*</span></label>
+                        <input type="text" id="username" class="form-input" placeholder="Login username" />
+                    </div>
+                    <div class="form-group">
+                        <label>Password <span class="req">*</span></label>
+                        <input type="password" id="password" class="form-input" placeholder="Min 6 characters" />
+                    </div>
+                </div>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-            <button class="btn-primary" onclick="saveModal()">Save Teacher</button>
+            <button class="btn-secondary" onclick="closeModal('teacherModal')">Cancel</button>
+            <button class="btn-primary" id="saveBtn" onclick="submitTeacher()">Save Teacher</button>
         </div>
     </div>
 </div>
 
-
-<!-- ===================== VIEW MODAL ===================== -->
+<!-- VIEW MODAL -->
 <div class="modal-overlay" id="viewModal">
-    <div class="modal-box">
+    <div class="modal-card">
         <div class="modal-header">
-            <h2>Teacher Profile</h2>
-            <button class="modal-close" onclick="closeViewModal()">&#10005;</button>
+            <h3>Teacher Profile</h3>
+            <button class="modal-close" onclick="closeModal('viewModal')">×</button>
         </div>
-        <div class="modal-body">
-            <div class="view-student-top">
-                <div class="view-avatar" id="viewAvatar">JM</div>
-                <div>
-                    <div class="view-name" id="viewName">Mr. James Maano</div>
-                    <div class="view-id" id="viewTchId">TCH-001</div>
-                </div>
-            </div>
-            <div class="view-details">
-                <div class="view-row">
-                    <span class="view-label">Email</span>
-                    <span class="view-value" id="viewEmail">-</span>
-                </div>
-                <div class="view-row">
-                    <span class="view-label">Department</span>
-                    <span class="view-value" id="viewDept">-</span>
-                </div>
-                <div class="view-row">
-                    <span class="view-label">Subjects Handled</span>
-                    <span class="view-value" id="viewSubjects">-</span>
-                </div>
-                <div class="view-row">
-                    <span class="view-label">Contact</span>
-                    <span class="view-value" id="viewContact">-</span>
-                </div>
-                <div class="view-row">
-                    <span class="view-label">Status</span>
-                    <span class="view-value" id="viewStatus">-</span>
-                </div>
-            </div>
-        </div>
+        <div class="modal-body" id="viewBody"></div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeViewModal()">Close</button>
+            <button class="btn-primary" onclick="closeModal('viewModal')">Close</button>
         </div>
     </div>
 </div>
 
-
-<!-- ===================== DELETE MODAL ===================== -->
+<!-- DELETE MODAL -->
 <div class="modal-overlay" id="deleteModal">
-    <div class="modal-box modal-small">
+    <div class="modal-card modal-sm">
         <div class="modal-header">
-            <h2>Remove Teacher</h2>
-            <button class="modal-close" onclick="closeDeleteModal()">&#10005;</button>
+            <h3>Delete Teacher</h3>
+            <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
         </div>
         <div class="modal-body">
-            <p>Are you sure you want to remove <strong id="deleteName"></strong>? This action cannot be undone.</p>
+            <p>Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-            <button class="btn-danger-solid" onclick="closeDeleteModal()">Yes, Remove</button>
+            <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="btn-danger" id="confirmDeleteBtn" onclick="submitDelete()">Yes, Delete</button>
         </div>
     </div>
 </div>
-
 
 @section Scripts {
-    <script>
+<script>
+    let currentPage  = @Model.CurrentPage;
+    const totalPages = @Model.TotalPages;
+    let isLoading = false, searchTimer = null, isEditing = false, pendingDeleteId = null;
 
-        // ---- Search & Filter ----
-        function filterTable() {
-            var search = document.getElementById("searchInput").value.toLowerCase();
-            var dept   = document.getElementById("deptFilter").value.toLowerCase();
-            var status = document.getElementById("statusFilter").value.toLowerCase();
-            var rows   = document.querySelectorAll("#teachersTable tbody tr");
+    const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-            rows.forEach(function (row) {
-                var id       = row.cells[0].innerText.toLowerCase();
-                var name     = row.cells[1].innerText.toLowerCase();
-                var deptText = row.cells[2].innerText.toLowerCase();
-                var statText = row.cells[5].innerText.toLowerCase();
+    // ── Lazy loading ─────────────────────────────────────────
+    new IntersectionObserver(entries => {
+        if (entries[0].isIntersecting && !isLoading && currentPage < totalPages) loadMore();
+    }, { threshold: 0.1 }).observe(document.getElementById('loadSentinel'));
 
-                var okSearch = id.includes(search) || name.includes(search);
-                var okDept   = dept === "" || deptText.includes(dept);
-                var okStatus = status === "" || statText.includes(status);
+    async function loadMore() {
+        isLoading = true;
+        document.getElementById('lazySpinner').style.display = 'flex';
+        const s = document.getElementById('searchInput').value;
+        const f = document.getElementById('statusFilter').value;
+        try {
+            const res  = await fetch(`/Admin/TeachersPartial?page=${currentPage + 1}&search=${encodeURIComponent(s)}&status=${encodeURIComponent(f)}`);
+            const html = await res.text();
+            if (html.trim()) { document.getElementById('teachersBody').insertAdjacentHTML('beforeend', html); currentPage++; }
+        } catch { Toast.error('Failed to load more teachers.'); }
+        finally  { isLoading = false; document.getElementById('lazySpinner').style.display = 'none'; }
+    }
 
-                row.style.display = (okSearch && okDept && okStatus) ? "" : "none";
-            });
+    // ── Search — AJAX, no page redirect ─────────────────────
+    function handleSearch() {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(async () => {
+            const s = document.getElementById('searchInput').value;
+            const f = document.getElementById('statusFilter').value;
+            try {
+                const res  = await fetch(`/Admin/TeachersPartial?page=1&search=${encodeURIComponent(s)}&status=${encodeURIComponent(f)}`);
+                const html = await res.text();
+                document.getElementById('teachersBody').innerHTML = html || emptyRow();
+                currentPage = 1;
+            } catch { Toast.error('Search failed.'); }
+        }, 350);
+    }
+
+    function emptyRow() {
+        return `<tr><td colspan="6" style="text-align:center;padding:40px;color:rgba(255,255,255,0.35)">No teachers found.</td></tr>`;
+    }
+
+    // ── Modals ───────────────────────────────────────────────
+    function openAddModal() {
+        isEditing = false;
+        document.getElementById('modalTitle').textContent = 'Add Teacher';
+        document.getElementById('accountFields').style.display = '';
+        clearForm();
+        openModal('teacherModal');
+    }
+
+    function editTeacher(id, tno, fn, ln, email) {
+        isEditing = true;
+        document.getElementById('modalTitle').textContent = 'Edit Teacher';
+        document.getElementById('accountFields').style.display = 'none';
+        document.getElementById('dbId').value       = id;
+        document.getElementById('teacherNo').value  = tno;
+        document.getElementById('firstName').value  = fn;
+        document.getElementById('lastName').value   = ln;
+        document.getElementById('email').value      = email;
+        openModal('teacherModal');
+    }
+
+    function viewTeacher(id, name, tno, email, courses, username, isActive) {
+        const status = isActive === 'true' ? 'Active' : 'Inactive';
+        document.getElementById('viewBody').innerHTML = `
+            <div class="profile-view">
+                <div class="profile-avatar">${name.charAt(0)}</div>
+                <h3 class="profile-name">${name}</h3>
+                <p class="profile-id">${tno}</p>
+                <div class="profile-details">
+                    <div class="detail-row"><span class="detail-label">Email</span><span>${email}</span></div>
+                    <div class="detail-row"><span class="detail-label">Courses</span><span>${courses} assigned</span></div>
+                    <div class="detail-row"><span class="detail-label">Username</span><span>${username || '—'}</span></div>
+                    <div class="detail-row"><span class="detail-label">Status</span>
+                        <span class="status-badge ${status === 'Active' ? 'badge-active' : 'badge-inactive'}">${status}</span>
+                    </div>
+                </div>
+            </div>`;
+        openModal('viewModal');
+    }
+
+    function confirmDelete(id, name) {
+        pendingDeleteId = id;
+        document.getElementById('deleteName').textContent = name;
+        openModal('deleteModal');
+    }
+
+    // ── AJAX Submit ──────────────────────────────────────────
+    async function submitTeacher() {
+        const fn  = document.getElementById('firstName').value.trim();
+        const ln  = document.getElementById('lastName').value.trim();
+        const em  = document.getElementById('email').value.trim();
+        const tno = document.getElementById('teacherNo').value.trim();
+
+        if (!fn || !ln || !em || !tno) { Toast.warning('Please fill in all required fields.'); return; }
+
+        if (!isEditing) {
+            const un = document.getElementById('username').value.trim();
+            const pw = document.getElementById('password').value.trim();
+            if (!un || !pw) { Toast.warning('Username and password are required.'); return; }
+            if (pw.length < 6) { Toast.warning('Password must be at least 6 characters.'); return; }
         }
 
-        // ---- Add Modal ----
-        function openAddModal() {
-            document.getElementById("modalTitle").innerText = "Add Teacher";
-            document.getElementById("fldFirst").value   = "";
-            document.getElementById("fldLast").value    = "";
-            document.getElementById("fldEmail").value   = "";
-            document.getElementById("fldDept").value    = "";
-            document.getElementById("fldContact").value = "";
-            document.getElementById("fldStatus").value  = "Active";
-            document.getElementById("teacherModal").classList.add("active");
-        }
+        const btn = document.getElementById('saveBtn');
+        btn.disabled = true; btn.textContent = 'Saving...';
 
-        // ---- Edit Modal ----
-        function openEditModal(id, first, last, email, dept, contact, status) {
-            document.getElementById("modalTitle").innerText = "Edit Teacher";
-            document.getElementById("fldFirst").value   = first;
-            document.getElementById("fldLast").value    = last;
-            document.getElementById("fldEmail").value   = email;
-            document.getElementById("fldDept").value    = dept;
-            document.getElementById("fldContact").value = contact;
-            document.getElementById("fldStatus").value  = status;
-            document.getElementById("teacherModal").classList.add("active");
-        }
-
-        function closeModal() {
-            document.getElementById("teacherModal").classList.remove("active");
-        }
-
-        function saveModal() {
-            alert("Teacher saved! (Connect to your controller here)");
-            closeModal();
-        }
-
-        // ---- View Modal ----
-        function openViewModal(id, name, email, dept, subjects, contact, status, initials) {
-            document.getElementById("viewAvatar").innerText   = initials;
-            document.getElementById("viewName").innerText     = name;
-            document.getElementById("viewTchId").innerText    = id;
-            document.getElementById("viewEmail").innerText    = email;
-            document.getElementById("viewDept").innerText     = dept;
-            document.getElementById("viewSubjects").innerText = subjects;
-            document.getElementById("viewContact").innerText  = contact;
-            document.getElementById("viewStatus").innerText   = status;
-            document.getElementById("viewModal").classList.add("active");
-        }
-
-        function closeViewModal() {
-            document.getElementById("viewModal").classList.remove("active");
-        }
-
-        // ---- Delete Modal ----
-        function confirmDelete(id, name) {
-            document.getElementById("deleteName").innerText = name;
-            document.getElementById("deleteModal").classList.add("active");
-        }
-
-        function closeDeleteModal() {
-            document.getElementById("deleteModal").classList.remove("active");
-        }
-
-        // ---- Close modal when clicking outside ----
-        document.querySelectorAll(".modal-overlay").forEach(function (overlay) {
-            overlay.addEventListener("click", function (e) {
-                if (e.target === overlay) {
-                    overlay.classList.remove("active");
-                }
-            });
+        const url     = isEditing ? '/Admin/UpdateTeacher' : '/Admin/AddTeacher';
+        const payload = new URLSearchParams({
+            __RequestVerificationToken: antiForgery,
+            id:        document.getElementById('dbId').value,
+            teacherNo: tno, firstName: fn, lastName: ln, email: em,
+            username:  isEditing ? '' : document.getElementById('username').value.trim(),
+            password:  isEditing ? '' : document.getElementById('password').value.trim(),
         });
 
-    </script>
+        try {
+            const res  = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: payload
+            });
+            const data = await res.json();
+            if (data.success) {
+                Toast.success(data.message);
+                closeModal('teacherModal');
+                await refreshTable();
+            } else {
+                Toast.error(data.message);
+            }
+        } catch { Toast.error('An unexpected error occurred.'); }
+        finally  { btn.disabled = false; btn.textContent = 'Save Teacher'; }
+    }
+
+    async function submitDelete() {
+        const btn = document.getElementById('confirmDeleteBtn');
+        btn.disabled = true; btn.textContent = 'Deleting...';
+
+        const payload = new URLSearchParams({
+            __RequestVerificationToken: antiForgery,
+            id: pendingDeleteId
+        });
+
+        try {
+            const res  = await fetch('/Admin/DeleteTeacher', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                body: payload
+            });
+            const data = await res.json();
+            if (data.success) {
+                Toast.success(data.message);
+                closeModal('deleteModal');
+                const row = document.getElementById(`row-${pendingDeleteId}`);
+                if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+            } else {
+                Toast.error(data.message);
+            }
+        } catch { Toast.error('An unexpected error occurred.'); }
+        finally  { btn.disabled = false; btn.textContent = 'Yes, Delete'; }
+    }
+
+    async function refreshTable() {
+        const s = document.getElementById('searchInput').value;
+        const f = document.getElementById('statusFilter').value;
+        const res  = await fetch(`/Admin/TeachersPartial?page=1&search=${encodeURIComponent(s)}&status=${encodeURIComponent(f)}`);
+        const html = await res.text();
+        document.getElementById('teachersBody').innerHTML = html || emptyRow();
+        currentPage = 1;
+    }
+
+    function clearForm() {
+        ['dbId','teacherNo','firstName','lastName','email','username','password']
+            .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    }
+
+    function openModal(id)  { document.getElementById(id).classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+    document.querySelectorAll('.modal-overlay').forEach(o =>
+        o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+    });
+</script>
 }

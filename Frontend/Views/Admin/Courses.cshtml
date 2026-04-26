@@ -1,243 +1,311 @@
-﻿@{
+﻿@model AMS.ViewModels.CoursesPageViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Courses";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["PageTitle"] = "Courses";
 }
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">Courses</h1>
-        <p class="page-subtitle">Manage all courses offered this semester</p>
+        <h2>Courses</h2>
+        <p>Manage all courses offered this semester</p>
     </div>
     <button class="btn-primary" onclick="openAddModal()">+ Add Course</button>
 </div>
 
-<!-- Search and Filter Bar -->
-<div class="filter-bar">
-    <div class="search-box">
-        <span class="search-icon">&#128269;</span>
-        <input type="text" id="searchInput" placeholder="Search course name or code..." onkeyup="filterTable()" />
-    </div>
-    <select id="filterStatus" onchange="filterTable()">
-        <option value="">All Status</option>
-        <option value="Active">Active</option>
-        <option value="Inactive">Inactive</option>
-    </select>
+<div class="summary-bar">
+    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong>@Model.Courses.Count</strong></div>
 </div>
 
-<!-- Courses Table -->
-<div class="card">
-    <table class="data-table" id="coursesTable">
+<div class="filter-bar">
+    <input type="text" id="searchInput" class="search-input"
+           placeholder="Search by course code or name..."
+           value="@Model.Search" oninput="handleSearch()" />
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
         <thead>
             <tr>
-                <th>#</th>
-                <th>Course Code</th>
-                <th>Course Name</th>
-                <th>Assigned Teacher</th>
-                <th>Students</th>
-                <th>Schedule</th>
-                <th>Status</th>
+                <th>Course</th>
+                <th class="hide-sm">Code</th>
+                <th class="hide-sm">Section</th>
+                <th class="hide-md">Schedule</th>
+                <th class="hide-sm">Teacher</th>
+                <th>Units</th>
                 <th>Actions</th>
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td>1</td>
-                <td><span class="course-code">CS101</span></td>
-                <td>Introduction to Computing</td>
-                <td>Mr. Santos</td>
-                <td>32</td>
-                <td>MWF 7:30 AM</td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <button class="btn-icon" title="Edit" onclick="openEditModal('CS101', 'Introduction to Computing', 'Mr. Santos', 'MWF 7:30 AM', 'Active')">&#9998;</button>
-                    <button class="btn-icon btn-danger" title="Delete" onclick="confirmDelete('Introduction to Computing')">&#128465;</button>
+        <tbody id="coursesBody">
+            @if (Model.Courses.Any())
+            {
+                @foreach (var c in Model.Courses)
+                {
+                    <tr class="table-row fade-in-row" id="row-@c.DbId">
+                        <td><p class="cell-name">@c.CourseName</p></td>
+                        <td class="hide-sm"><span class="course-code-badge">@c.CourseCode</span></td>
+                        <td class="hide-sm">@c.Section</td>
+                        <td class="hide-md"><p class="cell-sub">@c.Schedule</p></td>
+                        <td class="hide-sm">@c.TeacherName</td>
+                        <td>@c.Units units</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-view"
+                                        onclick="viewCourse(@c.DbId,'@Html.Raw(c.CourseName)','@c.CourseCode','@c.Section','@Html.Raw(c.Schedule)','@c.Units','@Html.Raw(c.TeacherName)')">
+                                    View
+                                </button>
+                                <button class="btn-sm btn-edit"
+                                        onclick="editCourse(@c.DbId,'@c.CourseCode','@Html.Raw(c.CourseName)','@c.Units','@c.Section','@Html.Raw(c.Schedule)','@c.TeacherId')">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-delete"
+                                        onclick="confirmDelete(@c.DbId,'@Html.Raw(c.CourseName)')">
+                                    Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7">
+                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
+                        {
+                            Icon = "◧", Title = "No courses found",
+                                        Message = "Try a different search or add a new course."
+                                        })
                 </td>
             </tr>
-            <tr>
-                <td>2</td>
-                <td><span class="course-code">CS102</span></td>
-                <td>Programming 1</td>
-                <td>Ms. Reyes</td>
-                <td>28</td>
-                <td>TTH 9:00 AM</td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <button class="btn-icon" title="Edit" onclick="openEditModal('CS102', 'Programming 1', 'Ms. Reyes', 'TTH 9:00 AM', 'Active')">&#9998;</button>
-                    <button class="btn-icon btn-danger" title="Delete" onclick="confirmDelete('Programming 1')">&#128465;</button>
-                </td>
-            </tr>
-            <tr>
-                <td>3</td>
-                <td><span class="course-code">MATH01</span></td>
-                <td>College Algebra</td>
-                <td>Mr. Cruz</td>
-                <td>40</td>
-                <td>MWF 10:30 AM</td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <button class="btn-icon" title="Edit" onclick="openEditModal('MATH01', 'College Algebra', 'Mr. Cruz', 'MWF 10:30 AM', 'Active')">&#9998;</button>
-                    <button class="btn-icon btn-danger" title="Delete" onclick="confirmDelete('College Algebra')">&#128465;</button>
-                </td>
-            </tr>
-            <tr>
-                <td>4</td>
-                <td><span class="course-code">ENG01</span></td>
-                <td>English Communication</td>
-                <td>Ms. Lim</td>
-                <td>35</td>
-                <td>TTH 1:00 PM</td>
-                <td><span class="badge badge-inactive">Inactive</span></td>
-                <td>
-                    <button class="btn-icon" title="Edit" onclick="openEditModal('ENG01', 'English Communication', 'Ms. Lim', 'TTH 1:00 PM', 'Inactive')">&#9998;</button>
-                    <button class="btn-icon btn-danger" title="Delete" onclick="confirmDelete('English Communication')">&#128465;</button>
-                </td>
-            </tr>
-            <tr>
-                <td>5</td>
-                <td><span class="course-code">PE001</span></td>
-                <td>Physical Education 1</td>
-                <td>Mr. Dela Cruz</td>
-                <td>45</td>
-                <td>SAT 7:00 AM</td>
-                <td><span class="badge badge-active">Active</span></td>
-                <td>
-                    <button class="btn-icon" title="Edit" onclick="openEditModal('PE001', 'Physical Education 1', 'Mr. Dela Cruz', 'SAT 7:00 AM', 'Active')">&#9998;</button>
-                    <button class="btn-icon btn-danger" title="Delete" onclick="confirmDelete('Physical Education 1')">&#128465;</button>
-                </td>
-            </tr>
+                        }
         </tbody>
     </table>
 </div>
 
-<!-- Add / Edit Modal -->
+<!-- ADD / EDIT MODAL -->
 <div class="modal-overlay" id="courseModal">
-    <div class="modal-box">
+    <div class="modal-card">
         <div class="modal-header">
-            <h2 id="modalTitle">Add Course</h2>
-            <button class="modal-close" onclick="closeModal()">&#10005;</button>
+            <h3 id="modalTitle">Add Course</h3>
+            <button class="modal-close" onclick="closeModal('courseModal')">×</button>
         </div>
         <div class="modal-body">
-            <div class="form-group">
-                <label>Course Code</label>
-                <input type="text" id="fldCode" placeholder="e.g. CS101" />
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="dbId" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Course Code <span class="req">*</span></label>
+                    <input type="text" id="courseCode" class="form-input" placeholder="e.g. CS101" required />
+                </div>
+                <div class="form-group">
+                    <label>Units <span class="req">*</span></label>
+                    <input type="number" id="units" class="form-input" value="3" min="1" max="10" required />
+                </div>
             </div>
             <div class="form-group">
-                <label>Course Name</label>
-                <input type="text" id="fldName" placeholder="e.g. Introduction to Computing" />
+                <label>Course Name <span class="req">*</span></label>
+                <input type="text" id="courseName" class="form-input" placeholder="e.g. Introduction to Computing" required />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Section <span class="req">*</span></label>
+                    <input type="text" id="section" class="form-input" placeholder="e.g. 3TagaPayu" required />
+                </div>
+                <div class="form-group">
+                    <label>Schedule <span class="req">*</span></label>
+                    <input type="text" id="schedule" class="form-input" placeholder="e.g. Mon/Wed 8:00-10:00 AM" required />
+                </div>
             </div>
             <div class="form-group">
-                <label>Assigned Teacher</label>
-                <select id="fldTeacher">
-                    <option value="">-- Select Teacher --</option>
-                    <option>Mr. Santos</option>
-                    <option>Ms. Reyes</option>
-                    <option>Mr. Cruz</option>
-                    <option>Ms. Lim</option>
-                    <option>Mr. Dela Cruz</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Schedule</label>
-                <input type="text" id="fldSchedule" placeholder="e.g. MWF 7:30 AM" />
-            </div>
-            <div class="form-group">
-                <label>Status</label>
-                <select id="fldStatus">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
+                <label>Teacher <span class="req">*</span></label>
+                <select id="teacherId" class="form-input" required>
+                    <option value="">— Select Teacher —</option>
+                    @foreach (var t in Model.Teachers)
+                    {
+                        <option value="@t.DbId">@t.FullName (@t.TeacherNo)</option>
+                    }
                 </select>
             </div>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeModal()">Cancel</button>
-            <button class="btn-primary" onclick="saveModal()">Save Course</button>
+            <button class="btn-secondary" onclick="closeModal('courseModal')">Cancel</button>
+            <button class="btn-primary" id="saveBtn" onclick="submitCourse()">Save Course</button>
         </div>
     </div>
 </div>
 
-<!-- Delete Confirm Modal -->
-<div class="modal-overlay" id="deleteModal">
-    <div class="modal-box modal-small">
+<!-- VIEW MODAL -->
+<div class="modal-overlay" id="viewModal">
+    <div class="modal-card">
         <div class="modal-header">
-            <h2>Delete Course</h2>
-            <button class="modal-close" onclick="closeDeleteModal()">&#10005;</button>
+            <h3>Course Details</h3>
+            <button class="modal-close" onclick="closeModal('viewModal')">×</button>
+        </div>
+        <div class="modal-body" id="viewBody"></div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeModal('viewModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-card modal-sm">
+        <div class="modal-header">
+            <h3>Delete Course</h3>
+            <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
         </div>
         <div class="modal-body">
             <p>Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
         </div>
         <div class="modal-footer">
-            <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
-            <button class="btn-danger-solid" onclick="closeDeleteModal()">Yes, Delete</button>
+            <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="btn-danger" id="confirmDeleteBtn" onclick="submitDelete()">Yes, Delete</button>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // --- Search & Filter ---
-        function filterTable() {
-            var search = document.getElementById("searchInput").value.toLowerCase();
-            var status = document.getElementById("filterStatus").value.toLowerCase();
-            var rows = document.querySelectorAll("#coursesTable tbody tr");
+        let searchTimer = null, pendingDeleteId = null, isEditing = false;
+        const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-            rows.forEach(function (row) {
-                var text = row.innerText.toLowerCase();
-                var rowStatus = row.querySelector(".badge") ? row.querySelector(".badge").innerText.toLowerCase() : "";
-                var matchSearch = text.includes(search);
-                var matchStatus = status === "" || rowStatus === status;
-                row.style.display = matchSearch && matchStatus ? "" : "none";
-            });
+        // Client-side search (courses are fully loaded — no lazy load needed)
+        function handleSearch() {
+            clearTimeout(searchTimer);
+            searchTimer = setTimeout(() => {
+                const q = document.getElementById('searchInput').value.toLowerCase();
+                document.querySelectorAll('#coursesBody tr.table-row').forEach(row => {
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(q) ? '' : 'none';
+                });
+            }, 200);
         }
 
-        // --- Add Modal ---
         function openAddModal() {
-            document.getElementById("modalTitle").innerText = "Add Course";
-            document.getElementById("fldCode").value = "";
-            document.getElementById("fldName").value = "";
-            document.getElementById("fldTeacher").value = "";
-            document.getElementById("fldSchedule").value = "";
-            document.getElementById("fldStatus").value = "Active";
-            document.getElementById("courseModal").classList.add("active");
+            isEditing = false;
+            document.getElementById('modalTitle').textContent = 'Add Course';
+            clearForm();
+            openModal('courseModal');
         }
 
-        // --- Edit Modal ---
-        function openEditModal(code, name, teacher, schedule, status) {
-            document.getElementById("modalTitle").innerText = "Edit Course";
-            document.getElementById("fldCode").value = code;
-            document.getElementById("fldName").value = name;
-            document.getElementById("fldTeacher").value = teacher;
-            document.getElementById("fldSchedule").value = schedule;
-            document.getElementById("fldStatus").value = status;
-            document.getElementById("courseModal").classList.add("active");
+        function editCourse(id, code, name, units, section, schedule, teacherId) {
+            isEditing = true;
+            document.getElementById('modalTitle').textContent = 'Edit Course';
+            document.getElementById('dbId').value        = id;
+            document.getElementById('courseCode').value  = code;
+            document.getElementById('courseName').value  = name;
+            document.getElementById('units').value       = units;
+            document.getElementById('section').value     = section;
+            document.getElementById('schedule').value    = schedule;
+            document.getElementById('teacherId').value   = teacherId;
+            openModal('courseModal');
         }
 
-        function closeModal() {
-            document.getElementById("courseModal").classList.remove("active");
+        function viewCourse(id, name, code, section, schedule, units, teacher) {
+            document.getElementById('viewBody').innerHTML = `
+                <div class="profile-view">
+                    <div class="profile-avatar" style="border-radius:10px;font-size:13px;">${code}</div>
+                    <h3 class="profile-name">${name}</h3>
+                    <div class="profile-details">
+                        <div class="detail-row"><span class="detail-label">Section</span><span>${section}</span></div>
+                        <div class="detail-row"><span class="detail-label">Schedule</span><span>${schedule}</span></div>
+                        <div class="detail-row"><span class="detail-label">Units</span><span>${units} units</span></div>
+                        <div class="detail-row"><span class="detail-label">Teacher</span><span>${teacher}</span></div>
+                    </div>
+                </div>`;
+            openModal('viewModal');
         }
 
-        function saveModal() {
-            // In a real project, this would post to the controller
-            alert("Course saved! (Connect to your controller here)");
-            closeModal();
+        function confirmDelete(id, name) {
+            pendingDeleteId = id;
+            document.getElementById('deleteName').textContent = name;
+            openModal('deleteModal');
         }
 
-        // --- Delete Modal ---
-        function confirmDelete(name) {
-            document.getElementById("deleteName").innerText = name;
-            document.getElementById("deleteModal").classList.add("active");
-        }
+        async function submitCourse() {
+            const code     = document.getElementById('courseCode').value.trim();
+            const name     = document.getElementById('courseName').value.trim();
+            const section  = document.getElementById('section').value.trim();
+            const schedule = document.getElementById('schedule').value.trim();
+            const teacher  = document.getElementById('teacherId').value;
+            const units    = document.getElementById('units').value;
 
-        function closeDeleteModal() {
-            document.getElementById("deleteModal").classList.remove("active");
-        }
+            if (!code || !name || !section || !schedule || !teacher) {
+                Toast.warning('Please fill in all required fields.');
+                return;
+            }
 
-        // Close modal when clicking outside
-        document.querySelectorAll(".modal-overlay").forEach(function (overlay) {
-            overlay.addEventListener("click", function (e) {
-                if (e.target === overlay) {
-                    overlay.classList.remove("active");
-                }
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.textContent = 'Saving...';
+
+            const url     = isEditing ? '/Admin/UpdateCourse' : '/Admin/AddCourse';
+            const payload = new URLSearchParams({
+                __RequestVerificationToken: antiForgery,
+                id: document.getElementById('dbId').value,
+                courseCode: code, courseName: name, units, section, schedule, teacherId: teacher
             });
+
+            try {
+                const res  = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: payload
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Toast.success(data.message);
+                    closeModal('courseModal');
+                    // Reload page to reflect new/updated course in table
+                    location.reload();
+                } else {
+                    Toast.error(data.message);
+                }
+            } catch { Toast.error('An unexpected error occurred.'); }
+            finally  { btn.disabled = false; btn.textContent = 'Save Course'; }
+        }
+
+        async function submitDelete() {
+            const btn = document.getElementById('confirmDeleteBtn');
+            btn.disabled = true; btn.textContent = 'Deleting...';
+
+            const payload = new URLSearchParams({
+                __RequestVerificationToken: antiForgery,
+                id: pendingDeleteId
+            });
+
+            try {
+                const res  = await fetch('/Admin/DeleteCourse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: payload
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Toast.success(data.message);
+                    closeModal('deleteModal');
+                    const row = document.getElementById(`row-${pendingDeleteId}`);
+                    if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+                } else {
+                    Toast.error(data.message);
+                }
+            } catch { Toast.error('An unexpected error occurred.'); }
+            finally  { btn.disabled = false; btn.textContent = 'Yes, Delete'; }
+        }
+
+        function clearForm() {
+            ['dbId','courseCode','courseName','section','schedule'].forEach(id => document.getElementById(id).value = '');
+            document.getElementById('units').value    = '3';
+            document.getElementById('teacherId').value = '';
+        }
+
+        function openModal(id)  { document.getElementById(id).classList.add('active'); }
+        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+        document.querySelectorAll('.modal-overlay').forEach(o =>
+            o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
         });
     </script>
 }

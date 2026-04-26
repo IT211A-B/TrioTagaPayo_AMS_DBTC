@@ -1,146 +1,48 @@
-﻿/* Department badges */
+﻿/* teachers.css — Wireframe v9 redesign */
+
+/* Department badges: updated to match dark theme */
 .dept-badge {
     display: inline-block;
     padding: 3px 10px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.4px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-family: 'Outfit', sans-serif;
 }
 
     .dept-badge.bsit {
-        background: #dbeafe;
-        color: #1d4ed8;
+        background: rgba(56,189,248,0.12);
+        color: #38bdf8;
+        border-left: 2px solid #38bdf8;
     }
 
     .dept-badge.bscs {
-        background: #ede9fe;
-        color: #6d28d9;
+        background: rgba(139,92,246,0.12);
+        color: #a78bfa;
+        border-left: 2px solid #a78bfa;
     }
 
     .dept-badge.bsed {
-        background: #dcfce7;
-        color: #15803d;
+        background: rgba(34,197,94,0.12);
+        color: #4ade80;
+        border-left: 2px solid #4ade80;
     }
 
     .dept-badge.bsba {
-        background: #fef9c3;
-        color: #a16207;
+        background: rgba(245,158,11,0.12);
+        color: #fcd34d;
+        border-left: 2px solid #f59e0b;
     }
 
     .dept-badge.bshrm {
-        background: #ffe4e6;
-        color: #be123c;
+        background: rgba(216,27,96,0.12);
+        color: #f48fb1;
+        border-left: 2px solid #d81b60;
     }
 
-/* Summary pills — same as students, reused here */
-.summary-bar {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-
-.summary-pill {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 20px;
-    padding: 5px 14px;
-    font-size: 12.5px;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.summary-dot {
-    width: 8px;
-    height: 8px;
+/* Avatar override */
+.student-cell .avatar {
     border-radius: 50%;
-    flex-shrink: 0;
-}
-
-.dot-blue {
-    background: var(--accent);
-}
-
-.dot-green {
-    background: var(--green);
-}
-
-.dot-red {
-    background: var(--red);
-}
-
-.dot-amber {
-    background: var(--amber);
-}
-
-/* View modal - teacher profile */
-.view-student-top {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 20px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-}
-
-.view-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--accent), #0F3E9E);
-    color: #fff;
-    font-size: 15px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.view-name {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.view-id {
-    font-size: 12px;
-    font-family: 'Courier New', Courier, monospace;
-    color: var(--text-muted);
-    margin-top: 3px;
-}
-
-.view-details {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.view-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-}
-
-    .view-row:last-child {
-        border-bottom: none;
-        padding-bottom: 0;
-    }
-
-.view-label {
-    font-size: 12px;
-    color: var(--text-muted);
-    font-weight: 500;
-}
-
-.view-value {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--text-primary);
+    border: 1px solid rgba(56,189,248,0.2);
 }

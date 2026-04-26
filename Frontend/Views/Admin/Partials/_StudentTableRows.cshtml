@@ -1,0 +1,29 @@
+﻿@model List<AMS.ViewModels.StudentViewModel>
+
+@foreach (var s in Model)
+{
+    <tr class="table-row fade-in-row">
+        <td>
+            <div class="student-cell">
+                <div class="avatar" style="background:@s.AvatarColor">@s.Initials</div>
+                <div>
+                    <p class="cell-name">@s.FullName</p>
+                    <p class="cell-sub">@s.Email</p>
+                </div>
+            </div>
+        </td>
+        <td class="hide-sm"><span class="id-badge">@s.StudentNo</span></td>
+        <td class="hide-sm">@s.Section</td>
+        <td class="hide-md">@s.MobileNo</td>
+        <td>
+            <div class="action-btns">
+                <button class="btn-sm btn-view"
+                        onclick="viewStudent(@s.DbId,'@Html.Raw(s.FullName)','@s.StudentNo','@s.Email','@s.Section','@s.MobileNo')">View</button>
+                <button class="btn-sm btn-edit"
+                        onclick="editStudent(@s.DbId,'@s.StudentNo','@Html.Raw(s.FirstName)','@Html.Raw(s.MiddleName)','@Html.Raw(s.LastName)','@s.Email','@s.Section','@s.MobileNo')">Edit</button>
+                <button class="btn-sm btn-delete"
+                        onclick="confirmDelete(@s.DbId,'@Html.Raw(s.FullName)')">Delete</button>
+            </div>
+        </td>
+    </tr>
+}

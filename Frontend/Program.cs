@@ -1,24 +1,36 @@
+// ============================================================
+// Program.cs
+// ============================================================
+
+using AMS.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add MVC
 builder.Services.AddControllersWithViews();
 
-// Add Session support (needed for login)
+// Session — stores JWT token after login
+builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(60);
+    options.IdleTimeout = TimeSpan.FromHours(8);
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
 
-// Register ApiService and HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddHttpClient<ASM.Services.ApiService>();
+
+// HttpClient pointing to your classmate's API
+builder.Services.AddHttpClient<ApiService>(client =>
+{
+    client.BaseAddress = new Uri("http://localhost:5167");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
 
 var app = builder.Build();
 
-// Standard middleware
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
+    app.UseDeveloperExceptionPage();
+else
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
@@ -27,12 +39,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-
-// Session must go BEFORE authorization
 app.UseSession();
 app.UseAuthorization();
 
-// Default route — go to Login first
+// Default route — Login first
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");

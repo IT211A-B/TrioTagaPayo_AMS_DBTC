@@ -1,3 +1,8 @@
+﻿/* ============================================================
+   login.css — Redesigned split-panel login (Wireframe v9)
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
 
 * {
     margin: 0;
@@ -7,87 +12,105 @@
 
 body {
     min-height: 100vh;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    /* Dark navy � background.png blends on top of the gradient */
-    background-color: #0a1628;
-    background-image: url('/images/background.png'), linear-gradient(135deg, #0a1628 0%, #0d1f45 40%, #0a1c3e 70%, #061020 100%);
-    background-size: cover;
-    background-position: center;
-    background-blend-mode: overlay;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #0a0010;
     display: flex;
-    align-items: center;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+/* ── LEFT FORM PANEL ─────────────────────────────────────── */
+.login-panel {
+    position: relative;
+    z-index: 10;
+    width: min(460px, 100vw);
+    min-height: 100vh;
+    background: rgba(8,3,16,0.98);
+    display: flex;
+    flex-direction: column;
     justify-content: center;
+    padding: clamp(40px, 7vw, 72px) clamp(32px, 6vw, 60px);
+    flex-shrink: 0;
+}
+
+    /* Pink divider line on right edge of panel */
+    .login-panel::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 2px;
+        height: 100%;
+        background: linear-gradient(180deg, transparent, #d81b60 25%, #d81b60 75%, transparent);
+    }
+
+/* ── RIGHT ART PANEL ─────────────────────────────────────── */
+.l-art-panel {
+    flex: 1;
     position: relative;
     overflow: hidden;
 }
 
-
-    /* =============================================
-   Subtle top border glow on the whole page
-   (just a tiny detail that makes it look nicer)
-   ============================================= */
-    body::before {
-        content: '';
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background: linear-gradient(90deg, transparent, #1a56c4, #3b78e7, #1a56c4, transparent);
-        opacity: 0.6;
-        z-index: 10;
-    }
-
-
-/* =============================================
-   TOP-LEFT: School badge
-   ============================================= */
-
-.school-badge {
+.l-art-img {
     position: absolute;
-    top: 24px;
-    left: 28px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
 }
 
-    .school-badge img {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: 2px solid rgba(255, 255, 255, 0.25);
-        object-fit: cover;
-        background: #1a56c4;
-        /* Soft glow around the logo */
-        box-shadow: 0 0 12px rgba(26, 86, 196, 0.4);
-    }
-
-.school-badge-text strong {
-    display: block;
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    line-height: 1.3;
+.l-art-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(8,3,16,0.6) 0%, rgba(8,3,16,0.1) 40%, transparent 100%);
 }
 
-.school-badge-text span {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.45);
+.l-scanlines {
+    position: absolute;
+    inset: 0;
+    background-image: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.07) 3px, rgba(0,0,0,0.07) 4px);
+    pointer-events: none;
 }
 
+/* Accent decorations */
+.l-accent-v {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, #d81b60 20%, #d81b60 80%, transparent);
+    z-index: 5;
+}
 
-/* =============================================
-   CENTER: login card wrapper
-   ============================================= */
+.l-accent-h {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 55%;
+    background: linear-gradient(90deg, #d81b60, transparent);
+    z-index: 5;
+}
 
-.login-center {
+.l-accent-corner {
+    position: absolute;
+    bottom: 80px;
+    left: 32px;
+    z-index: 6;
+    width: 18px;
+    height: 18px;
+    border-left: 2px solid #d81b60;
+    border-bottom: 2px solid #d81b60;
+}
+
+/* ── LOGIN CARD (content inside panel) ───────────────────── */
+.login-card {
     position: relative;
-    z-index: 1;
-    display: flex;
-    justify-content: center;
-    /* Fade in when page loads */
-    animation: fadeUp 0.4s ease both;
+    z-index: 3;
+    width: 100%;
+    animation: fadeUp 0.65s cubic-bezier(.16,1,.3,1) both;
 }
 
 @keyframes fadeUp {
@@ -102,95 +125,158 @@ body {
     }
 }
 
-.login-card {
-    width: 340px;
+/* Logo */
+.login-logo-wrap {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    justify-content: center;
+    margin-bottom: 28px;
 }
 
-
-/* =============================================
-   Logo circle above the box
-   ============================================= */
-
-.logo-circle {
-    width: 68px;
-    height: 68px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #1a56c4, #0f3e9e);
-    border: 2px solid rgba(255, 255, 255, 0.2);
+.l-logo {
+    width: 140px;
+    height: 100px;
+    background: transparent;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 14px;
-    overflow: hidden;
-    /* Glow effect under the logo */
-    box-shadow: 0 0 0 6px rgba(26, 86, 196, 0.12), 0 8px 24px rgba(26, 86, 196, 0.35);
 }
 
-    .logo-circle img {
-        width: 54px;
-        height: 54px;
-        border-radius: 50%;
-        object-fit: cover;
+    .l-logo img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 0 12px rgba(216,27,96,0.8)) drop-shadow(0 0 28px rgba(216,27,96,0.3));
     }
 
-.card-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 4px;
-    letter-spacing: 0.01em;
+/* Titles */
+.login-title {
+    text-align: left;
+    font-family: 'Outfit', sans-serif;
+    font-size: 34px;
+    font-weight: 900;
+    color: #ece8e1;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+    text-transform: uppercase;
+    line-height: 1;
 }
 
-.card-sub {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.45);
-    margin-bottom: 22px;
+.login-sub {
+    text-align: left;
+    font-size: 11px;
+    color: #d81b60;
+    margin: 0 0 36px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 600;
 }
 
+/* Field label */
+.field-lbl {
+    font-size: 10px;
+    font-weight: 800;
+    color: #6b7280;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 8px;
+    font-family: 'Outfit', sans-serif;
+}
 
-/* =============================================
-   Glass login box
-   ============================================= */
+/* Input wrap */
+.inp-wrap {
+    position: relative;
+    margin-bottom: 20px;
+}
 
-.login-box {
+.inp-icon {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #4b5563;
+    pointer-events: none;
+}
+
+/* Input field */
+.field-inp {
     width: 100%;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 16px;
-    padding: 28px 26px;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    /* Polished shadow � layered for depth */
-    box-shadow: 0 2px 0 rgba(255, 255, 255, 0.05) inset, 0 24px 48px rgba(0, 0, 0, 0.4), 0 8px 16px rgba(0, 0, 0, 0.25);
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    padding: 11px 14px 11px 28px;
+    font-size: 14px;
+    color: #ece8e1;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
 }
 
-    .login-box h2 {
-        font-size: 15px;
-        font-weight: 600;
-        color: rgba(255, 255, 255, 0.85);
-        text-align: center;
-        margin-bottom: 20px;
-        letter-spacing: 0.03em;
+    .field-inp::placeholder {
+        color: #374151;
     }
 
+    .field-inp:focus {
+        border-bottom-color: #d81b60;
+        box-shadow: 0 1px 0 0 #d81b60;
+        background: rgba(216,27,96,0.04);
+    }
 
-/* =============================================
-   Error message
-   ============================================= */
+/* Login button */
+.login-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(90deg, #d81b60, #9c1040);
+    border: none;
+    font-size: 12px;
+    font-weight: 900;
+    color: #fff;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    margin-top: 12px;
+    transition: all 0.2s;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    box-shadow: 0 4px 28px rgba(216,27,96,0.45);
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
 
+    .login-btn:hover {
+        background: linear-gradient(90deg, #f01b6e, #c01555);
+        box-shadow: 0 8px 36px rgba(216,27,96,0.65);
+        transform: translateY(-1px);
+    }
+
+/* Password toggle */
+.pass-toggle {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #4b5563;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+    .pass-toggle:hover {
+        color: #f48fb1;
+    }
+
+/* Error message */
 .error-msg {
-    background: rgba(181, 43, 43, 0.2);
-    border-left: 3px solid #c0392b;
-    border-radius: 8px;
+    border-left: 3px solid #d81b60;
+    background: rgba(216,27,96,0.1);
     padding: 10px 13px;
-    margin-bottom: 14px;
+    margin-bottom: 20px;
     font-size: 12.5px;
-    font-weight: 500;
-    color: #ff8585;
-    /* Smooth slide-in when it appears */
+    color: #f48fb1;
     animation: slideIn 0.25s ease both;
 }
 
@@ -206,150 +292,37 @@ body {
     }
 }
 
-
-/* =============================================
-   Input fields
-   ============================================= */
-
-.input-group {
-    position: relative;
-    margin-bottom: 14px;
+/* Divider */
+.divider {
     display: flex;
     align-items: center;
+    gap: 12px;
+    margin: 28px 0 0;
 }
 
-/* Small icon on the left */
-.input-icon {
-    position: absolute;
-    left: 12px;
-    display: flex;
-    align-items: center;
-    pointer-events: none;
+.divider-line {
+    flex: 1;
+    height: 1px;
+    background: rgba(255,255,255,0.06);
 }
 
-    .input-icon svg {
-        width: 16px;
-        height: 16px;
-        color: rgba(255, 255, 255, 0.35);
-    }
-
-.input-group input {
-    width: 100%;
-    height: 44px;
-    background: rgba(255, 255, 255, 0.07);
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 9px;
-    padding: 0 44px 0 38px;
-    font-size: 14px;
-    color: #fff;
-    outline: none;
-    transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+.divider-txt {
+    font-size: 10px;
+    color: #374151;
+    white-space: nowrap;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
 }
 
-    .input-group input::placeholder {
-        color: rgba(255, 255, 255, 0.3);
-    }
-
-    /* Blue glow when the user clicks into the field */
-    .input-group input:focus {
-        border-color: rgba(59, 120, 231, 0.65);
-        background: rgba(255, 255, 255, 0.1);
-        box-shadow: 0 0 0 3px rgba(59, 120, 231, 0.15);
-    }
-
-
-/* =============================================
-   Eye button (show/hide password)
-   ============================================= */
-
-.eye-btn {
-    position: absolute;
-    right: 12px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    padding: 4px;
-    opacity: 0.3;
-    transition: opacity 0.15s;
-}
-
-    .eye-btn:hover {
-        opacity: 0.65;
-    }
-
-    /* When password is visible, the eye button brightens */
-    .eye-btn.eye-active {
-        opacity: 0.75;
-    }
-
-    .eye-btn svg {
-        width: 16px;
-        height: 16px;
-        color: #fff;
-    }
-
-
-/* =============================================
-   Login button
-   ============================================= */
-
-.login-btn {
-    width: 100%;
-    height: 44px;
-    background: linear-gradient(135deg, #1e5fd4, #1448b0);
-    color: #fff;
-    border: none;
-    border-radius: 9px;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-top: 4px;
-    margin-bottom: 14px;
-    letter-spacing: 0.03em;
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    /* Subtle shadow under the button */
-    box-shadow: 0 4px 14px rgba(26, 86, 196, 0.4);
-    transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
-}
-
-    .login-btn:hover {
-        background: linear-gradient(135deg, #1a56c4, #0f3e9e);
-        box-shadow: 0 6px 18px rgba(26, 86, 196, 0.5);
-        transform: translateY(-1px);
-    }
-
-    .login-btn:active {
-        transform: translateY(0px);
-        box-shadow: 0 2px 8px rgba(26, 86, 196, 0.35);
-    }
-
-    /* Dimmed state while waiting for the server */
-    .login-btn.btn-loading {
-        opacity: 0.75;
-        cursor: not-allowed;
-    }
-
-/* The "Login" text inside the button */
-.btn-text {
-    display: inline-block;
-}
-
-/* Spinner � hidden by default, shown via JS */
+/* Spinner */
 .btn-spinner {
     display: none;
     width: 18px;
     height: 18px;
-    border: 2.5px solid rgba(255, 255, 255, 0.3);
+    border: 2.5px solid rgba(255,255,255,0.3);
     border-top-color: #fff;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
-    flex-shrink: 0;
 }
 
 @keyframes spin {
@@ -358,73 +331,17 @@ body {
     }
 }
 
+/* ── RESPONSIVE: hide art panel on small screens ─────────── */
+@media (max-width: 640px) {
+    .l-art-panel {
+        display: none;
+    }
 
-/* =============================================
-   Forgot password link
-   ============================================= */
+    .login-panel {
+        width: 100vw;
+    }
 
-.forgot-link {
-    text-align: center;
-    font-size: 12.5px;
-    color: rgba(255, 255, 255, 0.3);
-    cursor: pointer;
-    transition: color 0.15s;
-    margin-bottom: 0;
+        .login-panel::after {
+            display: none;
+        }
 }
-
-    .forgot-link:hover {
-        color: rgba(255, 255, 255, 0.6);
-    }
-
-
-/* =============================================
-   Demo credentials hint box
-   ============================================= */
-
-.hint-box {
-    margin-top: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    border-radius: 9px;
-    padding: 12px 14px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
-    line-height: 1.8;
-}
-
-    .hint-box strong {
-        color: rgba(255, 255, 255, 0.65);
-    }
-
-    .hint-box span {
-        font-size: 11px;
-        color: rgba(255, 255, 255, 0.25);
-    }
-
-
-/* =============================================
-   BOTTOM-LEFT: Scripture quote
-   ============================================= */
-
-.scripture {
-    position: absolute;
-    bottom: 32px;
-    left: 28px;
-    font-family: Georgia, 'Times New Roman', serif;
-    font-style: italic;
-    font-size: 13px;
-    line-height: 1.75;
-    color: rgba(255, 255, 255, 0.2);
-    max-width: 280px;
-}
-
-    .scripture span {
-        display: block;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-        font-style: normal;
-        font-size: 10px;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: rgba(255, 255, 255, 0.13);
-        margin-top: 4px;
-    }

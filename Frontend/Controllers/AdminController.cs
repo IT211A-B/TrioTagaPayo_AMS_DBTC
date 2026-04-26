@@ -1,15 +1,22 @@
-﻿using ASM.Services;
-using ASM.ViewModels;
-using Microsoft.AspNetCore.Mvc;
+﻿// ============================================================
+// Controllers/AdminController.cs
+// FIXED: API returns { data, page, totalCount } — not a plain List<T>
+// ADDED: AJAX endpoints that return JSON instead of redirecting
+// ============================================================
 
-namespace ASM.Controllers
+using Microsoft.AspNetCore.Mvc;
+using AMS.Services;
+using AMS.Models;
+using AMS.ViewModels;
+
+namespace AMS.Controllers
 {
     public class AdminController : Controller
     {
         private readonly ApiService _api;
         private const int PageSize = 10;
 
-        private static readonly string[] AvatarColors =
+        private static readonly string[] Colors =
         {
             "linear-gradient(135deg,#1A56C4,#3B78E7)",
             "linear-gradient(135deg,#7C3AED,#A78BFA)",
@@ -20,49 +27,51 @@ namespace ASM.Controllers
             "linear-gradient(135deg,#BE185D,#F9A8D4)",
         };
 
-        public AdminController(ApiService api)
-        {
-            _api = api;
-        }
+        public AdminController(ApiService api) => _api = api;
+
+        // ── AUTH GUARD helper ─────────────────────────────────
+        private bool IsLoggedIn() =>
+            !string.IsNullOrEmpty(HttpContext.Session.GetString("JwtToken"));
+
+        private IActionResult RedirectToLogin() =>
+            RedirectToAction("Login", "Account");
 
         // ════════════════════════════════════════════════════
         // DASHBOARD
         // ════════════════════════════════════════════════════
         public async Task<IActionResult> Dashboard()
         {
-            ViewData["ActivePage"] = "Dashboard";
-            ViewData["PageTitle"] = "Dashboard";
+            if (!IsLoggedIn()) return RedirectToLogin();
+            SetPage("Dashboard");
 
-            var students = await _api.GetAsync<List<StudentApiModel>>("/api/Student") ?? new();
-            var teachers = await _api.GetAsync<List<TeacherApiModel>>("/api/Teacher") ?? new();
-            var courses = await _api.GetAsync<List<CourseApiModel>>("/api/Course") ?? new();
+            // FIX: API returns paged wrapper — fetch page=1 pageSize=1000 to get all
+            var students = await _api.GetAllAsync<StudentApiModel>("/api/Student");
+            var teachers = await _api.GetAllAsync<TeacherApiModel>("/api/Teacher");
+            var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
             var attendance = await _api.GetAsync<List<AttendanceApiModel>>("/api/Attendance") ?? new();
 
-            var recent = attendance
-                .OrderByDescending(a => a.Date + a.Time)
-                .Take(10)
-                .Select(a => new AttendanceEntryViewModel
-                {
-                    StudentName = a.StudentName,
-                    StudentId = a.StudentId,
-                    Course = a.CourseCode,
-                    Time = a.Time,
-                    Status = a.Status
-                }).ToList();
-
-            int totalRecords = attendance.Count;
-            int presentRecords = attendance.Count(a => a.Status == "Present");
-            int attRate = totalRecords > 0
-                ? (int)Math.Round(presentRecords / (double)totalRecords * 100)
-                : 0;
+            int total = attendance.Count;
+            int present = attendance.Count(a => a.Status == "Present");
+            int rate = total > 0 ? (int)Math.Round(present / (double)total * 100) : 0;
 
             var model = new DashboardViewModel
             {
                 TotalStudents = students.Count,
                 TotalTeachers = teachers.Count,
                 TotalCourses = courses.Count,
-                AttendanceRate = attRate,
-                RecentAttendance = recent
+                AttendanceRate = rate,
+                RecentAttendance = attendance
+                    .OrderByDescending(a => a.CreatedAt)
+                    .Take(10)
+                    .Select(a => new AttendanceEntryViewModel
+                    {
+                        StudentName = a.StudentName,
+                        StudentNo = a.StudentNo,
+                        CourseName = a.CourseName,
+                        Date = a.Date,
+                        Status = a.Status,
+                        Remarks = a.Remarks
+                    }).ToList()
             };
 
             return View(model);
@@ -71,346 +80,456 @@ namespace ASM.Controllers
         // ════════════════════════════════════════════════════
         // STUDENTS
         // ════════════════════════════════════════════════════
-        public async Task<IActionResult> Students(string? search, string? filter, int page = 1)
+        public async Task<IActionResult> Students(string? search, string? section, int page = 1)
         {
-            ViewData["ActivePage"] = "Students";
-            ViewData["PageTitle"] = "Students";
+            if (!IsLoggedIn()) return RedirectToLogin();
+            SetPage("Students");
 
-            var all = await _api.GetAsync<List<StudentApiModel>>("/api/Student") ?? new();
+            var all = await _api.GetAllAsync<StudentApiModel>("/api/Student");
 
             if (!string.IsNullOrWhiteSpace(search))
                 all = all.Where(s =>
-                    $"{s.FirstName} {s.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase)
-                    || s.StudentId.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                    $"{s.FirstName} {s.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    s.StudentNo.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    s.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (!string.IsNullOrWhiteSpace(filter))
-                all = all.Where(s => s.Status == filter).ToList();
+            if (!string.IsNullOrWhiteSpace(section))
+                all = all.Where(s => s.Section.Contains(section, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            int total = all.Count;
-            int totalPages = (int)Math.Ceiling(total / (double)PageSize);
+            int totalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
+            var paged = all.Skip((page - 1) * PageSize).Take(PageSize).Select(MapStudent).ToList();
 
-            var paged = all
-                .Skip((page - 1) * PageSize)
-                .Take(PageSize)
-                .Select(MapStudent)
-                .ToList();
-
-            var model = new StudentsPageViewModel
+            return View(new StudentsPageViewModel
             {
                 Students = paged,
-                TotalCount = total,
-                ActiveCount = all.Count(s => s.Status == "Active"),
-                InactiveCount = all.Count(s => s.Status != "Active"),
-                Search = search,
-                StatusFilter = filter,
+                TotalCount = all.Count,
                 CurrentPage = page,
                 TotalPages = totalPages,
-                PageSize = PageSize
-            };
-
-            return View(model);
+                Search = search,
+                SectionFilter = section,
+            });
         }
 
-        public async Task<IActionResult> StudentsPartial(string? search, string? filter, int page = 1)
+        // Partial for infinite scroll
+        public async Task<IActionResult> StudentsPartial(string? search, string? section, int page = 1)
         {
-            var all = await _api.GetAsync<List<StudentApiModel>>("/api/Student") ?? new();
+            var all = await _api.GetAllAsync<StudentApiModel>("/api/Student");
 
             if (!string.IsNullOrWhiteSpace(search))
                 all = all.Where(s =>
-                    $"{s.FirstName} {s.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase)
-                    || s.StudentId.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                    $"{s.FirstName} {s.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    s.StudentNo.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (!string.IsNullOrWhiteSpace(filter))
-                all = all.Where(s => s.Status == filter).ToList();
+            if (!string.IsNullOrWhiteSpace(section))
+                all = all.Where(s => s.Section.Contains(section, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            var paged = all
-                .Skip((page - 1) * PageSize)
-                .Take(PageSize)
-                .Select(MapStudent)
-                .ToList();
-
-            return PartialView("_StudentsRows", paged);
+            var paged = all.Skip((page - 1) * PageSize).Take(PageSize).Select(MapStudent).ToList();
+            return PartialView("_StudentTableRows", paged);
         }
 
+        // ── AJAX: Add Student — returns JSON ─────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddStudent(
-            string firstName, string lastName, string email,
-            string studentId, string section, string status)
+            string studentNo, string firstName, string middleName,
+            string lastName, string email, string section, string mobileNo)
         {
-            var ok = await _api.PostAsync<object>("/api/Student", new
+            var (ok, _, err) = await _api.PostAsync<object>("/api/Student", new
             {
+                studentNo,
                 firstName,
+                middleName,
                 lastName,
                 email,
-                studentId,
                 section,
-                status
+                mobileNo
             });
 
-            TempData[ok != null ? "Success" : "Error"] = ok != null
-                ? $"{firstName} {lastName} added successfully!"
-                : "Failed to add student. Please try again.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = $"{firstName} {lastName} added successfully!" })
+                    : Json(new { success = false, message = $"Failed to add student. {ParseError(err)}" });
 
+            TempData[ok ? "Success" : "Error"] = ok
+                ? $"{firstName} {lastName} added successfully!"
+                : $"Failed to add student. {ParseError(err)}";
             return RedirectToAction("Students");
         }
 
+        // ── AJAX: Update Student — returns JSON ───────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateStudent(
-            int id, string firstName, string lastName,
-            string email, string section, string status)
+            int id, string studentNo, string firstName, string middleName,
+            string lastName, string email, string section, string mobileNo)
         {
-            var ok = await _api.PutAsync($"/api/Student/{id}", new
+            var (ok, err) = await _api.PutAsync($"/api/Student/{id}", new
             {
+                studentNo,
                 firstName,
+                middleName,
                 lastName,
                 email,
                 section,
-                status
+                mobileNo
             });
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = "Student updated successfully!" })
+                    : Json(new { success = false, message = $"Failed to update student. {ParseError(err)}" });
 
             TempData[ok ? "Success" : "Error"] = ok
                 ? "Student updated successfully!"
-                : "Failed to update student.";
-
+                : $"Failed to update student. {ParseError(err)}";
             return RedirectToAction("Students");
         }
 
+        // ── AJAX: Delete Student — returns JSON ───────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteStudent(int id)
         {
-            var ok = await _api.DeleteAsync($"/api/Student/{id}");
+            var (ok, err) = await _api.DeleteAsync($"/api/Student/{id}");
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = "Student deleted successfully." })
+                    : Json(new { success = false, message = $"Failed to delete student. {ParseError(err)}" });
 
             TempData[ok ? "Success" : "Error"] = ok
                 ? "Student deleted successfully."
-                : "Failed to delete student.";
-
+                : $"Failed to delete student. {ParseError(err)}";
             return RedirectToAction("Students");
         }
 
         // ════════════════════════════════════════════════════
         // TEACHERS
         // ════════════════════════════════════════════════════
-        public async Task<IActionResult> Teachers(
-            string? search, string? dept, string? filter, int page = 1)
+        public async Task<IActionResult> Teachers(string? search, string? status, int page = 1)
         {
-            ViewData["ActivePage"] = "Teachers";
-            ViewData["PageTitle"] = "Teachers";
+            if (!IsLoggedIn()) return RedirectToLogin();
+            SetPage("Teachers");
 
-            var all = await _api.GetAsync<List<TeacherApiModel>>("/api/Teacher") ?? new();
+            var all = await _api.GetAllAsync<TeacherApiModel>("/api/Teacher");
 
             if (!string.IsNullOrWhiteSpace(search))
                 all = all.Where(t =>
-                    $"{t.FirstName} {t.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase)
-                    || t.TeacherId.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                    $"{t.FirstName} {t.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    t.TeacherNo.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    t.Email.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (!string.IsNullOrWhiteSpace(dept))
-                all = all.Where(t => t.Department == dept).ToList();
+            if (status == "Active") all = all.Where(t => t.IsActive).ToList();
+            if (status == "Inactive") all = all.Where(t => !t.IsActive).ToList();
 
-            if (!string.IsNullOrWhiteSpace(filter))
-                all = all.Where(t => t.Status == filter).ToList();
+            int totalPages = (int)Math.Ceiling(all.Count / (double)PageSize);
+            var paged = all.Skip((page - 1) * PageSize).Take(PageSize).Select(MapTeacher).ToList();
 
-            int total = all.Count;
-            int totalPages = (int)Math.Ceiling(total / (double)PageSize);
-
-            var paged = all
-                .Skip((page - 1) * PageSize)
-                .Take(PageSize)
-                .Select(MapTeacher)
-                .ToList();
-
-            var model = new TeachersPageViewModel
+            return View(new TeachersPageViewModel
             {
                 Teachers = paged,
-                TotalCount = total,
+                TotalCount = all.Count,
                 ActiveCount = all.Count(t => t.IsActive),
                 InactiveCount = all.Count(t => !t.IsActive),
-                Search = search,
-                DeptFilter = dept,
-                StatusFilter = filter,
                 CurrentPage = page,
                 TotalPages = totalPages,
-                PageSize = PageSize
-            };
-
-            return View(model);
+                Search = search,
+                StatusFilter = status,
+            });
         }
 
-        public async Task<IActionResult> TeachersPartial(
-            string? search, string? dept, string? filter, int page = 1)
+        // Partial for infinite scroll
+        public async Task<IActionResult> TeachersPartial(string? search, string? status, int page = 1)
         {
-            var all = await _api.GetAsync<List<TeacherApiModel>>("/api/Teacher") ?? new();
+            var all = await _api.GetAllAsync<TeacherApiModel>("/api/Teacher");
 
             if (!string.IsNullOrWhiteSpace(search))
                 all = all.Where(t =>
-                    $"{t.FirstName} {t.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase)
-                    || t.TeacherId.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+                    $"{t.FirstName} {t.LastName}".Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    t.TeacherNo.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
 
-            if (!string.IsNullOrWhiteSpace(dept))
-                all = all.Where(t => t.Department == dept).ToList();
+            if (status == "Active") all = all.Where(t => t.IsActive).ToList();
+            if (status == "Inactive") all = all.Where(t => !t.IsActive).ToList();
 
-            if (!string.IsNullOrWhiteSpace(filter))
-                all = all.Where(t => t.Status == filter).ToList();
-
-            var paged = all
-                .Skip((page - 1) * PageSize)
-                .Take(PageSize)
-                .Select(MapTeacher)
-                .ToList();
-
-            return PartialView("_TeachersRows", paged);
+            var paged = all.Skip((page - 1) * PageSize).Take(PageSize).Select(MapTeacher).ToList();
+            return PartialView("_TeacherTableRows", paged);
         }
 
+        // ── AJAX: Add Teacher ─────────────────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddTeacher(
-            string firstName, string lastName, string email,
-            string department, string contactNumber, string status)
+            string teacherNo, string firstName, string lastName,
+            string email, string username, string password)
         {
-            var ok = await _api.PostAsync<object>("/api/Teacher/with-account", new
+            var (ok, _, err) = await _api.PostAsync<object>("/api/Teacher/with-account", new
             {
+                teacherNo,
                 firstName,
                 lastName,
                 email,
-                department,
-                contactNumber,
-                status
+                username,
+                password
             });
 
-            TempData[ok != null ? "Success" : "Error"] = ok != null
-                ? $"{firstName} {lastName} added successfully!"
-                : "Failed to add teacher.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = $"{firstName} {lastName} added successfully!" })
+                    : Json(new { success = false, message = $"Failed to add teacher. {ParseError(err)}" });
 
+            TempData[ok ? "Success" : "Error"] = ok
+                ? $"{firstName} {lastName} added successfully!"
+                : $"Failed to add teacher. {ParseError(err)}";
             return RedirectToAction("Teachers");
         }
 
+        // ── AJAX: Update Teacher ──────────────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateTeacher(
-            int id, string firstName, string lastName,
-            string email, string department, string contactNumber)
+            int id, string teacherNo, string firstName, string lastName, string email)
         {
-            var ok = await _api.PutAsync($"/api/Teacher/{id}", new
+            var (ok, err) = await _api.PutAsync($"/api/Teacher/{id}", new
             {
+                teacherNo,
                 firstName,
                 lastName,
-                email,
-                department,
-                contactNumber
+                email
             });
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = "Teacher updated successfully!" })
+                    : Json(new { success = false, message = $"Failed to update teacher. {ParseError(err)}" });
 
             TempData[ok ? "Success" : "Error"] = ok
                 ? "Teacher updated successfully!"
-                : "Failed to update teacher.";
-
+                : $"Failed to update teacher. {ParseError(err)}";
             return RedirectToAction("Teachers");
         }
 
+        // ── AJAX: Delete Teacher ──────────────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteTeacher(int id)
         {
-            var ok = await _api.DeleteAsync($"/api/Teacher/{id}");
+            var (ok, err) = await _api.DeleteAsync($"/api/Teacher/{id}");
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = "Teacher deleted successfully." })
+                    : Json(new { success = false, message = $"Failed to delete teacher. {ParseError(err)}" });
 
             TempData[ok ? "Success" : "Error"] = ok
                 ? "Teacher deleted successfully."
-                : "Failed to delete teacher.";
-
+                : $"Failed to delete teacher. {ParseError(err)}";
             return RedirectToAction("Teachers");
         }
 
+        // ── AJAX: Toggle Teacher Status ───────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> ToggleTeacherStatus(int id)
         {
-            var ok = await _api.PatchAsync($"/api/Teacher/{id}/toggle-status");
+            var (ok, err) = await _api.PatchAsync($"/api/Teacher/{id}/toggle-status");
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = "Teacher status updated." })
+                    : Json(new { success = false, message = $"Failed to update status. {ParseError(err)}" });
 
             TempData[ok ? "Success" : "Error"] = ok
                 ? "Teacher status updated."
-                : "Failed to update status.";
-
+                : $"Failed to update status. {ParseError(err)}";
             return RedirectToAction("Teachers");
         }
 
         // ════════════════════════════════════════════════════
         // COURSES
         // ════════════════════════════════════════════════════
-        public async Task<IActionResult> Courses()
+        public async Task<IActionResult> Courses(string? search)
         {
-            ViewData["ActivePage"] = "Courses";
-            ViewData["PageTitle"] = "Courses";
+            if (!IsLoggedIn()) return RedirectToLogin();
+            SetPage("Courses");
 
-            var courses = await _api.GetAsync<List<CourseApiModel>>("/api/Course") ?? new();
-            return View(courses);
+            var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
+            var teachers = await _api.GetAllAsync<TeacherApiModel>("/api/Teacher");
+
+            if (!string.IsNullOrWhiteSpace(search))
+                courses = courses.Where(c =>
+                    c.CourseName.Contains(search, StringComparison.OrdinalIgnoreCase) ||
+                    c.CourseCode.Contains(search, StringComparison.OrdinalIgnoreCase)).ToList();
+
+            return View(new CoursesPageViewModel
+            {
+                Courses = courses.Select(MapCourse).ToList(),
+                Teachers = teachers.Select(MapTeacher).ToList(),
+                Search = search,
+            });
         }
 
+        // ── AJAX: Add Course ──────────────────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddCourse(
-            string courseCode, string courseName, string description, int units)
+            string courseCode, string courseName, int units,
+            string section, string schedule, int teacherId)
         {
-            var ok = await _api.PostAsync<object>("/api/Course", new
+            var (ok, _, err) = await _api.PostAsync<object>("/api/Course", new
             {
                 courseCode,
                 courseName,
-                description,
-                units
+                units,
+                section,
+                schedule,
+                teacherId
             });
 
-            TempData[ok != null ? "Success" : "Error"] = ok != null
-                ? $"{courseName} added successfully!"
-                : "Failed to add course.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = $"{courseName} added successfully!" })
+                    : Json(new { success = false, message = $"Failed to add course. {ParseError(err)}" });
 
+            TempData[ok ? "Success" : "Error"] = ok
+                ? $"{courseName} added successfully!"
+                : $"Failed to add course. {ParseError(err)}";
             return RedirectToAction("Courses");
         }
 
+        // ── AJAX: Update Course ───────────────────────────────
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateCourse(
+            int id, string courseCode, string courseName, int units,
+            string section, string schedule, int teacherId)
+        {
+            var (ok, err) = await _api.PutAsync($"/api/Course/{id}", new
+            {
+                courseCode,
+                courseName,
+                units,
+                section,
+                schedule,
+                teacherId
+            });
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = "Course updated successfully!" })
+                    : Json(new { success = false, message = $"Failed to update course. {ParseError(err)}" });
+
+            TempData[ok ? "Success" : "Error"] = ok
+                ? "Course updated successfully!"
+                : $"Failed to update course. {ParseError(err)}";
+            return RedirectToAction("Courses");
+        }
+
+        // ── AJAX: Delete Course ───────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteCourse(int id)
         {
-            var ok = await _api.DeleteAsync($"/api/Course/{id}");
+            var (ok, err) = await _api.DeleteAsync($"/api/Course/{id}");
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return ok
+                    ? Json(new { success = true, message = "Course deleted." })
+                    : Json(new { success = false, message = $"Failed to delete course. {ParseError(err)}" });
 
             TempData[ok ? "Success" : "Error"] = ok
                 ? "Course deleted."
-                : "Failed to delete course.";
-
+                : $"Failed to delete course. {ParseError(err)}";
             return RedirectToAction("Courses");
         }
 
         // ════════════════════════════════════════════════════
         // ATTENDANCE
         // ════════════════════════════════════════════════════
-        public async Task<IActionResult> Attendance(string? courseId)
+        public async Task<IActionResult> Attendance(int? courseId, int? studentId)
         {
-            ViewData["ActivePage"] = "Attendance";
-            ViewData["PageTitle"] = "Attendance";
+            if (!IsLoggedIn()) return RedirectToLogin();
+            SetPage("Attendance");
 
-            var records = string.IsNullOrWhiteSpace(courseId)
-                ? await _api.GetAsync<List<AttendanceApiModel>>("/api/Attendance") ?? new()
-                : await _api.GetAsync<List<AttendanceApiModel>>($"/api/Attendance/course/{courseId}") ?? new();
+            List<AttendanceApiModel> records;
 
-            return View(records);
+            if (courseId.HasValue)
+                records = await _api.GetAsync<List<AttendanceApiModel>>($"/api/Attendance/course/{courseId}") ?? new();
+            else if (studentId.HasValue)
+                records = await _api.GetAsync<List<AttendanceApiModel>>($"/api/Attendance/student/{studentId}") ?? new();
+            else
+                records = await _api.GetAsync<List<AttendanceApiModel>>("/api/Attendance") ?? new();
+
+            var entries = records.Select(a => new AttendanceEntryViewModel
+            {
+                StudentName = a.StudentName,
+                StudentNo = a.StudentNo,
+                CourseName = a.CourseName,
+                Date = a.Date,
+                Status = a.Status,
+                Remarks = a.Remarks
+            }).ToList();
+
+            return View(entries);
         }
 
         // ════════════════════════════════════════════════════
-        // MAPPERS — ApiModel → ViewModel
+        // MAPPERS
         // ════════════════════════════════════════════════════
         private static StudentViewModel MapStudent(StudentApiModel s, int i) => new()
         {
-            StudentId = s.StudentId,
+            DbId = s.Id,
+            StudentNo = s.StudentNo,
             FirstName = s.FirstName,
+            MiddleName = s.MiddleName,
             LastName = s.LastName,
             Email = s.Email,
-            YearLevel = "",           // not in API model — set if available
             Section = s.Section,
-            Status = s.Status,
-            AttendanceRate = "0%",
-            AvatarColor = AvatarColors[i % AvatarColors.Length]
+            MobileNo = s.MobileNo,
+            AvatarColor = Colors[i % Colors.Length],
         };
 
         private static TeacherViewModel MapTeacher(TeacherApiModel t, int i) => new()
         {
-            TeacherId = t.TeacherId,
+            DbId = t.Id,
+            TeacherNo = t.TeacherNo,
             FirstName = t.FirstName,
             LastName = t.LastName,
             Email = t.Email,
-            Department = t.Department,
-            ContactNumber = t.ContactNumber,
-            Status = t.IsActive ? "Active" : "Inactive",
-            AvatarColor = AvatarColors[i % AvatarColors.Length]
+            IsActive = t.IsActive,
+            CourseCount = t.CourseCount,
+            Username = t.Username,
+            HasAccount = t.HasAccount,
+            AvatarColor = Colors[i % Colors.Length],
         };
+
+        private static CourseViewModel MapCourse(CourseApiModel c) => new()
+        {
+            DbId = c.Id,
+            CourseCode = c.CourseCode,
+            CourseName = c.CourseName,
+            Units = c.Units,
+            Section = c.Section,
+            Schedule = c.Schedule,
+            TeacherId = c.TeacherId,
+            TeacherName = c.TeacherName,
+        };
+
+        private void SetPage(string page)
+        {
+            ViewData["ActivePage"] = page;
+            ViewData["PageTitle"] = page;
+        }
+
+        private static string ParseError(string raw)
+        {
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(raw);
+                if (doc.RootElement.TryGetProperty("message", out var msg))
+                    return msg.GetString() ?? "";
+            }
+            catch { }
+            return "";
+        }
     }
 }

@@ -1,7 +1,4 @@
-﻿// ============================================================
-// ViewModels/TeacherViewModel.cs
-// ============================================================
-namespace ASM.ViewModels
+﻿namespace ASM.ViewModels
 {
     public class TeacherViewModel
     {
