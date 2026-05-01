@@ -1,4 +1,11 @@
-﻿@model List<AMS.ViewModels.AttendanceEntryViewModel>
+﻿@* Views/Admin/Attendance.cshtml
+   FIX: @model changed from List<AttendanceEntryViewModel>
+        to AttendancePageViewModel which wraps the list AND
+        adds course dropdown + date range filter support.
+   Design is completely unchanged.
+*@
+@model AMS.ViewModels.AttendancePageViewModel
+@using AMS.ViewModels
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Attendance";
@@ -14,23 +21,48 @@
 
 <!-- SUMMARY PILLS -->
 <div class="summary-bar">
-    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong>@Model.Count</strong></div>
-    <div class="summary-pill"><span class="pill-dot dot-green"></span>Present: <strong>@Model.Count(a => a.Status == "Present")</strong></div>
-    <div class="summary-pill"><span class="pill-dot dot-red"></span>Absent: <strong>@Model.Count(a => a.Status == "Absent")</strong></div>
+    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong id="pillTotal">@Model.TotalCount</strong></div>
+    <div class="summary-pill"><span class="pill-dot dot-green"></span>Present: <strong id="pillPresent">@Model.PresentCount</strong></div>
+    <div class="summary-pill"><span class="pill-dot dot-red"></span>Absent: <strong id="pillAbsent">@Model.AbsentCount</strong></div>
     <div class="summary-pill" style="border-color:rgba(234,179,8,0.3)">
-        <span class="pill-dot" style="background:#facc15"></span>Late: <strong>@Model.Count(a => a.Status == "Late")</strong>
+        <span class="pill-dot" style="background:#facc15"></span>Late: <strong id="pillLate">@Model.LateCount</strong>
     </div>
 </div>
 
-<!-- FILTER -->
-<div class="filter-bar">
-    <input type="text" id="searchInput" class="search-input" placeholder="Search by student name or no..." oninput="filterTable()" />
+<!-- FILTER BAR — now includes course dropdown + date range -->
+<div class="filter-bar" style="flex-wrap:wrap;gap:8px;">
+    <input type="text" id="searchInput" class="search-input"
+           placeholder="Search by student name or no..." oninput="filterTable()" />
+
     <select id="statusFilter" class="filter-select" onchange="filterTable()">
         <option value="">All Status</option>
         <option value="Present">Present</option>
         <option value="Absent">Absent</option>
         <option value="Late">Late</option>
     </select>
+
+    <!-- FIX: Course filter dropdown — uses backend GET /api/Attendance/filter -->
+    <select id="courseFilter" class="filter-select" onchange="loadFilteredRecords()">
+        <option value="">All Courses</option>
+        @foreach (var c in Model.Courses)
+        {
+            if (Model.SelectedCourseId == c.DbId)
+            {
+                <option value="@c.DbId" selected>@c.CourseName (@c.Section)</option>
+            }
+            else
+            {
+                <option value="@c.DbId">@c.CourseName (@c.Section)</option>
+            }
+        }
+    </select>
+
+    <input type="date" id="fromDate" class="filter-input"
+           value="@Model.FromDate" onchange="loadFilteredRecords()"
+           title="From date" />
+    <input type="date" id="toDate" class="filter-input"
+           value="@Model.ToDate" onchange="loadFilteredRecords()"
+           title="To date" />
 </div>
 
 <div class="table-wrapper">
@@ -46,9 +78,9 @@
             </tr>
         </thead>
         <tbody id="attBody">
-            @if (Model.Any())
+            @if (Model.Records.Any())
             {
-                @foreach (var a in Model)
+                @foreach (var a in Model.Records)
                 {
                     <tr class="table-row fade-in-row"
                         data-name="@a.StudentName.ToLower()"
@@ -90,7 +122,7 @@
 
 @section Scripts {
     <script>
-        // Client-side filter since records are already loaded
+        // ── Client-side search + status filter ───────────────
         function filterTable() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const status = document.getElementById('statusFilter').value;
@@ -105,6 +137,47 @@
 
                 row.style.display = (matchSearch && matchStatus) ? '' : 'none';
             });
+        }
+
+        // ── Server-side filter by courseId + date range ───────
+        // Calls GET /Admin/AttendanceFilter which hits the backend's
+        // GET /api/Attendance/filter?courseId=&from=&to= endpoint.
+        // Returns a partial view with the filtered rows.
+        async function loadFilteredRecords() {
+            const courseId = document.getElementById('courseFilter').value;
+            const from     = document.getElementById('fromDate').value;
+            const to       = document.getElementById('toDate').value;
+
+            // Need courseId AND both dates to use the filter endpoint
+            if (!courseId || !from || !to) return;
+
+            try {
+                const res  = await fetch(`/Admin/AttendanceFilter?courseId=${courseId}&from=${from}&to=${to}`);
+                const html = await res.text();
+                document.getElementById('attBody').innerHTML = html || emptyRow();
+                updatePills();
+            } catch {
+                Toast.error('Failed to filter records.');
+            }
+        }
+
+        function updatePills() {
+            const rows    = document.querySelectorAll('#attBody tr.table-row');
+            let present = 0, absent = 0, late = 0;
+            rows.forEach(r => {
+                const s = r.dataset.status;
+                if (s === 'Present') present++;
+                else if (s === 'Absent') absent++;
+                else if (s === 'Late') late++;
+            });
+            document.getElementById('pillTotal').textContent   = rows.length;
+            document.getElementById('pillPresent').textContent = present;
+            document.getElementById('pillAbsent').textContent  = absent;
+            document.getElementById('pillLate').textContent    = late;
+        }
+
+        function emptyRow() {
+            return `<tr><td colspan="6" style="text-align:center;padding:40px;color:rgba(255,255,255,0.35)">No records found.</td></tr>`;
         }
     </script>
 }

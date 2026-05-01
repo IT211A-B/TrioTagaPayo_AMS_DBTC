@@ -1,0 +1,32 @@
+﻿@* Views/Admin/_AttendanceTableRows.cshtml
+   NEW: Partial view returned by GET /Admin/AttendanceFilter
+   Renders only the <tr> rows — the <tbody> stays on the page.
+   Design matches the rows already in Attendance.cshtml.
+*@
+@model List<AMS.ViewModels.AttendanceEntryViewModel>
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var a in Model)
+    {
+        <tr class="table-row fade-in-row"
+            data-name="@a.StudentName.ToLower()"
+            data-no="@a.StudentNo.ToLower()"
+            data-status="@a.Status">
+            <td><p class="cell-name">@a.StudentName</p></td>
+            <td class="hide-sm"><span class="id-badge">@a.StudentNo</span></td>
+            <td>@a.CourseName</td>
+            <td class="hide-md">@a.Date</td>
+            <td>
+                <span class="status-badge
+                            @(a.Status == "Present" ? "badge-active" :
+                                            a.Status == "Late" ? "badge-warning" : "badge-inactive")">
+                    @a.Status
+                </span>
+            </td>
+            <td class="hide-md">
+                <span class="cell-sub">@(string.IsNullOrEmpty(a.Remarks) ? "—" : a.Remarks)</span>
+            </td>
+        </tr>
+    }
+}
