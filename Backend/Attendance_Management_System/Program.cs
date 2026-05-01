@@ -166,20 +166,21 @@ builder.Services.AddAppRateLimiting();
 builder.Services.AddSignalR();
 
 // =============================================
-// HTTPS Enforcement
+// HTTPS Enforcement - DISABLED for Render
+// Render handles SSL termination automatically
 // =============================================
-builder.Services.AddHttpsRedirection(options =>
-{
-    options.HttpsPort = 443;
-    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
-});
+// builder.Services.AddHttpsRedirection(options =>
+// {
+//     options.HttpsPort = 443;
+//     options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+// });
 
-builder.Services.AddHsts(options =>
-{
-    options.Preload = true;
-    options.IncludeSubDomains = true;
-    options.MaxAge = TimeSpan.FromDays(365);
-});
+// builder.Services.AddHsts(options =>
+// {
+//     options.Preload = true;
+//     options.IncludeSubDomains = true;
+//     options.MaxAge = TimeSpan.FromDays(365);
+// });
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
@@ -251,11 +252,8 @@ using (var scope = app.Services.CreateScope())
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-if (app.Environment.IsProduction())
-{
-    app.UseHsts();
-}
-app.UseHttpsRedirection();
+// HTTPS redirection DISABLED for Render
+// app.UseHttpsRedirection();
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
