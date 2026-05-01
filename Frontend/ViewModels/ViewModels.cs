@@ -1,8 +1,4 @@
-﻿// ============================================================
-// ViewModels/ViewModels.cs
-// ============================================================
-
-namespace AMS.ViewModels
+﻿namespace AMS.ViewModels
 {
     // ── Shared ───────────────────────────────────────────────
 
@@ -21,6 +17,12 @@ namespace AMS.ViewModels
         public string Icon { get; set; } = "◍";
         public string Title { get; set; } = "Nothing here yet";
         public string Message { get; set; } = "No records found.";
+    }
+
+    public class ErrorViewModel
+    {
+        public string? RequestId { get; set; }
+        public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
     }
 
     // ── Dashboard ────────────────────────────────────────────
@@ -49,20 +51,18 @@ namespace AMS.ViewModels
     public class StudentViewModel
     {
         public int DbId { get; set; }
-        public string StudentNo { get; set; } = "";   // e.g. 2026-0001
+        public string StudentNo { get; set; } = "";
         public string FirstName { get; set; } = "";
         public string MiddleName { get; set; } = "";
         public string LastName { get; set; } = "";
         public string Email { get; set; } = "";
         public string Section { get; set; } = "";
         public string MobileNo { get; set; } = "";
-        public string AvatarColor { get; set; } = "";
-
-        // Attendance computed from records (0 until real data available)
+        public string AvatarColor { get; set; } = "#6366f1";
         public int AttendanceRate { get; set; }
 
-        public string FullName => $"{FirstName} {LastName}".Trim();
-        public string Initials => $"{FirstName.FirstOrDefault()}{LastName.FirstOrDefault()}".ToUpper();
+        public string FullName => $"{FirstName} {(string.IsNullOrWhiteSpace(MiddleName) ? "" : MiddleName + " ")}{LastName}".Trim();
+        public string Initials => $"{FirstName.FirstOrDefault()}{LastName.FirstOrDefault()}".ToUpper().Trim();
     }
 
     public class StudentsPageViewModel
@@ -80,7 +80,7 @@ namespace AMS.ViewModels
     public class TeacherViewModel
     {
         public int DbId { get; set; }
-        public string TeacherNo { get; set; } = "";   // e.g. TCH-001
+        public string TeacherNo { get; set; } = "";
         public string FirstName { get; set; } = "";
         public string LastName { get; set; } = "";
         public string Email { get; set; } = "";
@@ -88,10 +88,10 @@ namespace AMS.ViewModels
         public int CourseCount { get; set; }
         public string Username { get; set; } = "";
         public bool HasAccount { get; set; }
-        public string AvatarColor { get; set; } = "";
+        public string AvatarColor { get; set; } = "#6366f1";
 
         public string FullName => $"{FirstName} {LastName}".Trim();
-        public string Initials => $"{FirstName.FirstOrDefault()}{LastName.FirstOrDefault()}".ToUpper();
+        public string Initials => $"{FirstName.FirstOrDefault()}{LastName.FirstOrDefault()}".ToUpper().Trim();
         public string Status => IsActive ? "Active" : "Inactive";
     }
 
@@ -124,7 +124,24 @@ namespace AMS.ViewModels
     public class CoursesPageViewModel
     {
         public List<CourseViewModel> Courses { get; set; } = new();
-        public List<TeacherViewModel> Teachers { get; set; } = new(); // for dropdown in Add modal
+        public List<TeacherViewModel> Teachers { get; set; } = new();
         public string? Search { get; set; }
+    }
+
+    // ── Attendance ───────────────────────────────────────────
+
+    public class AttendancePageViewModel
+    {
+        public List<AttendanceEntryViewModel> Records { get; set; } = new();
+        public List<CourseViewModel> Courses { get; set; } = new();
+        public int? SelectedCourseId { get; set; }
+        public string? FromDate { get; set; }
+        public string? ToDate { get; set; }
+
+        // Computed from Records — no separate API call needed
+        public int TotalCount => Records.Count;
+        public int PresentCount => Records.Count(r => r.Status == "Present");
+        public int AbsentCount => Records.Count(r => r.Status == "Absent");
+        public int LateCount => Records.Count(r => r.Status == "Late");
     }
 }
