@@ -76,14 +76,14 @@ namespace Attendance_Management_System.Helpers
                 if (response.IsSuccessStatusCode)
                 {
                     _logger.LogInformation(
-                        "[EmailJS] ✅ Email sent → {Email} | Student: {No} | Status: {Status}",
+                        "[EmailJS]  Email sent → {Email} | Student: {No} | Status: {Status}",
                         studentEmail, studentNo, status);
                     return true;
                 }
 
                 var errorBody = await response.Content.ReadAsStringAsync();
                 _logger.LogWarning(
-                    "[EmailJS] ❌ Failed → {Code} | Body: {Body}",
+                    "[EmailJS]  Failed → {Code} | Body: {Body}",
                     response.StatusCode, errorBody);
                 return false;
             }

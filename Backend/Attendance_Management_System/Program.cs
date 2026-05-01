@@ -14,6 +14,9 @@ using Attendance_Management_System.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// =============================================
+// Validation Error Response Format
+// =============================================
 builder.Services.Configure<ApiBehaviorOptions>(options =>
 {
     options.InvalidModelStateResponseFactory = context =>
@@ -35,8 +38,20 @@ builder.Services.Configure<ApiBehaviorOptions>(options =>
 
 builder.Services.AddControllers();
 
+// =============================================
+// Database — Neon PostgreSQL with Retry Logic
+// =============================================
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseNpgsql(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(30),
+                errorCodesToAdd: null);
+            npgsqlOptions.CommandTimeout(120);
+        }));
 
 // =============================================
 // EmailJS
@@ -63,7 +78,7 @@ builder.Services.AddScoped<IQRSessionRepository, QRSessionRepository>();
 // =============================================
 // Register Services
 // =============================================
-builder.Services.AddScoped<IPasswordHasher, Sha256PasswordHasher>();
+builder.Services.AddScoped<IPasswordHasher, BCryptPasswordHasher>();
 builder.Services.AddScoped<IJwtTokenGenerator, JwtTokenGenerator>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
@@ -95,7 +110,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnMessageReceived = context =>
             {
-                // ? PRIORITY 1: Cookie — para sa browser clients
                 var cookieToken = context.Request.Cookies["accessToken"];
                 if (!string.IsNullOrEmpty(cookieToken))
                 {
@@ -103,7 +117,6 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     return Task.CompletedTask;
                 }
 
-                // ? PRIORITY 2: SignalR query string — para sa WebSocket
                 var accessToken = context.Request.Query["access_token"];
                 var path = context.HttpContext.Request.Path;
                 if (!string.IsNullOrEmpty(accessToken) &&
@@ -112,18 +125,34 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                     context.Token = accessToken;
                 }
 
-                // ? PRIORITY 3: Bearer header — para sa mobile/Swagger
-                // (default behavior na sa JwtBearer — wala na need i-handle)
-
                 return Task.CompletedTask;
             }
         };
     });
 
+// =============================================
+// CORS — Production ready with credentials
+// =============================================
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowAll", policy =>
-        policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+    options.AddPolicy("ProductionCors", policy =>
+    {
+        var allowedOrigins = new[]
+        {
+            "https://yourfrontend.com",
+            "https://www.yourfrontend.com",
+            "http://localhost:3000",
+            "http://localhost:4200",
+            "http://localhost:5173"
+        };
+
+        policy
+            .WithOrigins(allowedOrigins)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials()
+            .WithExposedHeaders("Content-Disposition");
+    });
 });
 
 // =============================================
@@ -136,6 +165,22 @@ builder.Services.AddAppRateLimiting();
 // =============================================
 builder.Services.AddSignalR();
 
+// =============================================
+// HTTPS Enforcement
+// =============================================
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.HttpsPort = 443;
+    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+});
+
+builder.Services.AddHsts(options =>
+{
+    options.Preload = true;
+    options.IncludeSubDomains = true;
+    options.MaxAge = TimeSpan.FromDays(365);
+});
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -143,9 +188,7 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "3TagaPayu Attendance Management API",
         Version = "v1",
-        Description = "REST API for the 3TagaPayu Attendance Management System. " +
-                      "Manages students, teachers, courses, and attendance records. " +
-                      "All endpoints except POST /api/Auth/login require a valid JWT Bearer token."
+        Description = "REST API for the 3TagaPayu Attendance Management System."
     });
 
     var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -160,7 +203,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Enter your JWT token. Get it from POST /api/Auth/login."
+        Description = "Enter your JWT token."
     });
 
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
@@ -171,7 +214,7 @@ builder.Services.AddSwaggerGen(options =>
                 Reference = new Microsoft.OpenApi.Models.OpenApiReference
                 {
                     Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
-                    Id   = "Bearer"
+                    Id = "Bearer"
                 }
             },
             Array.Empty<string>()
@@ -184,13 +227,35 @@ builder.Services.AddSwaggerGen(options =>
 // =============================================
 var app = builder.Build();
 
+// Show detailed errors for debugging
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+
+// Seed admin
 using (var scope = app.Services.CreateScope())
 {
-    var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-    await authService.SeedAdminAsync();
+    try
+    {
+        var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        await authService.SeedAdminAsync();
+        Console.WriteLine("Admin seeded successfully (if no admin existed)");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error seeding admin: {ex.Message}");
+        Console.WriteLine($"Stack trace: {ex.StackTrace}");
+    }
 }
 
 app.UseMiddleware<ExceptionMiddleware>();
+
+if (app.Environment.IsProduction())
+{
+    app.UseHsts();
+}
+app.UseHttpsRedirection();
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
@@ -199,13 +264,11 @@ app.UseSwaggerUI(c =>
     c.DocumentTitle = "3TagaPayu AMS – API Docs";
 });
 
-app.UseCors("AllowAll");
+app.UseCors("ProductionCors");
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
-// SignalR endpoint
 app.MapHub<AttendanceHub>("/hubs/attendance");
 
 app.Run();

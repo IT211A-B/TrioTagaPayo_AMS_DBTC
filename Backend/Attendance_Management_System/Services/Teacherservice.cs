@@ -83,7 +83,7 @@ namespace Attendance_Management_System.Services
             var user = new User
             {
                 Username = usernameToUse,
-                PasswordHash = _hasher.Hash(dto.Password), // was: AuthService.HashPassword(...)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
                 Role = "Teacher",
                 CreatedAt = DateTime.UtcNow
             };
@@ -132,7 +132,7 @@ namespace Attendance_Management_System.Services
             }
 
             if (!string.IsNullOrEmpty(dto.NewPassword))
-                user.PasswordHash = _hasher.Hash(dto.NewPassword); // was: AuthService.HashPassword(...)
+                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
 
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();

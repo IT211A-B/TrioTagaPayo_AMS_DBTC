@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Attendance_Management_System.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260319030817_UpdateModelsForWireframe")]
-    partial class UpdateModelsForWireframe
+    [Migration("20260425070757_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -100,6 +100,67 @@ namespace Attendance_Management_System.Migrations
                     b.HasIndex("TeacherId");
 
                     b.ToTable("Courses");
+                });
+
+            modelBuilder.Entity("Attendance_Management_System.Models.QRScan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("QRSessionId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("ScannedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("StudentId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StudentId");
+
+                    b.HasIndex("QRSessionId", "StudentId")
+                        .IsUnique();
+
+                    b.ToTable("QRScans");
+                });
+
+            modelBuilder.Entity("Attendance_Management_System.Models.QRSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("QRSessions");
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.Student", b =>
@@ -196,6 +257,12 @@ namespace Attendance_Management_System.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("RefreshToken")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("RefreshTokenExpiry")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("Role")
                         .IsRequired()
                         .HasColumnType("text");
@@ -239,9 +306,44 @@ namespace Attendance_Management_System.Migrations
                     b.Navigation("Teacher");
                 });
 
+            modelBuilder.Entity("Attendance_Management_System.Models.QRScan", b =>
+                {
+                    b.HasOne("Attendance_Management_System.Models.QRSession", "QRSession")
+                        .WithMany("Scans")
+                        .HasForeignKey("QRSessionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Attendance_Management_System.Models.Student", "Student")
+                        .WithMany()
+                        .HasForeignKey("StudentId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("QRSession");
+
+                    b.Navigation("Student");
+                });
+
+            modelBuilder.Entity("Attendance_Management_System.Models.QRSession", b =>
+                {
+                    b.HasOne("Attendance_Management_System.Models.Course", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("Attendance_Management_System.Models.Course", b =>
                 {
                     b.Navigation("Attendances");
+                });
+
+            modelBuilder.Entity("Attendance_Management_System.Models.QRSession", b =>
+                {
+                    b.Navigation("Scans");
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.Student", b =>
