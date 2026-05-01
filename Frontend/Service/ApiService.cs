@@ -1,10 +1,4 @@
-﻿// ============================================================
-// Services/ApiService.cs
-// FIXED: Added GetAllAsync<T> for paginated endpoints
-// The backend wraps list responses in { data, page, totalCount }
-// GetAllAsync unwraps that automatically.
-// ============================================================
-
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -27,6 +21,7 @@ namespace AMS.Services
             _ctx = ctx;
         }
 
+        // ── Token helpers ─────────────────────────────────────
         private void AttachToken()
         {
             var token = _ctx.HttpContext?.Session.GetString("JwtToken");
@@ -38,33 +33,48 @@ namespace AMS.Services
         private static StringContent ToJson(object obj) =>
             new(JsonSerializer.Serialize(obj), Encoding.UTF8, "application/json");
 
-        // ── GET (plain response — use for Attendance which returns a List directly) ──
+        // ── Auto-refresh on 401 ───────────────────────────────
+        // Called by every HTTP method after receiving a 401.
+        // Returns true if a new token was obtained and attached.
+        private async Task<bool> Handle401Async()
+        {
+            var refreshed = await TryRefreshTokenAsync();
+            if (refreshed) AttachToken();
+            return refreshed;
+        }
+
+        // ── GET (single item / plain object) ─────────────────
         public async Task<T?> GetAsync<T>(string endpoint)
         {
             AttachToken();
             var res = await _http.GetAsync(endpoint);
+
+            if (res.StatusCode == HttpStatusCode.Unauthorized && await Handle401Async())
+                res = await _http.GetAsync(endpoint);
+
             if (!res.IsSuccessStatusCode) return default;
             var json = await res.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<T>(json, Opts);
         }
 
-        // ── GET ALL (paginated — fetches all records in one call with pageSize=1000) ──
-        // Handles the { data: [], page, totalCount } wrapper the backend returns
-        // for Student, Teacher, and Course endpoints.
+        // ── GET ALL (handles paginated wrapper and plain array) ─
         public async Task<List<T>> GetAllAsync<T>(string endpoint)
         {
             AttachToken();
-            // Pass a large pageSize so we get everything in one request
             var url = endpoint.Contains('?')
                 ? $"{endpoint}&page=1&pageSize=1000"
                 : $"{endpoint}?page=1&pageSize=1000";
 
             var res = await _http.GetAsync(url);
+
+            if (res.StatusCode == HttpStatusCode.Unauthorized && await Handle401Async())
+                res = await _http.GetAsync(url);
+
             if (!res.IsSuccessStatusCode) return new List<T>();
 
             var json = await res.Content.ReadAsStringAsync();
 
-            // Try paginated wrapper first: { data: [...], page, totalCount }
+            // Try paginated wrapper first: { data: [], page, totalCount, ... }
             try
             {
                 using var doc = JsonDocument.Parse(json);
@@ -74,9 +84,8 @@ namespace AMS.Services
                     return list ?? new List<T>();
                 }
             }
-            catch { }
+            catch { /* not paginated — fall through */ }
 
-            // Fallback: plain array response
             return JsonSerializer.Deserialize<List<T>>(json, Opts) ?? new List<T>();
         }
 
@@ -85,6 +94,10 @@ namespace AMS.Services
         {
             AttachToken();
             var res = await _http.PostAsync(endpoint, ToJson(body));
+
+            if (res.StatusCode == HttpStatusCode.Unauthorized && await Handle401Async())
+                res = await _http.PostAsync(endpoint, ToJson(body));
+
             var json = await res.Content.ReadAsStringAsync();
             if (!res.IsSuccessStatusCode) return (false, default, json);
             var data = JsonSerializer.Deserialize<T>(json, Opts);
@@ -96,6 +109,10 @@ namespace AMS.Services
         {
             AttachToken();
             var res = await _http.PutAsync(endpoint, ToJson(body));
+
+            if (res.StatusCode == HttpStatusCode.Unauthorized && await Handle401Async())
+                res = await _http.PutAsync(endpoint, ToJson(body));
+
             var json = await res.Content.ReadAsStringAsync();
             return (res.IsSuccessStatusCode, json);
         }
@@ -105,6 +122,10 @@ namespace AMS.Services
         {
             AttachToken();
             var res = await _http.DeleteAsync(endpoint);
+
+            if (res.StatusCode == HttpStatusCode.Unauthorized && await Handle401Async())
+                res = await _http.DeleteAsync(endpoint);
+
             var json = await res.Content.ReadAsStringAsync();
             return (res.IsSuccessStatusCode, json);
         }
@@ -113,30 +134,100 @@ namespace AMS.Services
         public async Task<(bool Success, string Error)> PatchAsync(string endpoint, object? body = null)
         {
             AttachToken();
-            var content = body != null
-                ? ToJson(body)
-                : new StringContent("", Encoding.UTF8, "application/json");
-            var req = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
-            var res = await _http.SendAsync(req);
+            HttpResponseMessage res = await SendPatch(endpoint, body);
+
+            if (res.StatusCode == HttpStatusCode.Unauthorized && await Handle401Async())
+                res = await SendPatch(endpoint, body);
+
             var json = await res.Content.ReadAsStringAsync();
             return (res.IsSuccessStatusCode, json);
         }
 
+        private async Task<HttpResponseMessage> SendPatch(string endpoint, object? body)
+        {
+            var content = body != null
+                ? ToJson(body)
+                : new StringContent("", Encoding.UTF8, "application/json");
+            var req = new HttpRequestMessage(HttpMethod.Patch, endpoint) { Content = content };
+            return await _http.SendAsync(req);
+        }
+
         // ── LOGIN ─────────────────────────────────────────────
+        // FIX: Now stores Username and Role in session.
+        // The layout (_AdminLayout) reads Session["Username"] for the topbar.
         public async Task<LoginApiResponse?> LoginAsync(string username, string password)
         {
-            var res = await _http.PostAsync("/api/auth/login", ToJson(new { username, password }));
-            var json = await res.Content.ReadAsStringAsync();
+            var res = await _http.PostAsync("/api/auth/login",
+                ToJson(new { username, password }));
+
             if (!res.IsSuccessStatusCode) return null;
-            return JsonSerializer.Deserialize<LoginApiResponse>(json, Opts);
+
+            var json = await res.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<LoginApiResponse>(json, Opts);
+
+            if (result != null)
+            {
+                _ctx.HttpContext?.Session.SetString("JwtToken", result.Token);
+                _ctx.HttpContext?.Session.SetString("Username", result.Username); // FIX: layout needs this
+                _ctx.HttpContext?.Session.SetString("Role", result.Role);         // FIX: role-based UI needs this
+
+                if (!string.IsNullOrEmpty(result.RefreshToken))
+                    _ctx.HttpContext?.Session.SetString("RefreshToken", result.RefreshToken);
+            }
+
+            return result;
+        }
+
+        // ── LOGOUT ───────────────────────────────────────────
+        // Clears session AND tells backend to clear its cookies.
+        public async Task LogoutAsync()
+        {
+            try
+            {
+                AttachToken();
+                await _http.PostAsync("/api/auth/logout",
+                    new StringContent("", Encoding.UTF8, "application/json"));
+            }
+            catch { /* backend call is best-effort */ }
+            finally
+            {
+                _ctx.HttpContext?.Session.Clear();
+            }
+        }
+
+        // ── REFRESH TOKEN ─────────────────────────────────────
+        // Sends stored refresh token to /api/Auth/refresh.
+        // Updates session with new JWT on success.
+        public async Task<bool> TryRefreshTokenAsync()
+        {
+            var refreshToken = _ctx.HttpContext?.Session.GetString("RefreshToken");
+            if (string.IsNullOrEmpty(refreshToken)) return false;
+
+            var res = await _http.PostAsync("/api/Auth/refresh",
+                ToJson(new { refreshToken }));
+
+            if (!res.IsSuccessStatusCode) return false;
+
+            var json = await res.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<LoginApiResponse>(json, Opts);
+            if (result == null || string.IsNullOrEmpty(result.Token)) return false;
+
+            _ctx.HttpContext?.Session.SetString("JwtToken", result.Token);
+            _ctx.HttpContext?.Session.SetString("Username", result.Username);
+            _ctx.HttpContext?.Session.SetString("Role", result.Role);
+            _ctx.HttpContext?.Session.SetString("RefreshToken", result.RefreshToken);
+            return true;
         }
     }
 
+    // ── Login response model — matches backend LoginResponse ─
     public class LoginApiResponse
     {
         public string Token { get; set; } = "";
         public string Username { get; set; } = "";
         public string Role { get; set; } = "";
         public DateTime Expiration { get; set; }
+        public string RefreshToken { get; set; } = "";
+        public DateTime RefreshTokenExpiry { get; set; }
     }
 }
