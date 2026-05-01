@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.RateLimiting;
 using Attendance_Management_System.Helpers;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
+using BCrypt.Net;
 
 namespace Attendance_Management_System.Controllers
 {
@@ -17,6 +18,40 @@ namespace Attendance_Management_System.Controllers
     {
         private readonly IAuthService _authService;
         public AuthController(IAuthService authService) => _authService = authService;
+
+        /// <summary>
+        /// TEST ENDPOINT - Check if BCrypt is working on Render
+        /// </summary>
+        [AllowAnonymous]
+        [HttpGet("test-bcrypt")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public IActionResult TestBcrypt()
+        {
+            try
+            {
+                var testPassword = "admin123";
+                var testHash = BCrypt.Net.BCrypt.HashPassword(testPassword);
+                var isValid = BCrypt.Net.BCrypt.Verify(testPassword, testHash);
+
+                return Ok(new
+                {
+                    success = true,
+                    testHash,
+                    isValid,
+                    bcryptWorking = isValid,
+                    message = isValid ? "BCrypt is working correctly!" : "BCrypt verification failed!"
+                });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new
+                {
+                    success = false,
+                    error = ex.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
+        }
 
         /// <summary>
         /// Authenticates a user and returns a JWT access token + refresh token.
