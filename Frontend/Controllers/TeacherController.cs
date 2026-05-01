@@ -1,12 +1,15 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// Controllers/TeacherController.cs
+// FIX: Was namespace ASM.Controllers — corrected to AMS.Controllers
 
-namespace ASM.Controllers
+using Microsoft.AspNetCore.Mvc;
+
+namespace AMS.Controllers
 {
     public class TeacherController : Controller
     {
         public IActionResult Index()
         {
-            return View();
+            return RedirectToAction("Login", "Account");
         }
     }
 }

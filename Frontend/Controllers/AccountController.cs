@@ -1,11 +1,4 @@
-﻿// ============================================================
-// Controllers/AccountController.cs
-// Login calls POST /api/auth/login
-// Body: { "username": "...", "password": "..." }
-// Response: { "token", "username", "role", "expiration" }
-// ============================================================
-
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using AMS.Services;
 
 namespace AMS.Controllers
@@ -20,9 +13,10 @@ namespace AMS.Controllers
         }
 
         // GET /Account/Login
+        // If already logged in, skip to dashboard
+        [HttpGet]
         public IActionResult Login()
         {
-            // Already logged in → go to dashboard
             if (!string.IsNullOrEmpty(HttpContext.Session.GetString("JwtToken")))
                 return RedirectToAction("Dashboard", "Admin");
 
@@ -36,33 +30,38 @@ namespace AMS.Controllers
         {
             if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
             {
-                ViewBag.Error = "Please enter your username and password.";
+                ViewBag.Error = "Username and password are required.";
                 return View();
             }
 
-            // Calls POST /api/auth/login with { username, password }
+            // ApiService.LoginAsync stores JwtToken, Username, Role, RefreshToken in session
             var result = await _api.LoginAsync(username, password);
 
-            if (result == null || string.IsNullOrEmpty(result.Token))
+            if (result == null)
             {
-                ViewBag.Error = "Invalid username or password. Please try again.";
+                ViewBag.Error = "Invalid username or password.";
                 return View();
             }
 
-            // Save to session — all future API calls will use this token
-            HttpContext.Session.SetString("JwtToken", result.Token);
-            HttpContext.Session.SetString("Username", result.Username);
-            HttpContext.Session.SetString("UserRole", result.Role);
-
-            TempData["Success"] = $"Welcome back, {result.Username}!";
             return RedirectToAction("Dashboard", "Admin");
         }
 
-        // GET /Account/Logout
-        public IActionResult Logout()
+        // POST /Account/Logout
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Logout()
         {
-            HttpContext.Session.Clear();
-            return RedirectToAction("Login");
+            // Clears session + calls backend logout (best-effort)
+            await _api.LogoutAsync();
+            return RedirectToAction("Login", "Account");
+        }
+
+        // GET /Account/Logout  — support direct link in layout sidebar
+        [HttpGet]
+        public async Task<IActionResult> LogoutGet()
+        {
+            await _api.LogoutAsync();
+            return RedirectToAction("Login", "Account");
         }
     }
 }
