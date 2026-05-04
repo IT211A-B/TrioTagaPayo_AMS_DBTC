@@ -1,183 +1,210 @@
-﻿@* Views/Admin/Attendance.cshtml
-   FIX: @model changed from List<AttendanceEntryViewModel>
-        to AttendancePageViewModel which wraps the list AND
-        adds course dropdown + date range filter support.
-   Design is completely unchanged.
-*@
-@model AMS.ViewModels.AttendancePageViewModel
-@using AMS.ViewModels
+﻿@model AMS.ViewModels.AttendancePageViewModel
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Attendance";
     ViewData["PageTitle"] = "Attendance";
+    ViewData["ActivePage"] = "Attendance";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/attendance.css" />
 }
 
+<!-- HEADER -->
 <div class="page-header">
     <div>
         <h2>Attendance</h2>
-        <p>All attendance records</p>
+        <p>Monitor and manage attendance records</p>
     </div>
 </div>
 
-<!-- SUMMARY PILLS -->
-<div class="summary-bar">
-    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong id="pillTotal">@Model.TotalCount</strong></div>
-    <div class="summary-pill"><span class="pill-dot dot-green"></span>Present: <strong id="pillPresent">@Model.PresentCount</strong></div>
-    <div class="summary-pill"><span class="pill-dot dot-red"></span>Absent: <strong id="pillAbsent">@Model.AbsentCount</strong></div>
-    <div class="summary-pill" style="border-color:rgba(234,179,8,0.3)">
-        <span class="pill-dot" style="background:#facc15"></span>Late: <strong id="pillLate">@Model.LateCount</strong>
-    </div>
-</div>
+<!-- TWO COLUMN LAYOUT -->
+<div class="attendance-two-columns">
 
-<!-- FILTER BAR — now includes course dropdown + date range -->
-<div class="filter-bar" style="flex-wrap:wrap;gap:8px;">
-    <input type="text" id="searchInput" class="search-input"
-           placeholder="Search by student name or no..." oninput="filterTable()" />
-
-    <select id="statusFilter" class="filter-select" onchange="filterTable()">
-        <option value="">All Status</option>
-        <option value="Present">Present</option>
-        <option value="Absent">Absent</option>
-        <option value="Late">Late</option>
-    </select>
-
-    <!-- FIX: Course filter dropdown — uses backend GET /api/Attendance/filter -->
-    <select id="courseFilter" class="filter-select" onchange="loadFilteredRecords()">
-        <option value="">All Courses</option>
-        @foreach (var c in Model.Courses)
-        {
-            if (Model.SelectedCourseId == c.DbId)
-            {
-                <option value="@c.DbId" selected>@c.CourseName (@c.Section)</option>
-            }
-            else
-            {
-                <option value="@c.DbId">@c.CourseName (@c.Section)</option>
-            }
-        }
-    </select>
-
-    <input type="date" id="fromDate" class="filter-input"
-           value="@Model.FromDate" onchange="loadFilteredRecords()"
-           title="From date" />
-    <input type="date" id="toDate" class="filter-input"
-           value="@Model.ToDate" onchange="loadFilteredRecords()"
-           title="To date" />
-</div>
-
-<div class="table-wrapper">
-    <table class="data-table" id="attTable">
-        <thead>
-            <tr>
-                <th>Student</th>
-                <th class="hide-sm">Student No</th>
-                <th>Course</th>
-                <th class="hide-md">Date</th>
-                <th>Status</th>
-                <th class="hide-md">Remarks</th>
-            </tr>
-        </thead>
-        <tbody id="attBody">
-            @if (Model.Records.Any())
-            {
-                @foreach (var a in Model.Records)
+    <!-- LEFT COLUMN - QR CODE SCANNER -->
+    <div class="qr-scanner-card">
+        <h3 class="qr-title">QR CODE SCANNER</h3>
+        <div class="qr-scanner-box">
+            <div class="scanner-placeholder">
+                <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <path d="M8 12h8M12 8v8" />
+                </svg>
+                <p>Camera ready</p>
+                <span>Position QR code in frame</span>
+            </div>
+        </div>
+        <div class="qr-controls">
+            <select id="qrCourseSelect" class="form-select">
+                <option value="">Select Course</option>
+                @foreach (var course in Model.Courses)
                 {
-                    <tr class="table-row fade-in-row"
-                        data-name="@a.StudentName.ToLower()"
-                        data-no="@a.StudentNo.ToLower()"
-                        data-status="@a.Status">
-                        <td><p class="cell-name">@a.StudentName</p></td>
-                        <td class="hide-sm"><span class="id-badge">@a.StudentNo</span></td>
-                        <td>@a.CourseName</td>
-                        <td class="hide-md">@a.Date</td>
-                        <td>
-                            <span class="status-badge
-                                        @(a.Status == "Present" ? "badge-active" :
-                                                                    a.Status == "Late" ? "badge-warning" : "badge-inactive")">
-                                @a.Status
-                            </span>
-                        </td>
-                        <td class="hide-md">
-                            <span class="cell-sub">@(string.IsNullOrEmpty(a.Remarks) ? "—" : a.Remarks)</span>
-                        </td>
-                    </tr>
+                    <option value="@course.DbId">@course.CourseName - @course.Section</option>
                 }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="6">
-                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
+            </select>
+            <input type="date" id="qrDate" class="form-input" value="@DateTime.Today.ToString("yyyy-MM-dd")" />
+            <button id="startScannerBtn" class="btn-primary">Start Scanning</button>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN - ATTENDANCE TABLE -->
+    <div class="attendance-table-card">
+        <!-- FILTERS -->
+        <div class="filter-bar">
+            <div class="search-wrapper">
+                <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="10" cy="10" r="7" />
+                    <path d="M21 21L15 15" />
+                </svg>
+                <input type="text" id="studentSearch" class="search-input" placeholder="Search student..." />
+            </div>
+            <select id="courseFilter" class="filter-select">
+                <option value="">All Courses</option>
+                @foreach (var course in Model.Courses)
+                {
+                    <option value="@course.DbId">@course.CourseName</option>
+                }
+            </select>
+            <select id="statusFilter" class="filter-select">
+                <option value="">All Status</option>
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+            </select>
+            <input type="date" id="fromDate" class="filter-input" value="@Model.FromDate" />
+            <input type="date" id="toDate" class="filter-input" value="@Model.ToDate" />
+            <button id="applyFilter" class="btn-secondary">Apply Filter</button>
+        </div>
+
+        <!-- SUMMARY PILLS -->
+        <div class="summary-bar">
+            <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong id="totalCount">@Model.TotalCount</strong></div>
+            <div class="summary-pill"><span class="pill-dot dot-green"></span>Present: <strong id="presentCount">@Model.PresentCount</strong></div>
+            <div class="summary-pill"><span class="pill-dot dot-red"></span>Absent: <strong id="absentCount">@Model.AbsentCount</strong></div>
+            <div class="summary-pill"><span class="pill-dot" style="background:#f59e0b"></span>Late: <strong id="lateCount">@Model.LateCount</strong></div>
+        </div>
+
+        <!-- ATTENDANCE TABLE -->
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th class="hide-sm">ID No.</th>
+                        <th class="hide-sm">Course</th>
+                        <th class="hide-md">Date</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    @if (Model.Records.Any())
+                    {
+                        foreach (var record in Model.Records)
                         {
-                            Icon = "◷",
-                                        Title = "No attendance records",
-                                        Message = "Attendance records will appear here after students scan in."
-                                        })
-                </td>
-            </tr>
+                            <tr class="table-row">
+                                <td>
+                                    <div class="student-cell">
+                                        <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                            @(record.StudentName?.Length > 0 ? record.StudentName[0].ToString().ToUpper() : "?")
+                                        </div>
+                                        <div>
+                                            <p class="cell-name">@record.StudentName</p>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="hide-sm"><span class="id-badge">@record.StudentNo</span></td>
+                                <td class="hide-sm">@record.CourseName</td>
+                                <td class="hide-md">@record.Date</td>
+                                <td>
+                                    <span class="status-badge @(record.Status == "Present" ? "badge-active" : record.Status == "Late" ? "badge-warning" : "badge-inactive")">
+                                        ● @record.Status
+                                    </span>
+                                </td>
+                                <td>@record.Remarks</td>
+                            </tr>
                         }
-        </tbody>
-    </table>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6">
+                                <div class="empty-state">
+                                    <span class="empty-icon">◷</span>
+                                    <p class="empty-title">No attendance records yet</p>
+                                    <p class="empty-message">Records will appear here once students start scanning in.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION -->
+        <div class="pagination-info">
+            Showing <span id="showingStart">0</span>-<span id="showingEnd">0</span> of <span id="totalRecords">@Model.TotalCount</span> records
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <script>
-        // ── Client-side search + status filter ───────────────
-        function filterTable() {
-            const search = document.getElementById('searchInput').value.toLowerCase();
-            const status = document.getElementById('statusFilter').value;
+        // Filter function
+        document.getElementById('applyFilter')?.addEventListener('click', async function() {
+            const courseId = document.getElementById('courseFilter')?.value;
+            const status = document.getElementById('statusFilter')?.value;
+            const fromDate = document.getElementById('fromDate')?.value;
+            const toDate = document.getElementById('toDate')?.value;
 
-            document.querySelectorAll('#attBody tr.table-row').forEach(row => {
-                const name = row.dataset.name || '';
-                const no   = row.dataset.no   || '';
-                const st   = row.dataset.status || '';
-
-                const matchSearch = !search || name.includes(search) || no.includes(search);
-                const matchStatus = !status || st === status;
-
-                row.style.display = (matchSearch && matchStatus) ? '' : 'none';
-            });
-        }
-
-        // ── Server-side filter by courseId + date range ───────
-        // Calls GET /Admin/AttendanceFilter which hits the backend's
-        // GET /api/Attendance/filter?courseId=&from=&to= endpoint.
-        // Returns a partial view with the filtered rows.
-        async function loadFilteredRecords() {
-            const courseId = document.getElementById('courseFilter').value;
-            const from     = document.getElementById('fromDate').value;
-            const to       = document.getElementById('toDate').value;
-
-            // Need courseId AND both dates to use the filter endpoint
-            if (!courseId || !from || !to) return;
+            let url = '/Admin/AttendanceFilter?';
+            if (courseId && courseId !== '') url += 'courseId=' + courseId + '&';
+            if (status && status !== '') url += 'status=' + status + '&';
+            if (fromDate) url += 'from=' + fromDate + '&';
+            if (toDate) url += 'to=' + toDate;
 
             try {
-                const res  = await fetch(`/Admin/AttendanceFilter?courseId=${courseId}&from=${from}&to=${to}`);
-                const html = await res.text();
-                document.getElementById('attBody').innerHTML = html || emptyRow();
-                updatePills();
-            } catch {
-                Toast.error('Failed to filter records.');
+                const response = await fetch(url);
+                const html = await response.text();
+                document.getElementById('attendanceBody').innerHTML = html;
+                if (typeof Toast !== 'undefined') Toast.success('Filter applied');
+            } catch (error) {
+                console.error('Error loading attendance:', error);
+                if (typeof Toast !== 'undefined') Toast.error('Failed to load attendance records');
             }
-        }
+        });
 
-        function updatePills() {
-            const rows    = document.querySelectorAll('#attBody tr.table-row');
-            let present = 0, absent = 0, late = 0;
-            rows.forEach(r => {
-                const s = r.dataset.status;
-                if (s === 'Present') present++;
-                else if (s === 'Absent') absent++;
-                else if (s === 'Late') late++;
+        // Student search
+        document.getElementById('studentSearch')?.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('#attendanceBody tr.table-row');
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                const isVisible = text.includes(searchTerm);
+                row.style.display = isVisible ? '' : 'none';
+                if (isVisible) visibleCount++;
             });
-            document.getElementById('pillTotal').textContent   = rows.length;
-            document.getElementById('pillPresent').textContent = present;
-            document.getElementById('pillAbsent').textContent  = absent;
-            document.getElementById('pillLate').textContent    = late;
+            updatePagination(visibleCount);
+        });
+
+        function updatePagination(visibleCount) {
+            const startSpan = document.getElementById('showingStart');
+            const endSpan = document.getElementById('showingEnd');
+            if (startSpan) startSpan.innerText = visibleCount > 0 ? '1' : '0';
+            if (endSpan) endSpan.innerText = visibleCount;
         }
 
-        function emptyRow() {
-            return `<tr><td colspan="6" style="text-align:center;padding:40px;color:rgba(255,255,255,0.35)">No records found.</td></tr>`;
-        }
+        // QR Scanner
+        document.getElementById('startScannerBtn')?.addEventListener('click', function() {
+            const courseId = document.getElementById('qrCourseSelect')?.value;
+            const date = document.getElementById('qrDate')?.value;
+
+            if (!courseId) {
+                if (typeof Toast !== 'undefined') Toast.warning('Please select a course');
+                return;
+            }
+
+            if (typeof Toast !== 'undefined') Toast.info('Scanner would open here. Camera access required.');
+        });
     </script>
 }

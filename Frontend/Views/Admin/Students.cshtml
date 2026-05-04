@@ -3,52 +3,82 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Students";
     ViewData["PageTitle"] = "Students";
+    ViewData["ActivePage"] = "Students";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/students.css" />
 }
 
-<!-- HEADER -->
 <div class="page-header">
     <div>
         <h2>Students</h2>
-        <p>All enrolled students this semester</p>
+        <p>Manage student records and profiles</p>
     </div>
     <div class="page-header-actions">
         <button class="btn-primary" onclick="openAddModal()">+ Add Student</button>
     </div>
 </div>
 
-<!-- SUMMARY -->
 <div class="summary-bar">
-    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong id="totalCount">@Model.TotalCount</strong></div>
+    <div class="summary-pill">
+        <span class="pill-dot dot-blue"></span>
+        Total: <strong id="totalCount">@Model.TotalCount</strong>
+    </div>
 </div>
 
-<!-- FILTERS -->
 <div class="filter-bar">
-    <input type="text" id="searchInput" class="search-input"
-           placeholder="Search by name, student no, or email..."
-           value="@Model.Search" oninput="handleSearch()" />
-    <input type="text" id="sectionInput" class="filter-input"
-           placeholder="Filter by section..."
-           value="@Model.SectionFilter" oninput="handleSearch()" />
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search students..." />
+    </div>
+    <select id="sectionFilter" class="filter-select">
+        <option value="">All Sections</option>
+        @if (ViewBag.Sections != null)
+        {
+            foreach (var item in ViewBag.Sections)
+            {
+                <option value="@item">@item</option>
+            }
+        }
+    </select>
+    <select id="statusFilter" class="filter-select">
+        <option value="">All Status</option>
+        <option value="Active">Active</option>
+        <option value="Inactive">Inactive</option>
+        <option value="Probation">Probation</option>
+    </select>
 </div>
 
-<!-- TABLE -->
 <div class="table-wrapper">
     <table class="data-table">
         <thead>
             <tr>
                 <th>Student</th>
-                <th class="hide-sm">Student No</th>
-                <th class="hide-sm">Section</th>
-                <th class="hide-md">Mobile</th>
+                <th class="hide-sm">ID No.</th>
+                <th class="hide-sm">Course</th>
+                <th class="hide-md">Year</th>
+                <th>Status</th>
                 <th>Actions</th>
             </tr>
         </thead>
         <tbody id="studentsBody">
             @if (Model.Students.Any())
             {
-                @foreach (var s in Model.Students)
+                foreach (var s in Model.Students)
                 {
-                    <tr class="table-row fade-in-row" id="row-@s.DbId">
+                    <tr class="table-row" id="row-@s.DbId"
+                        data-id="@s.DbId"
+                        data-studentno="@s.StudentNo"
+                        data-firstname="@s.FirstName"
+                        data-middlename="@s.MiddleName"
+                        data-lastname="@s.LastName"
+                        data-fullname="@s.FullName"
+                        data-email="@s.Email"
+                        data-section="@s.Section"
+                        data-mobile="@s.MobileNo">
                         <td>
                             <div class="student-cell">
                                 <div class="avatar" style="background:@s.AvatarColor">@s.Initials</div>
@@ -60,21 +90,13 @@
                         </td>
                         <td class="hide-sm"><span class="id-badge">@s.StudentNo</span></td>
                         <td class="hide-sm">@s.Section</td>
-                        <td class="hide-md">@s.MobileNo</td>
+                        <td class="hide-md">1st Year</td>
+                        <td><span class="status-badge badge-active">Active</span></td>
                         <td>
                             <div class="action-btns">
-                                <button class="btn-sm btn-view"
-                                        onclick="viewStudent(@s.DbId,'@Html.Raw(s.FullName)','@s.StudentNo','@s.Email','@s.Section','@s.MobileNo')">
-                                    View
-                                </button>
-                                <button class="btn-sm btn-edit"
-                                        onclick="editStudent(@s.DbId,'@s.StudentNo','@Html.Raw(s.FirstName)','@Html.Raw(s.MiddleName)','@Html.Raw(s.LastName)','@s.Email','@s.Section','@s.MobileNo')">
-                                    Edit
-                                </button>
-                                <button class="btn-sm btn-delete"
-                                        onclick="confirmDelete(@s.DbId,'@Html.Raw(s.FullName)')">
-                                    Delete
-                                </button>
+                                <button class="btn-sm btn-view" onclick="viewStudent(this)">View</button>
+                                <button class="btn-sm btn-edit" onclick="editStudent(this)">Edit</button>
+                                <button class="btn-sm btn-delete" onclick="confirmDelete(this)">Delete</button>
                             </div>
                         </td>
                     </tr>
@@ -82,41 +104,40 @@
             }
             else
             {
-                <tr id="emptyRow">
-                    <td colspan="5">
-                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
-                        {
-                            Icon = "◍", Title = "No students found",
-                                        Message = "Try a different search or add a new student."
-                                        })
-                </td>
-            </tr>
-                        }
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <span class="empty-icon">◍</span>
+                            <p class="empty-title">No students found</p>
+                            <p class="empty-message">Click "+ Add Student" to get started.</p>
+                        </div>
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
-    <!-- Lazy load sentinel -->
-    <div id="loadSentinel"></div>
-    <div class="lazy-spinner" id="lazySpinner" style="display:none;"><div class="spinner-ring"></div></div>
 </div>
 
-<!-- ADD / EDIT MODAL -->
+<div class="pagination-info">
+    Showing <span id="showingStart">1</span>-<span id="showingEnd">@Model.Students.Count</span>
+    of <span id="totalRecords">@Model.TotalCount</span> students
+</div>
+
+<!-- Add / Edit Modal -->
 <div class="modal-overlay" id="studentModal">
     <div class="modal-card">
         <div class="modal-header">
             <h3 id="modalTitle">Add Student</h3>
-            <button class="modal-close" onclick="closeModal('studentModal')">×</button>
+            <button class="modal-close" onclick="closeModal('studentModal')">&times;</button>
         </div>
         <div class="modal-body">
             @Html.AntiForgeryToken()
             <input type="hidden" id="dbId" />
-            <div class="form-group">
-                <label>Student No <span class="req">*</span></label>
-                <input type="text" id="studentNo" class="form-input" placeholder="e.g. 2026-0001" required />
-            </div>
+            <input type="hidden" id="studentNo" />
             <div class="form-row">
                 <div class="form-group">
                     <label>First Name <span class="req">*</span></label>
-                    <input type="text" id="firstName" class="form-input" placeholder="e.g. Joshua" required />
+                    <input type="text" id="firstName" class="form-input" placeholder="e.g. Maria" required />
                 </div>
                 <div class="form-group">
                     <label>Last Name <span class="req">*</span></label>
@@ -129,12 +150,12 @@
             </div>
             <div class="form-group">
                 <label>Email <span class="req">*</span></label>
-                <input type="email" id="email" class="form-input" placeholder="student@email.com" required />
+                <input type="email" id="email" class="form-input" placeholder="student@school.edu" required />
             </div>
             <div class="form-row">
                 <div class="form-group">
                     <label>Section <span class="req">*</span></label>
-                    <input type="text" id="section" class="form-input" placeholder="e.g. 3TagaPayu" required />
+                    <input type="text" id="section" class="form-input" placeholder="e.g. CS101" required />
                 </div>
                 <div class="form-group">
                     <label>Mobile No</label>
@@ -149,12 +170,12 @@
     </div>
 </div>
 
-<!-- VIEW MODAL -->
+<!-- View Modal -->
 <div class="modal-overlay" id="viewModal">
     <div class="modal-card">
         <div class="modal-header">
             <h3>Student Profile</h3>
-            <button class="modal-close" onclick="closeModal('viewModal')">×</button>
+            <button class="modal-close" onclick="closeModal('viewModal')">&times;</button>
         </div>
         <div class="modal-body" id="viewBody"></div>
         <div class="modal-footer">
@@ -163,12 +184,12 @@
     </div>
 </div>
 
-<!-- DELETE MODAL -->
+<!-- Delete Modal -->
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-card modal-sm">
         <div class="modal-header">
             <h3>Delete Student</h3>
-            <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
+            <button class="modal-close" onclick="closeModal('deleteModal')">&times;</button>
         </div>
         <div class="modal-body">
             <p>Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
@@ -181,218 +202,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        // ── State ────────────────────────────────────────────────
-        let currentPage  = @Model.CurrentPage;
-        const totalPages = @Model.TotalPages;
-        let isLoading    = false;
-        let searchTimer  = null;
-        let isEditing    = false;
-        let pendingDeleteId = null;
-
-        // ── CSRF token (needed for fetch AJAX) ───────────────────
-        const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-        // ── Lazy loading via IntersectionObserver ────────────────
-        new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && !isLoading && currentPage < totalPages) loadMore();
-        }, { threshold: 0.1 }).observe(document.getElementById('loadSentinel'));
-
-        async function loadMore() {
-            isLoading = true;
-            document.getElementById('lazySpinner').style.display = 'flex';
-            const s   = document.getElementById('searchInput').value;
-            const sec = document.getElementById('sectionInput').value;
-            try {
-                const res  = await fetch(`/Admin/StudentsPartial?page=${currentPage + 1}&search=${encodeURIComponent(s)}&section=${encodeURIComponent(sec)}`);
-                const html = await res.text();
-                if (html.trim()) {
-                    document.getElementById('studentsBody').insertAdjacentHTML('beforeend', html);
-                    currentPage++;
-                }
-            } catch { Toast.error('Failed to load more students.'); }
-            finally  { isLoading = false; document.getElementById('lazySpinner').style.display = 'none'; }
-        }
-
-        // ── Search — AJAX fetch instead of page redirect ─────────
-        function handleSearch() {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(async () => {
-                const s   = document.getElementById('searchInput').value;
-                const sec = document.getElementById('sectionInput').value;
-                try {
-                    const res  = await fetch(`/Admin/StudentsPartial?page=1&search=${encodeURIComponent(s)}&section=${encodeURIComponent(sec)}`);
-                    const html = await res.text();
-                    document.getElementById('studentsBody').innerHTML = html || emptyRow();
-                    currentPage = 1;
-                } catch { Toast.error('Search failed.'); }
-            }, 350);
-        }
-
-        function emptyRow() {
-            return `<tr><td colspan="5" style="text-align:center;padding:40px;color:rgba(255,255,255,0.35)">No students found.</td></tr>`;
-        }
-
-        // ── Modals ───────────────────────────────────────────────
-        function openAddModal() {
-            isEditing = false;
-            document.getElementById('modalTitle').textContent = 'Add Student';
-            clearForm();
-            openModal('studentModal');
-        }
-
-        function editStudent(id, sno, fn, mn, ln, email, section, mobile) {
-            isEditing = true;
-            document.getElementById('modalTitle').textContent = 'Edit Student';
-            document.getElementById('dbId').value       = id;
-            document.getElementById('studentNo').value  = sno;
-            document.getElementById('firstName').value  = fn;
-            document.getElementById('middleName').value = mn;
-            document.getElementById('lastName').value   = ln;
-            document.getElementById('email').value      = email;
-            document.getElementById('section').value    = section;
-            document.getElementById('mobileNo').value   = mobile;
-            openModal('studentModal');
-        }
-
-        function viewStudent(id, name, sno, email, section, mobile) {
-            document.getElementById('viewBody').innerHTML = `
-                <div class="profile-view">
-                    <div class="profile-avatar">${name.charAt(0)}</div>
-                    <h3 class="profile-name">${name}</h3>
-                    <p class="profile-id">${sno}</p>
-                    <div class="profile-details">
-                        <div class="detail-row"><span class="detail-label">Email</span><span>${email}</span></div>
-                        <div class="detail-row"><span class="detail-label">Section</span><span>${section}</span></div>
-                        <div class="detail-row"><span class="detail-label">Mobile</span><span>${mobile || '—'}</span></div>
-                    </div>
-                </div>`;
-            openModal('viewModal');
-        }
-
-        function confirmDelete(id, name) {
-            pendingDeleteId = id;
-            document.getElementById('deleteName').textContent = name;
-            openModal('deleteModal');
-        }
-
-        // ── AJAX Submit ──────────────────────────────────────────
-        async function submitStudent() {
-            const fn  = document.getElementById('firstName').value.trim();
-            const ln  = document.getElementById('lastName').value.trim();
-            const em  = document.getElementById('email').value.trim();
-            const sno = document.getElementById('studentNo').value.trim();
-            const sec = document.getElementById('section').value.trim();
-
-            if (!fn || !ln || !em || !sno || !sec) {
-                Toast.warning('Please fill in all required fields.');
-                return;
-            }
-
-            const btn = document.getElementById('saveBtn');
-            btn.disabled    = true;
-            btn.textContent = 'Saving...';
-
-            const id      = document.getElementById('dbId').value;
-            const url     = isEditing ? '/Admin/UpdateStudent' : '/Admin/AddStudent';
-            const payload = new URLSearchParams({
-                __RequestVerificationToken: antiForgery,
-                id,
-                studentNo:  sno,
-                firstName:  fn,
-                middleName: document.getElementById('middleName').value.trim(),
-                lastName:   ln,
-                email:      em,
-                section:    sec,
-                mobileNo:   document.getElementById('mobileNo').value.trim(),
-            });
-
-            try {
-                const res  = await fetch(url, {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                    body:    payload
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    Toast.success(data.message);
-                    closeModal('studentModal');
-                    // Reload the table rows to reflect changes
-                    await refreshTable();
-                } else {
-                    Toast.error(data.message);
-                }
-            } catch {
-                Toast.error('An unexpected error occurred.');
-            } finally {
-                btn.disabled    = false;
-                btn.textContent = 'Save Student';
-            }
-        }
-
-        async function submitDelete() {
-            const btn = document.getElementById('confirmDeleteBtn');
-            btn.disabled    = true;
-            btn.textContent = 'Deleting...';
-
-            const payload = new URLSearchParams({
-                __RequestVerificationToken: antiForgery,
-                id: pendingDeleteId
-            });
-
-            try {
-                const res  = await fetch('/Admin/DeleteStudent', {
-                    method:  'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                    body:    payload
-                });
-                const data = await res.json();
-
-                if (data.success) {
-                    Toast.success(data.message);
-                    closeModal('deleteModal');
-                    // Remove the row from the DOM instantly — no reload needed
-                    const row = document.getElementById(`row-${pendingDeleteId}`);
-                    if (row) {
-                        row.style.transition = 'opacity 0.3s';
-                        row.style.opacity = '0';
-                        setTimeout(() => row.remove(), 300);
-                    }
-                } else {
-                    Toast.error(data.message);
-                }
-            } catch {
-                Toast.error('An unexpected error occurred.');
-            } finally {
-                btn.disabled    = false;
-                btn.textContent = 'Yes, Delete';
-            }
-        }
-
-        // Reload table without full page refresh
-        async function refreshTable() {
-            const s   = document.getElementById('searchInput').value;
-            const sec = document.getElementById('sectionInput').value;
-            const res  = await fetch(`/Admin/StudentsPartial?page=1&search=${encodeURIComponent(s)}&section=${encodeURIComponent(sec)}`);
-            const html = await res.text();
-            document.getElementById('studentsBody').innerHTML = html || emptyRow();
-            currentPage = 1;
-        }
-
-        // ── Helpers ──────────────────────────────────────────────
-        function clearForm() {
-            ['dbId','studentNo','firstName','middleName','lastName','email','section','mobileNo']
-                .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        }
-
-        function openModal(id)  { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-
-        document.querySelectorAll('.modal-overlay').forEach(o =>
-            o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-        });
-    </script>
+    <script src="~/js/pages/students.js"></script>
 }

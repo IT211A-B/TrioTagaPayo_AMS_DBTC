@@ -1,0 +1,184 @@
+﻿@model AMS.ViewModels.EnrollmentPageViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Enrollment";
+    ViewData["PageTitle"] = "Enrollment";
+    ViewData["ActivePage"] = "Enrollment";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/enrollment.css" />
+}
+
+<div class="page-header">
+    <div>
+        <h2>Enrollment</h2>
+        <p>Student course enrollment records</p>
+    </div>
+    <div class="page-header-actions">
+        <button class="btn-primary" onclick="openEnrollModal()">+ Enroll Student</button>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search enrollment..." />
+    </div>
+    <select id="courseFilter" class="filter-select">
+        <option value="">All Courses</option>
+        @if (ViewBag.Courses != null)
+        {
+            foreach (var c in ViewBag.Courses)
+            {
+                if (Model.CourseFilter == c)
+                {
+                    <option value="@c" selected>@c</option>
+                }
+                else
+                {
+                    <option value="@c">@c</option>
+                }
+            }
+        }
+    </select>
+    <select id="statusFilter" class="filter-select">
+        <option value="">All Status</option>
+        @if (Model.StatusFilter == "Enrolled")
+        {
+            <option value="Enrolled" selected>Enrolled</option>
+        }
+        else
+        {
+            <option value="Enrolled">Enrolled</option>
+        }
+        @if (Model.StatusFilter == "At Risk")
+        {
+            <option value="At Risk" selected>At Risk</option>
+        }
+        else
+        {
+            <option value="At Risk">At Risk</option>
+        }
+        @if (Model.StatusFilter == "Probation")
+        {
+            <option value="Probation" selected>Probation</option>
+        }
+        else
+        {
+            <option value="Probation">Probation</option>
+        }
+    </select>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-pill">
+        <span class="pill-dot dot-blue"></span>
+        Total: <strong>@Model.TotalCount</strong>
+    </div>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th class="hide-sm">ID No.</th>
+                <th class="hide-sm">Course</th>
+                <th>Attendance</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="enrollmentBody">
+            @if (Model.Enrollments.Any())
+            {
+                foreach (var e in Model.Enrollments)
+                {
+                    <tr class="table-row">
+                        <td class="student-cell">
+                            <div class="student-cell">
+                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                    @(e.StudentName.Length > 0 ? e.StudentName[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div>
+                                    <p class="cell-name">@e.StudentName</p>
+                                    <p class="cell-sub">@e.Email</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm"><span class="id-badge">@e.StudentNo</span></td>
+                        <td class="hide-sm">@e.CourseName</td>
+                        <td class="hide-sm">
+                            <div class="attend-mini">
+                                <div class="attend-bar" style="width: @e.AttendanceRate%"></div>
+                            </div>
+                            <span class="attend-pct">@e.AttendanceRate%</span>
+                        </td>
+                        <td class="hide-sm">
+                            @if (e.Status == "Enrolled")
+                            {
+                                <span class="status-badge badge-active">@e.Status</span>
+                            }
+                            else if (e.Status == "At Risk")
+                            {
+                                <span class="status-badge badge-warning">@e.Status</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-inactive">@e.Status</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="5">
+                        <div class="empty-state">
+                            <span class="empty-icon">◯</span>
+                            <p class="empty-title">No enrollment records</p>
+                            <p class="empty-message">Enroll students to get started.</p>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        function filterEnrollments() {
+            var search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            var course = document.getElementById('courseFilter')?.value || '';
+            var status = document.getElementById('statusFilter')?.value || '';
+            var rows = document.querySelectorAll('#enrollmentBody tr.table-row');
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var text = row.textContent.toLowerCase();
+                var courseCell = row.querySelector('td:nth-child(3)')?.textContent || '';
+                var statusCell = row.querySelector('td:nth-child(5)')?.textContent || '';
+                var show = text.indexOf(search) !== -1;
+                if (show && course && courseCell.indexOf(course) === -1) show = false;
+                if (show && status && statusCell.indexOf(status) === -1) show = false;
+                row.style.display = show ? '' : 'none';
+            }
+        }
+
+        var searchInput = document.getElementById('searchInput');
+        var courseFilter = document.getElementById('courseFilter');
+        var statusFilter = document.getElementById('statusFilter');
+
+        if (searchInput) searchInput.addEventListener('input', filterEnrollments);
+        if (courseFilter) courseFilter.addEventListener('change', filterEnrollments);
+        if (statusFilter) statusFilter.addEventListener('change', filterEnrollments);
+
+        function openEnrollModal() {
+            if (typeof Toast !== 'undefined') Toast.info('Select a student and course to enroll');
+        }
+    </script>
+}

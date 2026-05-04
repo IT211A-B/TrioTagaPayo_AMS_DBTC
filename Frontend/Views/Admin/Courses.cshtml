@@ -3,84 +3,74 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Courses";
     ViewData["PageTitle"] = "Courses";
+    ViewData["ActivePage"] = "Courses";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/courses.css" />
 }
 
+<!-- HEADER -->
 <div class="page-header">
     <div>
         <h2>Courses</h2>
-        <p>Manage all courses offered this semester</p>
+        <p>Manage subject offerings and assignments</p>
     </div>
     <button class="btn-primary" onclick="openAddModal()">+ Add Course</button>
 </div>
 
-<div class="summary-bar">
-    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong>@Model.Courses.Count</strong></div>
-</div>
-
+<!-- FILTER BAR -->
 <div class="filter-bar">
-    <input type="text" id="searchInput" class="search-input"
-           placeholder="Search by course code or name..."
-           value="@Model.Search" oninput="handleSearch()" />
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search courses..." value="@Model.Search" oninput="filterCourses()" />
+    </div>
 </div>
 
-<div class="table-wrapper">
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Course</th>
-                <th class="hide-sm">Code</th>
-                <th class="hide-sm">Section</th>
-                <th class="hide-md">Schedule</th>
-                <th class="hide-sm">Teacher</th>
-                <th>Units</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody id="coursesBody">
-            @if (Model.Courses.Any())
-            {
-                @foreach (var c in Model.Courses)
-                {
-                    <tr class="table-row fade-in-row" id="row-@c.DbId">
-                        <td><p class="cell-name">@c.CourseName</p></td>
-                        <td class="hide-sm"><span class="course-code-badge">@c.CourseCode</span></td>
-                        <td class="hide-sm">@c.Section</td>
-                        <td class="hide-md"><p class="cell-sub">@c.Schedule</p></td>
-                        <td class="hide-sm">@c.TeacherName</td>
-                        <td>@c.Units units</td>
-                        <td>
-                            <div class="action-btns">
-                                <button class="btn-sm btn-view"
-                                        onclick="viewCourse(@c.DbId,'@Html.Raw(c.CourseName)','@c.CourseCode','@c.Section','@Html.Raw(c.Schedule)','@c.Units','@Html.Raw(c.TeacherName)')">
-                                    View
-                                </button>
-                                <button class="btn-sm btn-edit"
-                                        onclick="editCourse(@c.DbId,'@c.CourseCode','@Html.Raw(c.CourseName)','@c.Units','@c.Section','@Html.Raw(c.Schedule)','@c.TeacherId')">
-                                    Edit
-                                </button>
-                                <button class="btn-sm btn-delete"
-                                        onclick="confirmDelete(@c.DbId,'@Html.Raw(c.CourseName)')">
-                                    Delete
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="7">
-                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
-                        {
-                            Icon = "◧", Title = "No courses found",
-                                        Message = "Try a different search or add a new course."
-                                        })
-                </td>
-            </tr>
-                        }
-        </tbody>
-    </table>
+<!-- COURSES GRID - CARDS -->
+<div class="courses-grid" id="coursesGrid">
+    @if (Model.Courses.Any())
+    {
+        foreach (var c in Model.Courses)
+        {
+            <div class="course-card" data-name="@c.CourseName.ToLower()" data-code="@c.CourseCode.ToLower()">
+                <div class="course-card-header">
+                    <div class="course-code">@c.CourseCode</div>
+                    <div class="course-actions-dropdown">
+                        <button class="dropdown-btn" onclick="toggleDropdown(this)">⋯</button>
+                        <div class="dropdown-menu">
+                            <button onclick="viewCourse(@c.DbId,'@Html.Raw(c.CourseName)','@c.CourseCode','@c.Section','@Html.Raw(c.Schedule)','@c.Units','@Html.Raw(c.TeacherName)')">View</button>
+                            <button onclick="editCourse(@c.DbId,'@c.CourseCode','@Html.Raw(c.CourseName)','@c.Units','@c.Section','@Html.Raw(c.Schedule)','@c.TeacherId')">Edit</button>
+                            <button onclick="confirmDelete(@c.DbId,'@Html.Raw(c.CourseName)')">Delete</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="course-card-body">
+                    <h3 class="course-name">@c.CourseName</h3>
+                    <p class="course-teacher">@c.TeacherName</p>
+                    <div class="course-details">
+                        <span class="course-schedule">📅 @c.Schedule</span>
+                        <span class="course-section">📚 @c.Section</span>
+                        <span class="course-units">⚡ @c.Units units</span>
+                    </div>
+                </div>
+                <div class="course-card-footer">
+                    <span class="student-count">👥 0 Students</span>
+                    <button class="btn-manage" onclick="manageCourse(@c.DbId)">Manage</button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <span class="empty-icon">◧</span>
+            <p class="empty-title">No courses found</p>
+            <p class="empty-message">Try a different search or add a new course.</p>
+        </div>
+    }
 </div>
 
 <!-- ADD / EDIT MODAL -->
@@ -121,9 +111,17 @@
                 <label>Teacher <span class="req">*</span></label>
                 <select id="teacherId" class="form-input" required>
                     <option value="">— Select Teacher —</option>
-                    @foreach (var t in Model.Teachers)
+                    @if (Model.Teachers != null)
                     {
-                        <option value="@t.DbId">@t.FullName (@t.TeacherNo)</option>
+                        var uniqueTeachers = Model.Teachers
+                        .GroupBy(t => t.TeacherNo)
+                        .Select(g => g.First())
+                        .ToList();
+
+                        foreach (var t in uniqueTeachers)
+                        {
+                            <option value="@t.DbId">@t.FullName (@t.TeacherNo)</option>
+                        }
                     }
                 </select>
             </div>
@@ -157,7 +155,10 @@
             <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
         </div>
         <div class="modal-body">
-            <p>Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
+            <p style="font-size:13px;color:var(--text2);line-height:1.6">
+                Are you sure you want to delete <strong id="deleteName" style="color:var(--text)"></strong>?
+                This cannot be undone.
+            </p>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
@@ -171,16 +172,34 @@
         let searchTimer = null, pendingDeleteId = null, isEditing = false;
         const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-        // Client-side search (courses are fully loaded — no lazy load needed)
-        function handleSearch() {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(() => {
-                const q = document.getElementById('searchInput').value.toLowerCase();
-                document.querySelectorAll('#coursesBody tr.table-row').forEach(row => {
-                    const text = row.textContent.toLowerCase();
-                    row.style.display = text.includes(q) ? '' : 'none';
-                });
-            }, 200);
+        function filterCourses() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const cards = document.querySelectorAll('.course-card');
+            cards.forEach(card => {
+                const name = card.getAttribute('data-name');
+                const code = card.getAttribute('data-code');
+                if (name && code) {
+                    card.style.display = name.includes(searchTerm) || code.includes(searchTerm) ? '' : 'none';
+                }
+            });
+        }
+
+        function toggleDropdown(btn) {
+            const dropdown = btn.nextElementSibling;
+            document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                if (menu !== dropdown) menu.classList.remove('show');
+            });
+            dropdown.classList.toggle('show');
+        }
+
+        document.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('dropdown-btn')) {
+                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+            }
+        });
+
+        function manageCourse(id) {
+            window.location.href = '/Admin/CourseManage/' + id;
         }
 
         function openAddModal() {
@@ -193,20 +212,20 @@
         function editCourse(id, code, name, units, section, schedule, teacherId) {
             isEditing = true;
             document.getElementById('modalTitle').textContent = 'Edit Course';
-            document.getElementById('dbId').value        = id;
-            document.getElementById('courseCode').value  = code;
-            document.getElementById('courseName').value  = name;
-            document.getElementById('units').value       = units;
-            document.getElementById('section').value     = section;
-            document.getElementById('schedule').value    = schedule;
-            document.getElementById('teacherId').value   = teacherId;
+            document.getElementById('dbId').value = id;
+            document.getElementById('courseCode').value = code;
+            document.getElementById('courseName').value = name;
+            document.getElementById('units').value = units;
+            document.getElementById('section').value = section;
+            document.getElementById('schedule').value = schedule;
+            document.getElementById('teacherId').value = teacherId;
             openModal('courseModal');
         }
 
         function viewCourse(id, name, code, section, schedule, units, teacher) {
             document.getElementById('viewBody').innerHTML = `
                 <div class="profile-view">
-                    <div class="profile-avatar" style="border-radius:10px;font-size:13px;">${code}</div>
+                    <div class="profile-avatar" style="font-size:12px;letter-spacing:.05em;">${code}</div>
                     <h3 class="profile-name">${name}</h3>
                     <div class="profile-details">
                         <div class="detail-row"><span class="detail-label">Section</span><span>${section}</span></div>
@@ -225,87 +244,118 @@
         }
 
         async function submitCourse() {
-            const code     = document.getElementById('courseCode').value.trim();
-            const name     = document.getElementById('courseName').value.trim();
-            const section  = document.getElementById('section').value.trim();
+            const code = document.getElementById('courseCode').value.trim();
+            const name = document.getElementById('courseName').value.trim();
+            const section = document.getElementById('section').value.trim();
             const schedule = document.getElementById('schedule').value.trim();
-            const teacher  = document.getElementById('teacherId').value;
-            const units    = document.getElementById('units').value;
-
+            const teacher = document.getElementById('teacherId').value;
+            const units = document.getElementById('units').value;
             if (!code || !name || !section || !schedule || !teacher) {
-                Toast.warning('Please fill in all required fields.');
+                if (typeof Toast !== 'undefined') Toast.warning('Please fill in all required fields.');
                 return;
             }
-
             const btn = document.getElementById('saveBtn');
-            btn.disabled = true; btn.textContent = 'Saving...';
-
-            const url     = isEditing ? '/Admin/UpdateCourse' : '/Admin/AddCourse';
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+            const url = isEditing ? '/Admin/UpdateCourse' : '/Admin/AddCourse';
             const payload = new URLSearchParams({
                 __RequestVerificationToken: antiForgery,
                 id: document.getElementById('dbId').value,
-                courseCode: code, courseName: name, units, section, schedule, teacherId: teacher
+                courseCode: code,
+                courseName: name,
+                units: units,
+                section: section,
+                schedule: schedule,
+                teacherId: teacher
             });
-
             try {
-                const res  = await fetch(url, {
+                const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
                     body: payload
                 });
                 const data = await res.json();
                 if (data.success) {
-                    Toast.success(data.message);
+                    if (typeof Toast !== 'undefined') Toast.success(data.message);
                     closeModal('courseModal');
-                    // Reload page to reflect new/updated course in table
                     location.reload();
                 } else {
-                    Toast.error(data.message);
+                    if (typeof Toast !== 'undefined') Toast.error(data.message);
                 }
-            } catch { Toast.error('An unexpected error occurred.'); }
-            finally  { btn.disabled = false; btn.textContent = 'Save Course'; }
+            } catch {
+                if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Save Course';
+            }
         }
 
         async function submitDelete() {
             const btn = document.getElementById('confirmDeleteBtn');
-            btn.disabled = true; btn.textContent = 'Deleting...';
-
+            btn.disabled = true;
+            btn.textContent = 'Deleting...';
             const payload = new URLSearchParams({
                 __RequestVerificationToken: antiForgery,
                 id: pendingDeleteId
             });
-
             try {
-                const res  = await fetch('/Admin/DeleteCourse', {
+                const res = await fetch('/Admin/DeleteCourse', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
                     body: payload
                 });
                 const data = await res.json();
                 if (data.success) {
-                    Toast.success(data.message);
+                    if (typeof Toast !== 'undefined') Toast.success(data.message);
                     closeModal('deleteModal');
                     const row = document.getElementById(`row-${pendingDeleteId}`);
-                    if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
+                    if (row) {
+                        row.style.transition = 'opacity 0.3s';
+                        row.style.opacity = '0';
+                        setTimeout(() => row.remove(), 300);
+                    }
                 } else {
-                    Toast.error(data.message);
+                    if (typeof Toast !== 'undefined') Toast.error(data.message);
                 }
-            } catch { Toast.error('An unexpected error occurred.'); }
-            finally  { btn.disabled = false; btn.textContent = 'Yes, Delete'; }
+            } catch {
+                if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Yes, Delete';
+            }
         }
 
         function clearForm() {
-            ['dbId','courseCode','courseName','section','schedule'].forEach(id => document.getElementById(id).value = '');
-            document.getElementById('units').value    = '3';
-            document.getElementById('teacherId').value = '';
+            ['dbId', 'courseCode', 'courseName', 'section', 'schedule'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            const unitsEl = document.getElementById('units');
+            if (unitsEl) unitsEl.value = '3';
+            const teacherEl = document.getElementById('teacherId');
+            if (teacherEl) teacherEl.value = '';
         }
 
-        function openModal(id)  { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        document.querySelectorAll('.modal-overlay').forEach(o =>
-            o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
+        function openModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeModal(id) {
+            const modal = document.getElementById(id);
+            if (modal) modal.classList.remove('active');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(o => {
+            o.addEventListener('click', e => {
+                if (e.target === o) o.classList.remove('active');
+            });
+        });
+
         document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            }
         });
     </script>
 }

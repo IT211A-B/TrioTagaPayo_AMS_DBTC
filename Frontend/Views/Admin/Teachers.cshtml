@@ -3,43 +3,51 @@
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Teachers";
     ViewData["PageTitle"] = "Teachers";
+    ViewData["ActivePage"] = "Teachers";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/teachers.css" />
 }
 
 <div class="page-header">
     <div>
         <h2>Teachers</h2>
-        <p>Manage all registered teachers</p>
+        <p>Manage all registered faculty members</p>
     </div>
-    <button class="btn-primary" onclick="openAddModal()">+ Add Teacher</button>
+    <div class="page-header-actions">
+        <button class="btn-primary" onclick="openAddModal()">+ Add Teacher</button>
+    </div>
 </div>
 
 <div class="summary-bar">
-    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong>@Model.TotalCount</strong></div>
-    <div class="summary-pill"><span class="pill-dot dot-green"></span>Active: <strong>@Model.ActiveCount</strong></div>
-    <div class="summary-pill"><span class="pill-dot dot-red"></span>Inactive: <strong>@Model.InactiveCount</strong></div>
+    <div class="summary-pill">
+        <span class="pill-dot dot-blue"></span>
+        Total: <strong>@Model.TotalCount</strong>
+    </div>
+    <div class="summary-pill">
+        <span class="pill-dot dot-green"></span>
+        Active: <strong>@Model.ActiveCount</strong>
+    </div>
+    <div class="summary-pill" style="border-color:rgba(239,68,68,0.2)">
+        <span class="pill-dot dot-red"></span>
+        Inactive: <strong>@Model.InactiveCount</strong>
+    </div>
 </div>
 
 <div class="filter-bar">
-    <input type="text" id="searchInput" class="search-input"
-           placeholder="Search by name or teacher no..."
-           value="@Model.Search" oninput="handleSearch()" />
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input"
+               placeholder="Search by name or teacher no..."
+               value="@Model.Search" oninput="handleSearch()" />
+    </div>
     <select id="statusFilter" class="filter-select" onchange="handleSearch()">
         <option value="">All Status</option>
-        @if (Model.StatusFilter == "Active")
-        {
-            <option value="Active" selected>Active</option>
-            <option value="Inactive">Inactive</option>
-        }
-        else if (Model.StatusFilter == "Inactive")
-        {
-            <option value="Active">Active</option>
-            <option value="Inactive" selected>Inactive</option>
-        }
-        else
-        {
-            <option value="Active">Active</option>
-            <option value="Inactive">Inactive</option>
-        }
+        <option value="Active" selected="@(Model.StatusFilter == "Active")">Active</option>
+        <option value="Inactive" selected="@(Model.StatusFilter == "Inactive")">Inactive</option>
     </select>
 </div>
 
@@ -60,7 +68,7 @@
             {
                 @foreach (var t in Model.Teachers)
                 {
-                    <tr class="table-row fade-in-row" id="row-@t.DbId">
+                    <tr class="table-row" id="row-@t.DbId">
                         <td>
                             <div class="student-cell">
                                 <div class="avatar" style="background:@t.AvatarColor">@t.Initials</div>
@@ -83,7 +91,9 @@
                             }
                         </td>
                         <td>
-                            <span class="status-badge @(t.IsActive ? "badge-active" : "badge-inactive")">@t.Status</span>
+                            <span class="status-badge @(t.IsActive ? "badge-active" : "badge-inactive")">
+                                ● @t.Status
+                            </span>
                         </td>
                         <td>
                             <div class="action-btns">
@@ -108,21 +118,19 @@
             {
                 <tr>
                     <td colspan="6">
-                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
-                        {
-                            Icon = "◈", Title = "No teachers found",
-                                        Message = "Try a different search or add a new teacher."
-                                        })
-                </td>
-            </tr>
-                        }
+                        <div class="empty-state">
+                            <span class="empty-icon">◈</span>
+                            <p class="empty-title">No teachers found</p>
+                            <p class="empty-message">Click "+ Add Teacher" to get started.</p>
+                        </div>
+                    </td>
+                </tr>
+            }
         </tbody>
     </table>
-    <div id="loadSentinel"></div>
-    <div class="lazy-spinner" id="lazySpinner" style="display:none;"><div class="spinner-ring"></div></div>
 </div>
 
-<!-- ADD / EDIT MODAL -->
+<!-- Add / Edit Modal -->
 <div class="modal-overlay" id="teacherModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -132,10 +140,7 @@
         <div class="modal-body">
             @Html.AntiForgeryToken()
             <input type="hidden" id="dbId" />
-            <div class="form-group">
-                <label>Teacher No <span class="req">*</span></label>
-                <input type="text" id="teacherNo" class="form-input" placeholder="e.g. TCH-001" required />
-            </div>
+            <input type="hidden" id="teacherNo" />
             <div class="form-row">
                 <div class="form-group">
                     <label>First Name <span class="req">*</span></label>
@@ -150,17 +155,9 @@
                 <label>Email <span class="req">*</span></label>
                 <input type="email" id="email" class="form-input" placeholder="teacher@school.edu" required />
             </div>
-            <div id="accountFields">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Username <span class="req">*</span></label>
-                        <input type="text" id="username" class="form-input" placeholder="Login username" />
-                    </div>
-                    <div class="form-group">
-                        <label>Password <span class="req">*</span></label>
-                        <input type="password" id="password" class="form-input" placeholder="Min 6 characters" />
-                    </div>
-                </div>
+            <div class="info-message">
+                <p>⚠️ Username will be auto-generated as: firstname.lastname</p>
+                <p>🔑 Default password: <strong>teacher123</strong></p>
             </div>
         </div>
         <div class="modal-footer">
@@ -170,7 +167,7 @@
     </div>
 </div>
 
-<!-- VIEW MODAL -->
+<!-- View Modal -->
 <div class="modal-overlay" id="viewModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -184,7 +181,7 @@
     </div>
 </div>
 
-<!-- DELETE MODAL -->
+<!-- Delete Modal -->
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-card modal-sm">
         <div class="modal-header">
@@ -202,190 +199,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        let currentPage  = @Model.CurrentPage;
-        const totalPages = @Model.TotalPages;
-        let isLoading = false, searchTimer = null, isEditing = false, pendingDeleteId = null;
-
-        const antiForgery = document.querySelector('input[name="__RequestVerificationToken"]').value;
-
-        // ── Lazy loading ─────────────────────────────────────────
-        new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting && !isLoading && currentPage < totalPages) loadMore();
-        }, { threshold: 0.1 }).observe(document.getElementById('loadSentinel'));
-
-        async function loadMore() {
-            isLoading = true;
-            document.getElementById('lazySpinner').style.display = 'flex';
-            const s = document.getElementById('searchInput').value;
-            const f = document.getElementById('statusFilter').value;
-            try {
-                const res  = await fetch(`/Admin/TeachersPartial?page=${currentPage + 1}&search=${encodeURIComponent(s)}&status=${encodeURIComponent(f)}`);
-                const html = await res.text();
-                if (html.trim()) { document.getElementById('teachersBody').insertAdjacentHTML('beforeend', html); currentPage++; }
-            } catch { Toast.error('Failed to load more teachers.'); }
-            finally  { isLoading = false; document.getElementById('lazySpinner').style.display = 'none'; }
-        }
-
-        // ── Search — AJAX, no page redirect ─────────────────────
-        function handleSearch() {
-            clearTimeout(searchTimer);
-            searchTimer = setTimeout(async () => {
-                const s = document.getElementById('searchInput').value;
-                const f = document.getElementById('statusFilter').value;
-                try {
-                    const res  = await fetch(`/Admin/TeachersPartial?page=1&search=${encodeURIComponent(s)}&status=${encodeURIComponent(f)}`);
-                    const html = await res.text();
-                    document.getElementById('teachersBody').innerHTML = html || emptyRow();
-                    currentPage = 1;
-                } catch { Toast.error('Search failed.'); }
-            }, 350);
-        }
-
-        function emptyRow() {
-            return `<tr><td colspan="6" style="text-align:center;padding:40px;color:rgba(255,255,255,0.35)">No teachers found.</td></tr>`;
-        }
-
-        // ── Modals ───────────────────────────────────────────────
-        function openAddModal() {
-            isEditing = false;
-            document.getElementById('modalTitle').textContent = 'Add Teacher';
-            document.getElementById('accountFields').style.display = '';
-            clearForm();
-            openModal('teacherModal');
-        }
-
-        function editTeacher(id, tno, fn, ln, email) {
-            isEditing = true;
-            document.getElementById('modalTitle').textContent = 'Edit Teacher';
-            document.getElementById('accountFields').style.display = 'none';
-            document.getElementById('dbId').value       = id;
-            document.getElementById('teacherNo').value  = tno;
-            document.getElementById('firstName').value  = fn;
-            document.getElementById('lastName').value   = ln;
-            document.getElementById('email').value      = email;
-            openModal('teacherModal');
-        }
-
-        function viewTeacher(id, name, tno, email, courses, username, isActive) {
-            const status = isActive === 'true' ? 'Active' : 'Inactive';
-            document.getElementById('viewBody').innerHTML = `
-                <div class="profile-view">
-                    <div class="profile-avatar">${name.charAt(0)}</div>
-                    <h3 class="profile-name">${name}</h3>
-                    <p class="profile-id">${tno}</p>
-                    <div class="profile-details">
-                        <div class="detail-row"><span class="detail-label">Email</span><span>${email}</span></div>
-                        <div class="detail-row"><span class="detail-label">Courses</span><span>${courses} assigned</span></div>
-                        <div class="detail-row"><span class="detail-label">Username</span><span>${username || '—'}</span></div>
-                        <div class="detail-row"><span class="detail-label">Status</span>
-                            <span class="status-badge ${status === 'Active' ? 'badge-active' : 'badge-inactive'}">${status}</span>
-                        </div>
-                    </div>
-                </div>`;
-            openModal('viewModal');
-        }
-
-        function confirmDelete(id, name) {
-            pendingDeleteId = id;
-            document.getElementById('deleteName').textContent = name;
-            openModal('deleteModal');
-        }
-
-        // ── AJAX Submit ──────────────────────────────────────────
-        async function submitTeacher() {
-            const fn  = document.getElementById('firstName').value.trim();
-            const ln  = document.getElementById('lastName').value.trim();
-            const em  = document.getElementById('email').value.trim();
-            const tno = document.getElementById('teacherNo').value.trim();
-
-            if (!fn || !ln || !em || !tno) { Toast.warning('Please fill in all required fields.'); return; }
-
-            if (!isEditing) {
-                const un = document.getElementById('username').value.trim();
-                const pw = document.getElementById('password').value.trim();
-                if (!un || !pw) { Toast.warning('Username and password are required.'); return; }
-                if (pw.length < 6) { Toast.warning('Password must be at least 6 characters.'); return; }
-            }
-
-            const btn = document.getElementById('saveBtn');
-            btn.disabled = true; btn.textContent = 'Saving...';
-
-            const url     = isEditing ? '/Admin/UpdateTeacher' : '/Admin/AddTeacher';
-            const payload = new URLSearchParams({
-                __RequestVerificationToken: antiForgery,
-                id:        document.getElementById('dbId').value,
-                teacherNo: tno, firstName: fn, lastName: ln, email: em,
-                username:  isEditing ? '' : document.getElementById('username').value.trim(),
-                password:  isEditing ? '' : document.getElementById('password').value.trim(),
-            });
-
-            try {
-                const res  = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: payload
-                });
-                const data = await res.json();
-                if (data.success) {
-                    Toast.success(data.message);
-                    closeModal('teacherModal');
-                    await refreshTable();
-                } else {
-                    Toast.error(data.message);
-                }
-            } catch { Toast.error('An unexpected error occurred.'); }
-            finally  { btn.disabled = false; btn.textContent = 'Save Teacher'; }
-        }
-
-        async function submitDelete() {
-            const btn = document.getElementById('confirmDeleteBtn');
-            btn.disabled = true; btn.textContent = 'Deleting...';
-
-            const payload = new URLSearchParams({
-                __RequestVerificationToken: antiForgery,
-                id: pendingDeleteId
-            });
-
-            try {
-                const res  = await fetch('/Admin/DeleteTeacher', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: payload
-                });
-                const data = await res.json();
-                if (data.success) {
-                    Toast.success(data.message);
-                    closeModal('deleteModal');
-                    const row = document.getElementById(`row-${pendingDeleteId}`);
-                    if (row) { row.style.transition = 'opacity 0.3s'; row.style.opacity = '0'; setTimeout(() => row.remove(), 300); }
-                } else {
-                    Toast.error(data.message);
-                }
-            } catch { Toast.error('An unexpected error occurred.'); }
-            finally  { btn.disabled = false; btn.textContent = 'Yes, Delete'; }
-        }
-
-        async function refreshTable() {
-            const s = document.getElementById('searchInput').value;
-            const f = document.getElementById('statusFilter').value;
-            const res  = await fetch(`/Admin/TeachersPartial?page=1&search=${encodeURIComponent(s)}&status=${encodeURIComponent(f)}`);
-            const html = await res.text();
-            document.getElementById('teachersBody').innerHTML = html || emptyRow();
-            currentPage = 1;
-        }
-
-        function clearForm() {
-            ['dbId','teacherNo','firstName','lastName','email','username','password']
-                .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-        }
-
-        function openModal(id)  { document.getElementById(id).classList.add('active'); }
-        function closeModal(id) { document.getElementById(id).classList.remove('active'); }
-        document.querySelectorAll('.modal-overlay').forEach(o =>
-            o.addEventListener('click', e => { if (e.target === o) o.classList.remove('active'); }));
-        document.addEventListener('keydown', e => {
-            if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
-        });
-    </script>
+    <script src="~/js/pages/teachers.js"></script>
 }

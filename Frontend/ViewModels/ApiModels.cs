@@ -108,4 +108,5 @@ namespace AMS.Models
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
     }
+
 }

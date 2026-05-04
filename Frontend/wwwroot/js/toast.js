@@ -1,5 +1,5 @@
 ﻿// toast.js — Global toast alert system
-function showToast(message, type = 'info', duration = 3500) {
+window.showToast = function (message, type = 'info', duration = 3500) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
 
@@ -12,29 +12,39 @@ function showToast(message, type = 'info', duration = 3500) {
         <div class="toast-icon">${icons[type] || 'ℹ'}</div>
         <div class="toast-body">
             <p class="toast-label">${labels[type] || 'Info'}</p>
-            <p class="toast-message">${message}</p>
+            <p class="toast-message">${escapeHtml(message)}</p>
         </div>
-        <button class="toast-close" onclick="dismissToast(this)">×</button>
+        <button class="toast-close" onclick="window.dismissToast(this)">×</button>
         <div class="toast-progress"></div>`;
 
     container.appendChild(toast);
-    requestAnimationFrame(() => requestAnimationFrame(() => toast.classList.add('toast-show')));
+    setTimeout(() => toast.classList.add('toast-show'), 10);
 
-    toast._timer = setTimeout(() => dismissToast(toast.querySelector('.toast-close')), duration);
-}
+    toast._timer = setTimeout(() => window.dismissToast(toast.querySelector('.toast-close')), duration);
+};
 
-function dismissToast(btn) {
+window.dismissToast = function (btn) {
     const toast = btn.closest('.toast');
     if (!toast) return;
     clearTimeout(toast._timer);
     toast.classList.remove('toast-show');
     toast.classList.add('toast-hide');
     toast.addEventListener('transitionend', () => toast.remove(), { once: true });
+};
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function (m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
 
-const Toast = {
-    success: m => showToast(m, 'success'),
-    error: m => showToast(m, 'error'),
-    warning: m => showToast(m, 'warning'),
-    info: m => showToast(m, 'info'),
-};
+window.Toast = {
+    success: (m) => window.showToast(m, 'success'),
+    error: (m) => window.showToast(m, 'error'),
+    warning: (m) => window.showToast(m, 'warning'),
+    info: (m) => window.showToast(m, 'info'),
+}; 

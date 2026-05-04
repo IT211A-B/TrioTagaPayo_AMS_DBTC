@@ -1,12 +1,9 @@
 ﻿using AMS.Services;
 
 var builder = WebApplication.CreateBuilder(args);
-
 builder.Services.AddControllersWithViews();
 
 // ── Session ───────────────────────────────────────────────
-// Stores JWT + Username + Role + RefreshToken after login.
-// IdleTimeout = 8 h matches the backend JWT expiry.
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
 {
@@ -15,18 +12,16 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
     options.Cookie.Name = "AMS.Session";
 });
-
 builder.Services.AddHttpContextAccessor();
 
 // ── HttpClient → backend API ──────────────────────────────
-// Base URL is read from appsettings.json ("ApiBaseUrl").
-// Falls back to localhost:5167 if missing.
+// Render.com free tier cold-starts can take 60–90 seconds.
+// Timeout increased to 120s to survive the wake-up delay.
 var apiBaseUrl = builder.Configuration["ApiBaseUrl"] ?? "http://localhost:5167";
-
 builder.Services.AddHttpClient<ApiService>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
-    client.Timeout = TimeSpan.FromSeconds(30);
+    client.Timeout = TimeSpan.FromSeconds(120); // was 30 — too short for Render cold start
 });
 
 // ── Build ─────────────────────────────────────────────────
@@ -43,9 +38,7 @@ else
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-
-// FIX: UseSession MUST be before UseAuthorization
-app.UseSession();
+app.UseSession();      // MUST be before UseAuthorization
 app.UseAuthorization();
 
 // Default route → Login first

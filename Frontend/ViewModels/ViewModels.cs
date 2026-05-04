@@ -77,7 +77,7 @@
 
     // ── Teachers ─────────────────────────────────────────────
 
-    public class TeacherViewModel
+     public class TeacherViewModel
     {
         public int DbId { get; set; }
         public string TeacherNo { get; set; } = "";
@@ -143,5 +143,45 @@
         public int PresentCount => Records.Count(r => r.Status == "Present");
         public int AbsentCount => Records.Count(r => r.Status == "Absent");
         public int LateCount => Records.Count(r => r.Status == "Late");
+    }
+    // ── Teacher Dashboard ViewModels ─────────────────────────────
+    public class TeacherDashboardViewModel
+    {
+        public string TeacherName { get; set; } = string.Empty;
+        public int MyCoursesCount { get; set; }
+        public int MyStudentsCount { get; set; }
+        public int TodayAttendanceRate { get; set; }
+        public List<AttendanceEntryViewModel> RecentAttendance { get; set; } = new();
+        public List<CourseViewModel> MyCourses { get; set; } = new();
+    }
+
+    public class TeacherAttendanceViewModel
+    {
+        public List<AttendanceEntryViewModel> Records { get; set; } = new();
+        public List<CourseViewModel> Courses { get; set; } = new();
+        public int? SelectedCourseId { get; set; }
+        public string? FromDate { get; set; }
+        public string? ToDate { get; set; }
+    }
+    // ── Enrollment ──────────────────────────────────────────────
+    public class EnrollmentViewModel
+    {
+        public int StudentId { get; set; }
+        public string StudentName { get; set; } = "";
+        public string StudentNo { get; set; } = "";
+        public string Email { get; set; } = "";
+        public int CourseId { get; set; }
+        public string CourseName { get; set; } = "";
+        public int AttendanceRate { get; set; }
+        public string Status { get; set; } = "";
+    }
+
+    public class EnrollmentPageViewModel
+    {
+        public List<EnrollmentViewModel> Enrollments { get; set; } = new();
+        public int TotalCount { get; set; }
+        public string? Search { get; set; }
+        public string? CourseFilter { get; set; }
+        public string? StatusFilter { get; set; }
     }
 }

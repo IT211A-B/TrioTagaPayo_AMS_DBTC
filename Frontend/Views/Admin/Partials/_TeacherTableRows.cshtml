@@ -1,47 +1,50 @@
 ﻿@model List<AMS.ViewModels.TeacherViewModel>
 
-@foreach (var t in Model)
+@if (Model != null && Model.Any())
 {
-    <tr class="table-row fade-in-row" id="row-@t.DbId">
-        <td>
-            <div class="student-cell">
-                <div class="avatar" style="background:@t.AvatarColor">@t.Initials</div>
-                <div>
-                    <p class="cell-name">@t.FullName</p>
-                    <p class="cell-sub">@t.Email</p>
+    @foreach (var t in Model)
+    {
+        <tr class="table-row fade-in-row" id="row-@t.DbId">
+            <td>
+                <div class="student-cell">
+                    <div class="avatar" style="background:@t.AvatarColor">@t.Initials</div>
+                    <div>
+                        <p class="cell-name">@t.FullName</p>
+                        <p class="cell-sub">@t.Email</p>
+                    </div>
                 </div>
-            </div>
-        </td>
-        <td class="hide-sm"><span class="id-badge">@t.TeacherNo</span></td>
-        <td class="hide-sm">@t.CourseCount course(s)</td>
-        <td class="hide-md">
-            @if (t.HasAccount)
-            {
-                <span class="status-badge badge-active">@t.Username</span>
-            }
-            else
-            {
-                <span class="status-badge badge-inactive">No account</span>
-            }
-        </td>
-        <td>
-            <span class="status-badge @(t.IsActive ? "badge-active" : "badge-inactive")">@t.Status</span>
-        </td>
-        <td>
-            <div class="action-btns">
-                <button class="btn-sm btn-view"
-                        onclick="viewTeacher(@t.DbId,'@Html.Raw(t.FullName)','@t.TeacherNo','@t.Email','@t.CourseCount','@t.Username','@t.IsActive.ToString().ToLower()')">
-                    View
-                </button>
-                <button class="btn-sm btn-edit"
-                        onclick="editTeacher(@t.DbId,'@t.TeacherNo','@Html.Raw(t.FirstName)','@Html.Raw(t.LastName)','@t.Email')">
-                    Edit
-                </button>
-                <button class="btn-sm btn-delete"
-                        onclick="confirmDelete(@t.DbId,'@Html.Raw(t.FullName)')">
-                    Delete
-                </button>
-            </div>
-        </td>
-    </tr>
+            </td>
+            <td class="hide-sm"><span class="id-badge">@t.TeacherNo</span></td>
+            <td class="hide-sm">@t.CourseCount course(s)</td>
+            <td class="hide-md">
+                @if (t.HasAccount)
+                {
+                    <span class="status-badge badge-active">@t.Username</span>
+                }
+                else
+                {
+                    <span class="status-badge badge-inactive">No account</span>
+                }
+            </td>
+            <td>
+                <span class="status-badge @(t.IsActive ? "badge-active" : "badge-inactive")">@t.Status</span>
+            </td>
+            <td>
+                <div class="action-btns">
+                    <button class="btn-sm btn-view"
+                            onclick="viewTeacher(@t.DbId,'@Html.Raw(t.FullName)','@t.TeacherNo','@t.Email','@t.CourseCount','@t.Username','@t.IsActive.ToString().ToLower()')">
+                        View
+                    </button>
+                    <button class="btn-sm btn-edit"
+                            onclick="editTeacher(@t.DbId,'@t.TeacherNo','@Html.Raw(t.FirstName)','@Html.Raw(t.LastName)','@t.Email')">
+                        Edit
+                    </button>
+                    <button class="btn-sm btn-delete"
+                            onclick="confirmDelete(@t.DbId,'@Html.Raw(t.FullName)')">
+                        Delete
+                    </button>
+                </div>
+            </td>
+        </tr>
+    }
 }

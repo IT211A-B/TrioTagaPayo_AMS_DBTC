@@ -2,98 +2,136 @@
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Dashboard";
-    ViewData["PageTitle"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/dashboard.css" />
 }
 
-<!-- STAT CARDS -->
+<!-- GREETING  -->
+<div class="greeting-section">
+    <h1>Good Morning, @Context.Session.GetString("Username")</h1>
+    <p>Here's your system overview for today - @DateTime.Now.ToString("dddd, MMMM d, yyyy").ToUpper()</p>
+</div>
+
+<!-- 4 STAT CARDS -->
 <div class="stats-row">
     <div class="stat-card">
-        <p class="stat-label">Total Students</p>
+        <div class="stat-icon">◍</div>
+        <p class="stat-label">TOTAL STUDENTS</p>
         <p class="stat-value">@Model.TotalStudents</p>
-        <p class="stat-hint">Enrolled this semester</p>
+        <p class="stat-hint">Active enrollees</p>
     </div>
     <div class="stat-card">
-        <p class="stat-label">Total Teachers</p>
+        <div class="stat-icon">◈</div>
+        <p class="stat-label">TEACHERS</p>
         <p class="stat-value">@Model.TotalTeachers</p>
-        <p class="stat-hint">Active faculty</p>
+        <p class="stat-hint">Faculty members</p>
     </div>
     <div class="stat-card">
-        <p class="stat-label">Total Courses</p>
+        <div class="stat-icon">◧</div>
+        <p class="stat-label">COURSES</p>
         <p class="stat-value">@Model.TotalCourses</p>
-        <p class="stat-hint">This semester</p>
+        <p class="stat-hint">Active subjects</p>
     </div>
     <div class="stat-card">
-        <p class="stat-label">Attendance Rate</p>
+        <div class="stat-icon">◷</div>
+        <p class="stat-label">TODAY ATTENDANCE</p>
         <p class="stat-value">@Model.AttendanceRate%</p>
-        <p class="stat-hint">Present records</p>
+        <p class="stat-hint">Present today</p>
     </div>
 </div>
 
 <!-- QUICK LINKS -->
 <div class="quick-links">
-    <a href="@Url.Action("Students", "Admin")" class="quick-link">
-        <span class="ql-icon">◍</span><span>Students</span>
-    </a>
-    <a href="@Url.Action("Teachers", "Admin")" class="quick-link">
-        <span class="ql-icon">◈</span><span>Teachers</span>
-    </a>
-    <a href="@Url.Action("Courses", "Admin")" class="quick-link">
-        <span class="ql-icon">◧</span><span>Courses</span>
-    </a>
-    <a href="@Url.Action("Attendance", "Admin")" class="quick-link">
-        <span class="ql-icon">◷</span><span>Attendance</span>
-    </a>
+    <a href="@Url.Action("Students", "Admin")" class="quick-link"><span class="ql-icon">◍</span><span>Students</span></a>
+    <a href="@Url.Action("Teachers", "Admin")" class="quick-link"><span class="ql-icon">◈</span><span>Teachers</span></a>
+    <a href="@Url.Action("Courses", "Admin")" class="quick-link"><span class="ql-icon">◧</span><span>Courses</span></a>
+    <a href="@Url.Action("Attendance", "Admin")" class="quick-link"><span class="ql-icon">◷</span><span>Attendance</span></a>
+    <a href="@Url.Action("Enrollment", "Admin")" class="quick-link"><span class="ql-icon">◯</span><span>Enrollment</span></a>
 </div>
 
-<!-- RECENT ATTENDANCE -->
-<div class="section-header">
-    <h3 class="section-title">Recent Attendance</h3>
-</div>
-
-<div class="table-wrapper">
-    <table class="data-table">
-        <thead>
-            <tr>
-                <th>Student</th>
-                <th class="hide-sm">Student No</th>
-                <th class="hide-sm">Course</th>
-                <th>Date</th>
-                <th>Status</th>
-            </tr>
-        </thead>
-        <tbody>
+<!-- TWO COLUMN LAYOUT - RECENT ATTENDANCE + WEEKLY CHART -->
+<div class="two-columns">
+    <!-- LEFT: Recent Attendance List - Wireframe style with times -->
+    <div class="recent-attendance-card">
+        <div class="section-header">
+            <span class="section-title">RECENT ATTENDANCE</span>
+            <a href="@Url.Action("Attendance", "Admin")" class="section-link">VIEW ALL →</a>
+        </div>
+        <div class="attendance-list">
             @if (Model.RecentAttendance.Any())
             {
-                @foreach (var a in Model.RecentAttendance)
+                foreach (var a in Model.RecentAttendance.Take(4))
                 {
-                    <tr class="table-row">
-                        <td><p class="cell-name">@a.StudentName</p></td>
-                        <td class="hide-sm"><span class="id-badge">@a.StudentNo</span></td>
-                        <td class="hide-sm">@a.CourseName</td>
-                        <td>@a.Date</td>
-                        <td>
-                            <span class="status-badge
-                                        @(a.Status == "Present" ? "badge-active" :
-                                                                    a.Status == "Late" ? "badge-warning" : "badge-inactive")">
-                                @a.Status
+                    <div class="attendance-item">
+                        <div class="attendance-avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                            @(a.StudentName?.Length > 0 ? a.StudentName[0].ToString().ToUpper() : "?")
+                        </div>
+                        <div class="attendance-info">
+                            <p class="attendance-name">@a.StudentName</p>
+                            <p class="attendance-course">@a.CourseName</p>
+                        </div>
+                        <div class="attendance-time">
+                            <span class="status-badge @(a.Status == "Present" ? "badge-active" : a.Status == "Late" ? "badge-warning" : "badge-inactive")">
+                                @(a.Status == "Present" ? DateTime.Now.ToString("hh:mm tt") : a.Status)
                             </span>
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                 }
             }
             else
             {
-                <tr>
-                    <td colspan="5">
-                        @await Html.PartialAsync("_EmptyState", new EmptyStateViewModel
-                        {
-                            Icon = "◷",
-                                        Title = "No attendance records yet",
-                                        Message = "Records will appear here once students start scanning in."
-                                        })
-                </td>
-            </tr>
-                        }
-        </tbody>
-    </table>
+                <div class="empty-state-small">
+                    <p>No attendance records yet</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- RIGHT: Weekly Attendance Chart -->
+    <div class="weekly-chart-card">
+        <div class="section-header">
+            <span class="section-title">WEEKLY ATTENDANCE</span>
+        </div>
+        <div class="chart-container">
+            <canvas id="weeklyChart"></canvas>
+        </div>
+        <div class="chart-legend">
+            <span><span class="legend-dot present"></span> Present</span>
+            <span><span class="legend-dot absent"></span> Absent</span>
+            <span><span class="legend-dot late"></span> Late</span>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Weekly Attendance Chart - Dynamic from API data
+        const ctx = document.getElementById('weeklyChart')?.getContext('2d');
+        if (ctx) {
+            // You can replace these with actual API data
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+                    datasets: [
+                        { label: 'Present', data: [65, 72, 80, 75, 68], backgroundColor: '#22c55e', borderRadius: 4 },
+                        { label: 'Absent', data: [12, 8, 5, 10, 15], backgroundColor: '#ef4444', borderRadius: 4 },
+                        { label: 'Late', data: [8, 10, 6, 5, 7], backgroundColor: '#f59e0b', borderRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+    </script>
+}

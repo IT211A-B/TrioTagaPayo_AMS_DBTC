@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AMS.Services;
+using System.Text.Json;
 
 namespace AMS.Controllers
 {
@@ -12,8 +13,7 @@ namespace AMS.Controllers
             _api = api;
         }
 
-        // GET /Account/Login
-        // If already logged in, skip to dashboard
+        // ── GET /Account/Login ────────────────────────────────
         [HttpGet]
         public IActionResult Login()
         {
@@ -23,7 +23,7 @@ namespace AMS.Controllers
             return View();
         }
 
-        // POST /Account/Login
+        // ── POST /Account/Login ───────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password)
@@ -34,29 +34,71 @@ namespace AMS.Controllers
                 return View();
             }
 
-            // ApiService.LoginAsync stores JwtToken, Username, Role, RefreshToken in session
-            var result = await _api.LoginAsync(username, password);
-
-            if (result == null)
+            try
             {
-                ViewBag.Error = "Invalid username or password.";
+                var result = await _api.LoginAsync(username, password);
+
+                if (result == null)
+                {
+                    ViewBag.Error = "Invalid username or password.";
+                    return View();
+                }
+
+                // Get role from the API response
+                string userRole = result.Role ?? "Admin";
+
+                // Ensure role is stored in session
+                HttpContext.Session.SetString("Role", userRole);
+                HttpContext.Session.SetString("Username", result.Username);
+
+                // Store teacher info if role is Teacher
+                if (userRole.Equals("Teacher", StringComparison.OrdinalIgnoreCase))
+                {
+                    HttpContext.Session.SetString("TeacherName", result.Username);
+                }
+
+                // Redirect based on user role
+                if (userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RedirectToAction("Dashboard", "Admin");
+                }
+                else if (userRole.Equals("Teacher", StringComparison.OrdinalIgnoreCase))
+                {
+                    return RedirectToAction("Dashboard", "Teacher");
+                }
+                else
+                {
+                    return RedirectToAction("Dashboard", "Admin");
+                }
+            }
+            catch (TaskCanceledException)
+            {
+                ViewBag.Error = "Server is waking up from sleep. Please wait 30 seconds and try again.";
+                ViewBag.IsWakingUp = true;
                 return View();
             }
-
-            return RedirectToAction("Dashboard", "Admin");
+            catch (HttpRequestException)
+            {
+                ViewBag.Error = "Cannot connect to the server. Please check your connection and try again.";
+                return View();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = "An unexpected error occurred. Please try again.";
+                return View();
+            }
         }
 
-        // POST /Account/Logout
+        // ── POST /Account/Logout ──────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
-            // Clears session + calls backend logout (best-effort)
             await _api.LogoutAsync();
             return RedirectToAction("Login", "Account");
         }
 
-        // GET /Account/Logout  — support direct link in layout sidebar
+        // ── GET /Account/Logout — direct link support ─────────
         [HttpGet]
         public async Task<IActionResult> LogoutGet()
         {
