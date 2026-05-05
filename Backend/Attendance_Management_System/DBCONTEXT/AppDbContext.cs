@@ -34,6 +34,13 @@ namespace Attendance_Management_System.DBCONTEXT
                 .HasForeignKey(a => a.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // Attendance to QRScan relationship (optional)
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.QRScan)
+                .WithOne(q => q.Attendance)
+                .HasForeignKey<Attendance>(a => a.QRScanId)
+                .OnDelete(DeleteBehavior.SetNull);
+
             modelBuilder.Entity<Attendance>()
                 .HasOne(a => a.Course)
                 .WithMany(c => c.Attendances)
