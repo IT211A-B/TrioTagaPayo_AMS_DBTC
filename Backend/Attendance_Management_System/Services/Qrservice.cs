@@ -1,241 +1,253 @@
-﻿using Microsoft.AspNetCore.SignalR;
-using QRCoder;
-using Attendance_Management_System.DTOs;
-using Attendance_Management_System.Helpers;
-using Attendance_Management_System.Hubs;
+﻿using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
-using Attendance_Management_System.Repositories.Interfaces;
+using Attendance_Management_System.Helpers;
+using Microsoft.EntityFrameworkCore;
+using QRCoder;
 
 namespace Attendance_Management_System.Services
 {
     public class QRService : IQRService
     {
-        private readonly IQRSessionRepository _qrRepository;
-        private readonly IStudentRepository _studentRepository;
-        private readonly IAttendanceRepository _attendanceRepository;
+        private readonly DBCONTEXT.AppDbContext _context;
+        private readonly ICourseService _courseService;
         private readonly EmailJSHelper _emailJS;
-        private readonly IHubContext<AttendanceHub> _hub; // ✅ NEW
-        private readonly ILogger<QRService> _logger;
 
         public QRService(
-            IQRSessionRepository qrRepository,
-            IStudentRepository studentRepository,
-            IAttendanceRepository attendanceRepository,
-            EmailJSHelper emailJS,
-            IHubContext<AttendanceHub> hub, // ✅ NEW
-            ILogger<QRService> logger)
+            DBCONTEXT.AppDbContext context,
+            ICourseService courseService,
+            EmailJSHelper emailJS)
         {
-            _qrRepository = qrRepository;
-            _studentRepository = studentRepository;
-            _attendanceRepository = attendanceRepository;
+            _context = context;
+            _courseService = courseService;
             _emailJS = emailJS;
-            _hub = hub; // ✅ NEW
-            _logger = logger;
         }
-
-        // ── GENERATE ─────────────────────────────────────────────────────
 
         public async Task<QRSessionResponseDto> GenerateAsync(GenerateQRDto dto)
         {
-            var token = Guid.NewGuid().ToString("N");
+            var token = Guid.NewGuid().ToString();
+            var createdAt = DateTime.UtcNow;
+            var expiresAt = createdAt.AddMinutes(dto.ValidForMinutes);
 
             var session = new QRSession
             {
-                CourseId = dto.CourseId,
                 Token = token,
+                CourseId = dto.CourseId,
                 Date = dto.Date,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddMinutes(dto.ValidForMinutes),
+                CreatedAt = createdAt,
+                ExpiresAt = expiresAt,
                 IsActive = true
             };
 
-            await _qrRepository.AddAsync(session);
-            await _qrRepository.SaveChangesAsync();
+            await _context.QRSessions.AddAsync(session);
+            await _context.SaveChangesAsync();
 
-            var saved = await _qrRepository.GetByIdWithDetailsAsync(session.Id);
-            var qrBase64 = GenerateQRCodeBase64(token);
+            var course = await _courseService.GetByIdAsync(dto.CourseId);
+            var qrCodeBase64 = GenerateQRCodeBase64(token);
 
-            return ToDto(saved!, qrBase64);
+            return new QRSessionResponseDto
+            {
+                Id = session.Id,
+                CourseId = dto.CourseId,
+                CourseName = course?.CourseName ?? "Unknown",
+                Token = token,
+                Date = dto.Date,
+                CreatedAt = createdAt,
+                ExpiresAt = expiresAt,
+                IsActive = true,
+                QRCodeBase64 = qrCodeBase64,
+                MinutesRemaining = dto.ValidForMinutes
+            };
         }
-
-        // ── SCAN ──────────────────────────────────────────────────────────
 
         public async Task<ScanResultDto> ScanAsync(ScanQRDto dto)
         {
-            // 1. Find the QR session by token
-            var session = await _qrRepository.GetByTokenAsync(dto.Token);
+            var session = await _context.QRSessions
+                .Include(q => q.Course)
+                .ThenInclude(c => c.Teacher)
+                .FirstOrDefaultAsync(q => q.Token == dto.Token && q.IsActive);
+
             if (session == null)
-                return Fail("Invalid QR code. Please ask your teacher for a new one.");
-
-            // 2. Check if still active
-            if (!session.IsActive)
-                return Fail("This QR code has been deactivated by your teacher.");
-
-            // 3. Check expiry
-            if (DateTime.UtcNow > session.ExpiresAt)
-                return Fail($"QR code expired. It was only valid until {session.ExpiresAt.ToLocalTime():hh:mm tt}.");
-
-            // 4. Get the student
-            var student = await _studentRepository.GetByIdAsync(dto.StudentId);
-            if (student == null)
-                return Fail("Student not found.");
-
-            // 5. Check duplicate scan
-            var alreadyScanned = await _qrRepository.AlreadyScannedAsync(session.Id, dto.StudentId);
-            if (alreadyScanned)
-                return Fail($"You already scanned attendance for {session.Course.CourseName} today.");
-
-            // 6. Determine status — Present = within 15 mins, Late = after
-            var minutesSinceCreated = (DateTime.UtcNow - session.CreatedAt).TotalMinutes;
-            var status = minutesSinceCreated <= 15 ? "Present" : "Late";
-
-            // 7. Save Attendance record
-            var attendance = new Attendance
             {
-                StudentId = dto.StudentId,
-                CourseId = session.CourseId,
-                Date = session.Date,
-                Status = status,
-                Remarks = "Via QR Code",
-                CreatedAt = DateTime.UtcNow
-            };
+                return new ScanResultDto
+                {
+                    Success = false,
+                    Message = "Invalid or expired QR code."
+                };
+            }
 
-            await _attendanceRepository.AddAsync(attendance);
+            if (session.ExpiresAt < DateTime.UtcNow)
+            {
+                session.IsActive = false;
+                await _context.SaveChangesAsync();
+                return new ScanResultDto
+                {
+                    Success = false,
+                    Message = "QR code has expired."
+                };
+            }
 
-            // 8. Record the scan (prevent duplicate)
+            var alreadyScanned = await _context.QRScans
+                .AnyAsync(s => s.QRSessionId == session.Id && s.StudentId == dto.StudentId);
+
+            if (alreadyScanned)
+            {
+                return new ScanResultDto
+                {
+                    Success = false,
+                    Message = "You have already marked attendance for this session."
+                };
+            }
+
+            var lateThreshold = session.ExpiresAt.AddMinutes(-5);
+            var status = DateTime.UtcNow <= lateThreshold ? "Present" : "Late";
+
+            var student = await _context.Students.FindAsync(dto.StudentId);
+            if (student == null)
+            {
+                return new ScanResultDto
+                {
+                    Success = false,
+                    Message = "Student not found."
+                };
+            }
+
+            // Record the scan
             var scan = new QRScan
             {
                 QRSessionId = session.Id,
                 StudentId = dto.StudentId,
                 ScannedAt = DateTime.UtcNow
             };
+            await _context.QRScans.AddAsync(scan);
+            await _context.SaveChangesAsync();
 
-            await _qrRepository.AddScanAsync(scan);
-            await _qrRepository.SaveChangesAsync();
-
-            // 9. Fire email — non-blocking
-            if (!string.IsNullOrWhiteSpace(student.Email))
+            // Create attendance record
+            var attendance = new Attendance
             {
-                _ = _emailJS.SendAttendanceNotificationAsync(
-                    studentEmail: student.Email,
-                    studentName: $"{student.FirstName} {student.LastName}",
-                    studentNo: student.StudentNo,
-                    courseName: session.Course.CourseName,
-                    section: student.Section,
-                    status: status,
-                    date: session.Date,
-                    timeRecorded: attendance.CreatedAt
-                );
-            }
+                StudentId = dto.StudentId,
+                CourseId = session.CourseId,
+                Date = session.Date,
+                Status = status,
+                Remarks = $"Scanned via QR code - Session {session.Token}",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _context.Attendances.AddAsync(attendance);
+            await _context.SaveChangesAsync();
 
-            // ✅ 10. Fire SignalR — real-time update sa teacher dashboard
-            await NotifyHubAsync(attendance, student, session, status);
-
-            _logger.LogInformation(
-                "[QR Scan] Student {StudentNo} scanned for {Course} → {Status}",
-                student.StudentNo, session.Course.CourseName, status);
+            // Send email notification (non-blocking)
+            _ = SendEmailNotificationAsync(student, session.Course, status, session.Date, attendance.CreatedAt);
 
             return new ScanResultDto
             {
                 Success = true,
-                Message = $"Attendance recorded! Status: {status}",
+                Message = $"Attendance marked as {status}",
                 AttendanceId = attendance.Id,
                 StudentName = $"{student.FirstName} {student.LastName}",
-                CourseName = session.Course.CourseName,
+                CourseName = session.Course?.CourseName ?? "Unknown",
                 Status = status,
                 Date = session.Date,
-                ScannedAt = attendance.CreatedAt
+                ScannedAt = DateTime.UtcNow
             };
         }
-
-        // ── DEACTIVATE ────────────────────────────────────────────────────
 
         public async Task<bool> DeactivateAsync(int sessionId)
         {
-            var session = await _qrRepository.GetByIdWithDetailsAsync(sessionId);
+            var session = await _context.QRSessions.FindAsync(sessionId);
             if (session == null) return false;
 
             session.IsActive = false;
-            _qrRepository.Update(session);
-            await _qrRepository.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return true;
         }
 
-        // ── ACTIVE SESSIONS ───────────────────────────────────────────────
-
-        public async Task<IEnumerable<QRSessionResponseDto>> GetActiveSessionsAsync(int courseId)
+        public async Task<List<QRSessionResponseDto>> GetActiveSessionsAsync(int courseId)
         {
-            var sessions = await _qrRepository.GetActiveByCourseAsync(courseId);
-            return sessions.Select(s => ToDto(s, string.Empty));
-        }
+            var query = _context.QRSessions
+                .Include(q => q.Course)
+                .Where(q => q.IsActive && q.ExpiresAt > DateTime.UtcNow);
 
-        // ── PRIVATE HELPERS ───────────────────────────────────────────────
-
-        /// <summary>
-        /// Sends real-time SignalR notification to:
-        ///   - "course_{courseId}" group → teacher dashboard
-        ///   - "admin" group             → admin global feed
-        /// </summary>
-        private async Task NotifyHubAsync(
-            Attendance attendance,
-            Student student,
-            QRSession session,
-            string status)
-        {
-            var notification = new AttendanceNotificationDto
+            if (courseId > 0)
             {
-                AttendanceId = attendance.Id,
-                StudentName = $"{student.LastName}, {student.FirstName}",
-                StudentNo = student.StudentNo,
-                CourseName = session.Course?.CourseName ?? "",
-                Section = student.Section,
-                Status = status,
-                Date = session.Date,
-                Timestamp = attendance.CreatedAt,
-                Source = "qr_scan" // ✅ frontend can show "via QR" badge
-            };
+                query = query.Where(q => q.CourseId == courseId);
+            }
 
-            // Notify teacher watching this specific course
-            await _hub.Clients
-                .Group($"course_{session.CourseId}")
-                .SendAsync("AttendanceRecorded", notification);
+            var sessions = await query
+                .OrderByDescending(q => q.CreatedAt)
+                .ToListAsync();
 
-            // Notify admin global feed
-            await _hub.Clients
-                .Group("admin")
-                .SendAsync("AttendanceRecorded", notification);
+            return sessions.Select(s => new QRSessionResponseDto
+            {
+                Id = s.Id,
+                CourseId = s.CourseId,
+                CourseName = s.Course?.CourseName ?? "Unknown",
+                Token = s.Token,
+                Date = s.Date,
+                CreatedAt = s.CreatedAt,
+                ExpiresAt = s.ExpiresAt,
+                IsActive = s.IsActive,
+                MinutesRemaining = (int)Math.Max(0, (s.ExpiresAt - DateTime.UtcNow).TotalMinutes)
+            }).ToList();
         }
 
-        private static string GenerateQRCodeBase64(string token)
+        public async Task<QRSessionResponseDto?> GetSessionByIdAsync(int sessionId)
+        {
+            var session = await _context.QRSessions
+                .Include(q => q.Course)
+                .FirstOrDefaultAsync(q => q.Id == sessionId);
+
+            if (session == null) return null;
+
+            return new QRSessionResponseDto
+            {
+                Id = session.Id,
+                CourseId = session.CourseId,
+                CourseName = session.Course?.CourseName ?? "Unknown",
+                Token = session.Token,
+                Date = session.Date,
+                CreatedAt = session.CreatedAt,
+                ExpiresAt = session.ExpiresAt,
+                IsActive = session.IsActive,
+                MinutesRemaining = (int)Math.Max(0, (session.ExpiresAt - DateTime.UtcNow).TotalMinutes)
+            };
+        }
+
+        private string GenerateQRCodeBase64(string token)
         {
             using var qrGenerator = new QRCodeGenerator();
-            var qrData = qrGenerator.CreateQrCode(token, QRCodeGenerator.ECCLevel.Q);
-            var qrCode = new PngByteQRCode(qrData);
-            var qrBytes = qrCode.GetGraphic(10);
-            return Convert.ToBase64String(qrBytes);
+            using var qrCodeData = qrGenerator.CreateQrCode(token, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var qrCodeBytes = qrCode.GetGraphic(20);
+            return Convert.ToBase64String(qrCodeBytes);
         }
 
-        private static QRSessionResponseDto ToDto(QRSession s, string qrBase64) => new()
+        private async Task SendEmailNotificationAsync(Student student, Course course, string status, DateOnly date, DateTime scannedAt)
         {
-            Id = s.Id,
-            CourseId = s.CourseId,
-            CourseName = s.Course?.CourseName ?? "",
-            Token = s.Token,
-            Date = s.Date,
-            CreatedAt = s.CreatedAt,
-            ExpiresAt = s.ExpiresAt,
-            IsActive = s.IsActive,
-            QRCodeBase64 = qrBase64,
-            MinutesRemaining = s.IsActive
-                ? Math.Max(0, (int)(s.ExpiresAt - DateTime.UtcNow).TotalMinutes)
-                : 0
-        };
+            try
+            {
+                if (string.IsNullOrWhiteSpace(student.Email))
+                {
+                    Console.WriteLine($"[EMAIL] No email for student {student.StudentNo}");
+                    return;
+                }
 
-        private static ScanResultDto Fail(string message) => new()
-        {
-            Success = false,
-            Message = message
-        };
+                await _emailJS.SendAttendanceNotificationAsync(
+                    studentEmail: student.Email,
+                    studentName: $"{student.FirstName} {student.LastName}",
+                    studentNo: student.StudentNo,
+                    courseName: course?.CourseName ?? "Unknown",
+                    section: student.Section,
+                    status: status,
+                    date: date,
+                    timeRecorded: scannedAt
+                );
+
+                Console.WriteLine($"[EMAIL] Sent to {student.Email} for QR scan - Status: {status}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[EMAIL ERROR] Failed to send to {student.Email}: {ex.Message}");
+            }
+        }
     }
 }

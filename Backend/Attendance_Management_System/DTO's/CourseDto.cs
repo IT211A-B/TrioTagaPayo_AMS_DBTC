@@ -62,7 +62,7 @@ namespace Attendance_Management_System.DTOs
         public int Units { get; set; }
         public string Section { get; set; } = string.Empty;
         public string Schedule { get; set; } = string.Empty;
-        public int TeacherId { get; set; }
+        public int TeacherId { get; set; }  // ✅ Exposed for ownership verification
         public string TeacherName { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; }
     }

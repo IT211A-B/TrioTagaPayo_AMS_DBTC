@@ -131,21 +131,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // =============================================
-// CORS — Production ready with credentials
+// CORS — Allow frontend connections
 // =============================================
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("ProductionCors", policy =>
     {
-        var allowedOrigins = new[]
-        {
-            "https://your-actual-frontend.onrender.com",
-            "https://www.yourfrontend.com",
-            "http://localhost:3000",
-        };
-
         policy
-            .WithOrigins(allowedOrigins)
+            .WithOrigins(
+                "https://localhost:7033",           // Your local frontend
+                "https://localhost:5001",           // Local frontend alternative
+                "http://localhost:3000",            // React
+                "http://localhost:5173",            // Vite
+                "http://localhost:4200",            // Angular
+                "https://your-frontend.onrender.com" // Replace with your actual frontend URL
+            )
             .AllowAnyHeader()
             .AllowAnyMethod()
             .AllowCredentials()
@@ -164,22 +164,8 @@ builder.Services.AddAppRateLimiting();
 builder.Services.AddSignalR();
 
 // =============================================
-// HTTPS Enforcement - DISABLED for Render
-// Render handles SSL termination automatically
+// Swagger
 // =============================================
-// builder.Services.AddHttpsRedirection(options =>
-// {
-//     options.HttpsPort = 443;
-//     options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
-// });
-
-// builder.Services.AddHsts(options =>
-// {
-//     options.Preload = true;
-//     options.IncludeSubDomains = true;
-//     options.MaxAge = TimeSpan.FromDays(365);
-// });
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -222,7 +208,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // =============================================
-// Build + Middleware Pipeline
+// Build App
 // =============================================
 var app = builder.Build();
 
@@ -248,11 +234,8 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
+// Middleware pipeline
 app.UseMiddleware<ExceptionMiddleware>();
-
-// HTTPS redirection DISABLED for Render
-// app.UseHttpsRedirection();
-
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {

@@ -10,10 +10,8 @@
         public string Remarks { get; set; } = string.Empty;
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-        // Optional: Link to QR scan if attendance came from QR
         public int? QRScanId { get; set; }
 
-        // Navigation properties
         public Student Student { get; set; } = null!;
         public Course Course { get; set; } = null!;
         public QRScan? QRScan { get; set; }
