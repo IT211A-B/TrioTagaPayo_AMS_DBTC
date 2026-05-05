@@ -61,10 +61,10 @@ namespace Attendance_Management_System.Helpers
 
                 var payload = new
                 {
-                    service_id = _options.ServiceId,   // service_g2chu6n
-                    template_id = _options.TemplateId,  // from your EmailJS template
-                    user_id = _options.PublicKey,   // 8Bl6qmvcgm8Trs0rg
-                    accessToken = _options.PrivateKey,  // ihj0... (private key)
+                    service_id = _options.ServiceId,   // from Render env: EmailJS:ServiceId
+                    template_id = _options.TemplateId,  // from Render env: EmailJS:TemplateId
+                    user_id = _options.PublicKey,   // from Render env: EmailJS:PublicKey
+                    accessToken = _options.PrivateKey,  // from Render env: EmailJS:PrivateKey
                     template_params = templateParams
                 };
 
