@@ -139,11 +139,9 @@ builder.Services.AddCors(options =>
     {
         var allowedOrigins = new[]
         {
-            "https://yourfrontend.com",
+            "https://your-actual-frontend.onrender.com",
             "https://www.yourfrontend.com",
             "http://localhost:3000",
-            "http://localhost:4200",
-            "http://localhost:5173"
         };
 
         policy
