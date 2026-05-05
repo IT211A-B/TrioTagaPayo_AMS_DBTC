@@ -59,12 +59,14 @@ namespace Attendance_Management_System.DBCONTEXT
                 .HasForeignKey(q => q.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ✅ Attendance to QRScan relationship (move this after QRScan config)
+            // ✅ COMMENT THIS OUT TEMPORARILY
+            /*
             modelBuilder.Entity<Attendance>()
                 .HasOne(a => a.QRScan)
                 .WithOne(q => q.Attendance)
                 .HasForeignKey<Attendance>(a => a.QRScanId)
                 .OnDelete(DeleteBehavior.SetNull);
+            */
 
             // ✅ Prevent duplicate scans at DB level
             modelBuilder.Entity<QRScan>()
