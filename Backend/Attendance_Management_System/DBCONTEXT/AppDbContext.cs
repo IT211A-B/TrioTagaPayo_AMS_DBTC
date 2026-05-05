@@ -21,7 +21,7 @@ namespace Attendance_Management_System.DBCONTEXT
         {
             base.OnModelCreating(modelBuilder);
 
-            // existing relationships (dili tanggalon)
+            // existing relationships
             modelBuilder.Entity<Course>()
                 .HasOne(c => c.Teacher)
                 .WithMany(t => t.Courses)
@@ -34,20 +34,13 @@ namespace Attendance_Management_System.DBCONTEXT
                 .HasForeignKey(a => a.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // Attendance to QRScan relationship (optional)
-            modelBuilder.Entity<Attendance>()
-                .HasOne(a => a.QRScan)
-                .WithOne(q => q.Attendance)
-                .HasForeignKey<Attendance>(a => a.QRScanId)
-                .OnDelete(DeleteBehavior.SetNull);
-
             modelBuilder.Entity<Attendance>()
                 .HasOne(a => a.Course)
                 .WithMany(c => c.Attendances)
                 .HasForeignKey(a => a.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // ✅ ADD THESE — QR relationships
+            // ✅ QR relationships
             modelBuilder.Entity<QRSession>()
                 .HasOne(q => q.Course)
                 .WithMany()
@@ -65,6 +58,13 @@ namespace Attendance_Management_System.DBCONTEXT
                 .WithMany()
                 .HasForeignKey(q => q.StudentId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ Attendance to QRScan relationship (move this after QRScan config)
+            modelBuilder.Entity<Attendance>()
+                .HasOne(a => a.QRScan)
+                .WithOne(q => q.Attendance)
+                .HasForeignKey<Attendance>(a => a.QRScanId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             // ✅ Prevent duplicate scans at DB level
             modelBuilder.Entity<QRScan>()
