@@ -111,6 +111,8 @@ async function submitStudent() {
     var lastName = document.getElementById('lastName').value.trim();
     var email = document.getElementById('email').value.trim();
     var section = document.getElementById('section').value.trim();
+    var middleName = document.getElementById('middleName').value.trim();
+    var mobileNo = document.getElementById('mobileNo').value.trim();
 
     if (!firstName || !lastName || !email || !section) {
         if (typeof Toast !== 'undefined') Toast.warning('Please fill in all required fields.');
@@ -127,13 +129,12 @@ async function submitStudent() {
     var payload = new URLSearchParams();
     payload.append('__RequestVerificationToken', antiForgeryToken);
     payload.append('id', document.getElementById('dbId').value);
-    payload.append('studentNo', document.getElementById('studentNo').value);
     payload.append('firstName', firstName);
-    payload.append('middleName', document.getElementById('middleName').value.trim());
+    payload.append('middleName', middleName);
     payload.append('lastName', lastName);
     payload.append('email', email);
     payload.append('section', section);
-    payload.append('mobileNo', document.getElementById('mobileNo').value.trim());
+    payload.append('mobileNo', mobileNo);
 
     try {
         var response = await fetch(url, {
@@ -196,10 +197,11 @@ async function submitDelete() {
 }
 
 function clearForm() {
-    ['dbId', 'studentNo', 'firstName', 'middleName', 'lastName', 'email', 'section', 'mobileNo'].forEach(function (id) {
-        var el = document.getElementById(id);
+    var ids = ['dbId', 'studentNo', 'firstName', 'middleName', 'lastName', 'email', 'section', 'mobileNo'];
+    for (var i = 0; i < ids.length; i++) {
+        var el = document.getElementById(ids[i]);
         if (el) el.value = '';
-    });
+    }
 }
 
 function openModal(id) {

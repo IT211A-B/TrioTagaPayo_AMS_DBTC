@@ -1,40 +1,7 @@
 ﻿// skeleton.js - Handle skeleton loading states
 
-function showSkeleton(elementId, skeletonHtml) {
-    var element = document.getElementById(elementId);
-    if (!element) return;
-
-    // Store original content if not already stored
-    if (!element.getAttribute('data-original-content')) {
-        element.setAttribute('data-original-content', element.innerHTML);
-    }
-
-    // Store skeleton HTML if provided
-    if (skeletonHtml) {
-        element.setAttribute('data-skeleton-html', skeletonHtml);
-    }
-
-    var skeletonContent = element.getAttribute('data-skeleton-html');
-    if (skeletonContent) {
-        element.innerHTML = skeletonContent;
-    }
-    element.classList.add('loading');
-}
-
-function hideSkeleton(elementId) {
-    var element = document.getElementById(elementId);
-    if (!element) return;
-
-    var originalContent = element.getAttribute('data-original-content');
-    if (originalContent) {
-        element.innerHTML = originalContent;
-    }
-    element.classList.remove('loading');
-}
-
-// Auto-hide skeleton rows when data loads
 document.addEventListener('DOMContentLoaded', function () {
-    // Hide skeleton after data loads (small delay to allow rendering)
+    // Hide skeleton after data loads
     setTimeout(function () {
         var skeletonRows = document.querySelectorAll('.skeleton-row');
         if (skeletonRows.length > 0) {

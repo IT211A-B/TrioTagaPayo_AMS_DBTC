@@ -1,7 +1,6 @@
 ﻿// teachers.js - Teachers page JavaScript
 
 let currentPage = 1;
-const totalPages = @Model.TotalPages;
 let isLoading = false;
 let searchTimer = null;
 let isEditing = false;
@@ -114,7 +113,6 @@ async function submitTeacher() {
     var payload = new URLSearchParams();
     payload.append('__RequestVerificationToken', antiForgeryToken);
     payload.append('id', document.getElementById('dbId').value);
-    payload.append('teacherNo', document.getElementById('teacherNo').value);
     payload.append('firstName', fn);
     payload.append('lastName', ln);
     payload.append('email', em);

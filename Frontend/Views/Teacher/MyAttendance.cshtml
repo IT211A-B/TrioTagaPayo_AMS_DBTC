@@ -1,0 +1,125 @@
+﻿@model AMS.ViewModels.TeacherAttendanceViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "My Attendance";
+    ViewData["PageTitle"] = "My Attendance";
+    ViewData["ActivePage"] = "MyAttendance";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/attendance.css" />
+}
+
+<div class="page-header">
+    <div>
+        <h2>My Attendance Records</h2>
+        <p>View and manage attendance for your classes</p>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="studentSearch" class="search-input" placeholder="Search student..." />
+    </div>
+    <select id="courseFilter" class="filter-select">
+        <option value="">All My Courses</option>
+        @foreach (var course in Model.Courses)
+        {
+            <option value="@course.DbId">@course.CourseName - @course.Section</option>
+        }
+    </select>
+    <select id="statusFilter" class="filter-select">
+        <option value="">All Status</option>
+        <option value="Present">Present</option>
+        <option value="Absent">Absent</option>
+        <option value="Late">Late</option>
+    </select>
+    <input type="date" id="fromDate" class="filter-input" value="@Model.FromDate" />
+    <input type="date" id="toDate" class="filter-input" value="@Model.ToDate" />
+    <button id="applyFilter" class="btn-secondary">Apply Filter</button>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-pill"><span class="pill-dot dot-blue"></span>Total: <strong>@Model.Records.Count</strong></div>
+    <div class="summary-pill"><span class="pill-dot dot-green"></span>Present: <strong>@Model.Records.Count(r => r.Status == "Present")</strong></div>
+    <div class="summary-pill"><span class="pill-dot dot-red"></span>Absent: <strong>@Model.Records.Count(r => r.Status == "Absent")</strong></div>
+    <div class="summary-pill"><span class="pill-dot" style="background:#f59e0b"></span>Late: <strong>@Model.Records.Count(r => r.Status == "Late")</strong></div>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th class="hide-sm">ID No.</th>
+                <th class="hide-sm">Course</th>
+                <th class="hide-md">Date</th>
+                <th>Status</th>
+                <th>Remarks</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceBody">
+            @if (Model.Records.Any())
+            {
+                foreach (var record in Model.Records)
+                {
+                    <tr class="table-row">
+                        <td>
+                            <div class="student-cell">
+                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                    @(record.StudentName?.Length > 0 ? record.StudentName[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div>
+                                    <p class="cell-name">@record.StudentName</p>
+                                    <p class="cell-sub">@record.StudentNo</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm"><span class="id-badge">@record.StudentNo</span></td>
+                        <td class="hide-sm">@record.CourseName</td>
+                        <td class="hide-md">@record.Date</td>
+                        <td>
+                            <span class="status-badge @(record.Status == "Present" ? "badge-active" : record.Status == "Late" ? "badge-warning" : "badge-inactive")">
+                                ● @record.Status
+                            </span>
+                        </td>
+                        <td class="hide-md">@record.Remarks</td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="6"><div class="empty-state"><span class="empty-icon">◷</span><p class="empty-title">No attendance records yet</p><p class="empty-message">Records will appear once students scan QR codes.</p></div></td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        function filterTable() {
+            var searchTerm = document.getElementById('studentSearch')?.value.toLowerCase() || '';
+            var course = document.getElementById('courseFilter')?.value || '';
+            var status = document.getElementById('statusFilter')?.value || '';
+            var rows = document.querySelectorAll('#attendanceBody tr.table-row');
+
+            rows.forEach(function(row) {
+                var text = row.textContent.toLowerCase();
+                var courseCell = row.querySelector('td:nth-child(3)')?.textContent || '';
+                var statusCell = row.querySelector('td:nth-child(5)')?.textContent || '';
+                var show = text.includes(searchTerm);
+                if (show && course && courseCell !== course) show = false;
+                if (show && status && !statusCell.includes(status)) show = false;
+                row.style.display = show ? '' : 'none';
+            });
+        }
+
+        document.getElementById('studentSearch')?.addEventListener('input', filterTable);
+        document.getElementById('courseFilter')?.addEventListener('change', filterTable);
+        document.getElementById('statusFilter')?.addEventListener('change', filterTable);
+        document.getElementById('applyFilter')?.addEventListener('click', filterTable);
+    </script>
+}
