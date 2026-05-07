@@ -5,26 +5,34 @@ using Attendance_Management_System.Helpers;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
 using BCrypt.Net;
+using Attendance_Management_System.DTOs;
+using Attendance_Management_System.Repositories.Interfaces;
 
 namespace Attendance_Management_System.Controllers
 {
-    /// <summary>
-    /// Handles user authentication — login, JWT generation, token refresh, and logout.
-    /// Supports both Bearer token (mobile) and HttpOnly cookie (browser).
-    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        public AuthController(IAuthService authService) => _authService = authService;
+        private readonly IUserRepository _userRepository;
+        private readonly IStudentRepository _studentRepository;
+        private readonly IPasswordHasher _hasher;
 
-        /// <summary>
-        /// TEST ENDPOINT - Check if BCrypt is working on Render
-        /// </summary>
+        public AuthController(
+            IAuthService authService,
+            IUserRepository userRepository,
+            IStudentRepository studentRepository,
+            IPasswordHasher hasher)
+        {
+            _authService = authService;
+            _userRepository = userRepository;
+            _studentRepository = studentRepository;
+            _hasher = hasher;
+        }
+
         [AllowAnonymous]
         [HttpGet("test-bcrypt")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
         public IActionResult TestBcrypt()
         {
             try
@@ -33,43 +41,17 @@ namespace Attendance_Management_System.Controllers
                 var testHash = BCrypt.Net.BCrypt.HashPassword(testPassword);
                 var isValid = BCrypt.Net.BCrypt.Verify(testPassword, testHash);
 
-                return Ok(new
-                {
-                    success = true,
-                    testHash,
-                    isValid,
-                    bcryptWorking = isValid,
-                    message = isValid ? "BCrypt is working correctly!" : "BCrypt verification failed!"
-                });
+                return Ok(new { success = true, isValid, message = isValid ? "BCrypt is working!" : "BCrypt failed!" });
             }
             catch (Exception ex)
             {
-                return Ok(new
-                {
-                    success = false,
-                    error = ex.Message,
-                    stackTrace = ex.StackTrace
-                });
+                return Ok(new { success = false, error = ex.Message });
             }
         }
 
-        /// <summary>
-        /// Authenticates a user and returns a JWT access token + refresh token.
-        /// Also stores both tokens in HttpOnly cookies for browser-based clients.
-        /// Access token expires in 8 hours. Refresh token expires in 7 days.
-        /// </summary>
-        /// <param name="request">Username and password credentials.</param>
-        /// <response code="200">Login successful. Returns token, username, role, and expiration.</response>
-        /// <response code="400">Username or password is missing.</response>
-        /// <response code="401">Invalid username or password.</response>
-        /// <response code="429">Too many login attempts. Try again after 1 minute.</response>
         [AllowAnonymous]
         [HttpPost("login")]
         [EnableRateLimiting("login")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
@@ -80,10 +62,6 @@ namespace Attendance_Management_System.Controllers
             if (result == null)
                 return Unauthorized(new { message = "Invalid username or password." });
 
-            // ✅ COOKIE SESSION — store JWT sa HttpOnly cookie
-            // HttpOnly = JS dili maka-access (XSS protection)
-            // Secure   = HTTPS only
-            // SameSite = CSRF protection
             Response.Cookies.Append("accessToken", result.Token, new CookieOptions
             {
                 HttpOnly = true,
@@ -92,8 +70,6 @@ namespace Attendance_Management_System.Controllers
                 Expires = result.Expiration
             });
 
-            // ✅ Refresh token sa separate cookie
-            // Path = accessible sa /api/Auth/refresh endpoint lang
             Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
             {
                 HttpOnly = true,
@@ -106,25 +82,11 @@ namespace Attendance_Management_System.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Refreshes an expired JWT access token using a valid refresh token.
-        /// Accepts either JSON body OR cookie — auto-detect.
-        /// Works for both browser (cookie) and mobile (body) clients.
-        /// </summary>
-        /// <param name="request">The refresh token (optional if cookie is present).</param>
-        /// <response code="200">Returns new access token + new refresh token.</response>
-        /// <response code="400">Refresh token is missing.</response>
-        /// <response code="401">Refresh token is invalid or expired.</response>
         [AllowAnonymous]
         [HttpPost("refresh")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest? request)
         {
-            // ✅ Auto-detect: cookie first (browser), then JSON body (mobile)
-            var token = Request.Cookies["refreshToken"]
-                        ?? request?.RefreshToken;
+            var token = Request.Cookies["refreshToken"] ?? request?.RefreshToken;
 
             if (string.IsNullOrWhiteSpace(token))
                 return BadRequest(new { message = "Refresh token is required." });
@@ -132,9 +94,8 @@ namespace Attendance_Management_System.Controllers
             var result = await _authService.RefreshAsync(token);
 
             if (result == null)
-                return Unauthorized(new { message = "Refresh token is invalid or has expired. Please log in again." });
+                return Unauthorized(new { message = "Refresh token is invalid or has expired." });
 
-            // ✅ Update cookies with new tokens (rotation)
             Response.Cookies.Append("accessToken", result.Token, new CookieOptions
             {
                 HttpOnly = true,
@@ -155,40 +116,112 @@ namespace Attendance_Management_System.Controllers
             return Ok(result);
         }
 
-        /// <summary>
-        /// Logs out the user — clears both JWT cookies from the browser.
-        /// </summary>
-        /// <response code="200">Logged out successfully.</response>
         [Authorize]
         [HttpPost("logout")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult Logout()
         {
-            // ✅ Delete both cookies on logout
             Response.Cookies.Delete("accessToken");
             Response.Cookies.Delete("refreshToken");
             return Ok(new { message = "Logged out successfully." });
         }
 
-        /// <summary>
-        /// Returns the currently logged-in user's info from JWT claims.
-        /// Useful for frontend to know who is logged in after page refresh.
-        /// </summary>
-        /// <response code="200">Returns userId, username, and role.</response>
-        /// <response code="401">Unauthorized — JWT token missing or invalid.</response>
         [Authorize]
         [HttpGet("me")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public IActionResult GetMe()
         {
-            // ✅ CLAIMS INFO — read directly from validated JWT
             var userId = User.GetUserId();
             var username = User.GetUsername();
             var role = User.GetRole();
 
             return Ok(new { userId, username, role });
+        }
+
+        /// <summary>
+        /// ✅ STUDENT REGISTRATION ENDPOINT
+        /// POST /api/Auth/register
+        /// </summary>
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        {
+            // Validate input
+            if (string.IsNullOrWhiteSpace(dto.Username) ||
+                string.IsNullOrWhiteSpace(dto.Password) ||
+                string.IsNullOrWhiteSpace(dto.FullName))
+            {
+                return BadRequest(new { success = false, message = "Username, password, and full name are required" });
+            }
+
+            // Check if user already exists
+            var existingUser = await _userRepository.FindAsync(u => u.Username == dto.Username);
+            if (existingUser != null)
+            {
+                return BadRequest(new { success = false, message = "Username already exists" });
+            }
+
+            // Parse full name
+            var (firstName, lastName) = ParseFullName(dto.FullName);
+
+            // Generate student number (STU001, STU002, etc.)
+            var studentNo = await GenerateStudentNumber();
+
+            // Create User account
+            var user = new User
+            {
+                Username = dto.Username,
+                PasswordHash = _hasher.Hash(dto.Password),
+                Role = "Student",
+                CreatedAt = DateTime.UtcNow,
+                RefreshToken = null,
+                RefreshTokenExpiry = null
+            };
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            // Create Student record
+            var student = new Student
+            {
+                StudentNo = studentNo,
+                FirstName = firstName,
+                LastName = lastName,
+                MiddleName = "",
+                Email = $"{studentNo}@student.edu",
+                Section = "",
+                MobileNo = "",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _studentRepository.AddAsync(student);
+            await _studentRepository.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = "Registration successful",
+                studentId = student.Id,
+                studentNo = student.StudentNo,
+                username = user.Username
+            });
+        }
+
+        private async Task<string> GenerateStudentNumber()
+        {
+            var students = await _studentRepository.GetAllAsync();
+            var count = students.Count() + 1;
+            return $"STU{count:D3}";
+        }
+
+        private (string FirstName, string LastName) ParseFullName(string fullName)
+        {
+            var trimmed = fullName.Trim();
+            var parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length == 0)
+                return ("", "");
+
+            if (parts.Length == 1)
+                return (parts[0], "");
+
+            return (parts[0], string.Join(" ", parts.Skip(1)));
         }
     }
 }

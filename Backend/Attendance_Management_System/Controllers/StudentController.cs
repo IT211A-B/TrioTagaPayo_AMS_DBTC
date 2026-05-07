@@ -12,7 +12,11 @@ namespace Attendance_Management_System.Controllers
     public class StudentController : ControllerBase
     {
         private readonly IStudentService _studentService;
-        public StudentController(IStudentService studentService) => _studentService = studentService;
+
+        public StudentController(IStudentService studentService)
+        {
+            _studentService = studentService;
+        }
 
         /// <summary>Gets all students with optional pagination.</summary>
         [HttpGet]
@@ -44,6 +48,12 @@ namespace Attendance_Management_System.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Create([FromBody] CreateStudentDto dto)
         {
+            // Auto-generate student number if not provided
+            if (string.IsNullOrWhiteSpace(dto.StudentNo))
+            {
+                dto.StudentNo = await GenerateStudentNumber();
+            }
+
             var created = await _studentService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
@@ -72,6 +82,16 @@ namespace Attendance_Management_System.Controllers
             return deleted
                 ? NoContent()
                 : NotFound(new { message = $"Student with ID {id} not found." });
+        }
+
+        /// <summary>
+        /// Generates a student number in STU001 format
+        /// </summary>
+        private async Task<string> GenerateStudentNumber()
+        {
+            var students = await _studentService.GetAllAsync();
+            var count = students.Count() + 1;
+            return $"STU{count:D3}";  // STU001, STU002, STU003...
         }
     }
 }

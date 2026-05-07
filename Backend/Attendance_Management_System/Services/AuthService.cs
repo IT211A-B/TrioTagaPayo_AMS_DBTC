@@ -12,17 +12,20 @@ namespace Attendance_Management_System.Services
         private readonly IPasswordHasher _hasher;
         private readonly IJwtTokenGenerator _tokenGenerator;
         private readonly ILogger<AuthService> _logger;
+        private readonly IStudentRepository _studentRepository;
 
         public AuthService(
             IUserRepository userRepository,
             IPasswordHasher hasher,
             IJwtTokenGenerator tokenGenerator,
-            ILogger<AuthService> logger)
+            ILogger<AuthService> logger,
+            IStudentRepository studentRepository)  // Add this parameter
         {
             _userRepository = userRepository;
             _hasher = hasher;
             _tokenGenerator = tokenGenerator;
             _logger = logger;
+            _studentRepository = studentRepository;  // Add this
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
