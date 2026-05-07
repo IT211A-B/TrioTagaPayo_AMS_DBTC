@@ -212,10 +212,10 @@ namespace Attendance_Management_System.Services
             };
         }
 
-        private string GenerateQRCodeBase64(string token)
+        private string GenerateQRCodeBase64(string text)
         {
             using var qrGenerator = new QRCodeGenerator();
-            using var qrCodeData = qrGenerator.CreateQrCode(token, QRCodeGenerator.ECCLevel.Q);
+            using var qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
             using var qrCode = new PngByteQRCode(qrCodeData);
             var qrCodeBytes = qrCode.GetGraphic(20);
             return Convert.ToBase64String(qrCodeBytes);

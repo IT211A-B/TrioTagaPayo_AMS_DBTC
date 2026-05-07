@@ -15,10 +15,14 @@ namespace Attendance_Management_System.DBCONTEXT
         public DbSet<QRSession> QRSessions { get; set; }
         public DbSet<QRScan> QRScans { get; set; }
 
+        // ✅ ADD THIS
+        public DbSet<Enrollment> Enrollments { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
+            // Existing relationships...
             modelBuilder.Entity<Course>()
                 .HasOne(c => c.Teacher)
                 .WithMany(t => t.Courses)
@@ -37,6 +41,25 @@ namespace Attendance_Management_System.DBCONTEXT
                 .HasForeignKey(a => a.CourseId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            // ✅ ADD ENROLLMENT RELATIONSHIPS
+            modelBuilder.Entity<Enrollment>()
+                .HasOne(e => e.Student)
+                .WithMany()
+                .HasForeignKey(e => e.StudentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Enrollment>()
+                .HasOne(e => e.Course)
+                .WithMany()
+                .HasForeignKey(e => e.CourseId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ Prevent duplicate enrollment
+            modelBuilder.Entity<Enrollment>()
+                .HasIndex(e => new { e.StudentId, e.CourseId })
+                .IsUnique();
+
+            // QR relationships...
             modelBuilder.Entity<QRSession>()
                 .HasOne(q => q.Course)
                 .WithMany()
