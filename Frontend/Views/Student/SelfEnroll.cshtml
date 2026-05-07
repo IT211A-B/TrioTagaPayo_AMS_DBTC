@@ -1,78 +1,66 @@
-﻿// self-enroll.js
-
-var courseId = new URLSearchParams(window.location.search).get('courseId');
-
-// Load course info
-fetch('/api/Course/' + courseId)
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        var courseInfo = document.getElementById('courseInfo');
-        if (courseInfo) {
-            courseInfo.innerHTML = '<span style="color:#38bdf8;">' + (data.courseCode || '') + '</span>
-<br><span style="color:#e2eaf4; font-weight:600;">' + (data.courseName || 'Course') + '</span>';
-        }
-    })
-    .catch(function() {
-        var courseInfo = document.getElementById('courseInfo');
-        if (courseInfo) {
-            courseInfo.innerHTML = '<span style="color:#38bdf8;">Course ready</span>';
-        }
-    });
-
-// Submit enrollment
-window.submitEnrollment = async function() {
-    var studentId = document.getElementById('studentId').value.trim();
-    var fullName = document.getElementById('fullName').value.trim();
-    var btn = document.getElementById('enrollBtn');
-
-    if (!studentId || !fullName) {
-        showMessage('Please enter both Student ID and Full Name', 'error');
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = 'Enrolling...';
-
-    try {
-        var response = await fetch('/api/Enrollment/self-enroll', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                studentId: studentId,
-                fullName: fullName,
-                courseId: parseInt(courseId)
-            })
-        });
-
-        var data = await response.json();
-
-        if (data.success) {
-            showMessage('✓ Successfully enrolled in course!', 'success');
-            setTimeout(function() { window.close(); }, 2000);
-        } else {
-            showMessage(data.message || 'Enrollment failed', 'error');
-        }
-    } catch (error) {
-        showMessage('Connection error. Please try again.', 'error');
-    } finally {
-        btn.disabled = false;
-        btn.textContent = 'Enroll Now';
-    }
-};
-
-function showMessage(msg, type) {
-    var messageArea = document.getElementById('messageArea');
-    if (!messageArea) return;
-    messageArea.innerHTML = '<div class="message ' + type + '">' + msg + '</div>';
-    setTimeout(function() {
-        if (messageArea.firstChild) messageArea.firstChild.remove();
-    }, 5000);
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Student Self-Enrollment";
 }
 
-// Enter key submits
-document.getElementById('studentId')?.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') window.submitEnrollment();
-});
-document.getElementById('fullName')?.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') window.submitEnrollment();
-});
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Self Enrollment - 3TagaPayu AMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/pages/self-enroll.css" />
+</head>
+<body>
+    <div class="enroll-container">
+        <div class="enroll-card">
+            <div class="logo">
+                <h1>3TagaPayu <span>AMS</span></h1>
+                <p>Student Self-Enrollment</p>
+            </div>
+
+            <div id="courseInfo" class="course-info">
+                <div class="loading">Loading course information...</div>
+            </div>
+
+            <div id="messageArea"></div>
+
+            <form id="enrollForm" onsubmit="event.preventDefault(); submitEnrollment();">
+                <div class="form-group">
+                    <label>STUDENT ID <span class="required">*</span></label>
+                    <input type="text" id="studentId" class="form-input" placeholder="e.g., 2024-00001" required />
+                </div>
+
+                <div class="form-group">
+                    <label>FULL NAME <span class="required">*</span></label>
+                    <input type="text" id="fullName" class="form-input" placeholder="e.g., Juan Dela Cruz" required />
+                </div>
+
+                <div class="form-group">
+                    <label>CREATE PASSWORD <span class="required">*</span></label>
+                    <input type="password" id="password" class="form-input" placeholder="Minimum 6 characters" required />
+                </div>
+
+                <div class="form-group">
+                    <label>CONFIRM PASSWORD <span class="required">*</span></label>
+                    <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter your password" required />
+                </div>
+
+                <button type="button" id="enrollBtn" class="enroll-btn" onclick="submitEnrollment()">Create Account & Enroll</button>
+            </form>
+
+            <div class="info-box">
+                <p>📌 After creating your account, you will be redirected to login.</p>
+                <p>🔐 Use your Student ID and the password you created to login.</p>
+            </div>
+
+            <div class="footer">
+                <p>3TagaPayu Attendance Management System</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/pages/self-enroll.js"></script>
+</body>
+</html>

@@ -1,4 +1,6 @@
-﻿.stats-row {
+﻿/* pages/course-details.css */
+
+.stats-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 20px;
@@ -9,7 +11,6 @@
     background: linear-gradient(135deg, rgba(13, 26, 42, 0.9), rgba(11, 21, 34, 0.95));
     border: 1px solid rgba(56, 189, 248, 0.1);
     padding: 20px;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
 }
 
 .stat-icon {
@@ -50,7 +51,6 @@
     background: rgba(13, 26, 42, 0.5);
     border: 1px solid rgba(56, 189, 248, 0.1);
     padding: 20px;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
 }
 
 .section-header {
@@ -114,7 +114,7 @@
     font-size: 14px;
     font-weight: 700;
     color: #fff;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    border-radius: 4px;
     flex-shrink: 0;
 }
 
@@ -171,12 +171,14 @@
     vertical-align: middle;
     margin-right: 6px;
     overflow: hidden;
+    border-radius: 2px;
 }
 
 .attend-bar {
     display: block;
     height: 100%;
     background: #22c55e;
+    border-radius: 2px;
 }
 
 .attend-pct {
@@ -192,7 +194,7 @@
     border: 1px solid rgba(56, 189, 248, 0.2);
     color: #e2eaf4;
     font-size: 12px;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    border-radius: 4px;
 }
 
 .status-select,
@@ -202,19 +204,12 @@
     color: #e2eaf4;
     padding: 6px 10px;
     font-size: 12px;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+    border-radius: 4px;
 }
 
 .remarks-input {
     width: 140px;
 }
-
-    .status-select:focus,
-    .remarks-input:focus,
-    .filter-input:focus {
-        outline: none;
-        border-color: rgba(216, 27, 96, 0.5);
-    }
 
 .btn-sm {
     padding: 5px 12px;
@@ -224,8 +219,7 @@
     letter-spacing: 0.05em;
     border: none;
     cursor: pointer;
-    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-    transition: all 0.15s;
+    border-radius: 4px;
 }
 
 .btn-primary {
@@ -234,7 +228,7 @@
 }
 
     .btn-primary:hover {
-        background: linear-gradient(90deg, #f01b6e, #c01555);
+        opacity: 0.9;
         transform: translateY(-1px);
     }
 
@@ -242,6 +236,7 @@
     background: rgba(34, 197, 94, 0.2);
     color: #4ade80;
     border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 4px;
 }
 
     .btn-success:hover {
@@ -252,15 +247,11 @@
     background: rgba(56, 189, 248, 0.2);
     color: #38bdf8;
     border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 4px;
 }
 
     .btn-save:hover {
         background: rgba(56, 189, 248, 0.3);
-    }
-
-    .btn-save:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
     }
 
 .modal-overlay {
@@ -291,13 +282,7 @@
     max-height: 90vh;
     overflow-y: auto;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-    transform: translateY(16px) scale(0.97);
-    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
-}
-
-.modal-overlay.active .modal-card {
-    transform: translateY(0) scale(1);
+    border-radius: 8px;
 }
 
 .modal-header {
@@ -326,14 +311,13 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.15s;
     font-size: 18px;
+    border-radius: 4px;
 }
 
     .modal-close:hover {
         background: rgba(216, 27, 96, 0.1);
         color: #d81b60;
-        border-color: rgba(216, 27, 96, 0.3);
     }
 
 .modal-body {
@@ -364,7 +348,11 @@
     }
 }
 
-@media (max-width: 900px) {
+@media (max-width: 768px) {
+    .hide-sm {
+        display: none;
+    }
+
     .two-columns {
         grid-template-columns: 1fr;
     }

@@ -102,6 +102,45 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
+        // MY COURSES (Teacher's assigned courses)
+        // ─────────────────────────────────────────────────────
+        public async Task<IActionResult> MyCourses()
+        {
+            if (!IsLoggedIn()) return RequireLogin();
+            if (!IsTeacher()) return RedirectToAction("Dashboard", "Admin");
+
+            ViewData["ActivePage"] = "MyCourses";
+            ViewData["PageTitle"] = "My Courses";
+
+            var teacherIdStr = HttpContext.Session.GetString("TeacherId");
+            var teacherName = HttpContext.Session.GetString("TeacherName") ??
+                              HttpContext.Session.GetString("Username") ?? "Teacher";
+
+            var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
+
+            List<CourseApiModel> myCourses;
+            if (!string.IsNullOrEmpty(teacherIdStr) && int.TryParse(teacherIdStr, out int teacherId))
+            {
+                myCourses = courses.Where(c => c.TeacherId == teacherId).ToList();
+            }
+            else
+            {
+                myCourses = courses.Where(c => c.TeacherName == teacherName).ToList();
+            }
+
+            var courseVMs = myCourses.Select(c => new CourseViewModel
+            {
+                DbId = c.Id,
+                CourseCode = c.CourseCode,
+                CourseName = c.CourseName,
+                Section = c.Section,
+                Schedule = c.Schedule
+            }).ToList();
+
+            return View(courseVMs);
+        }
+
+        // ─────────────────────────────────────────────────────
         // GENERATE QR CODE FOR COURSE ENROLLMENT - FIXED
         // ─────────────────────────────────────────────────────
         [HttpPost]
@@ -118,12 +157,13 @@ namespace AMS.Controllers
                 return Json(new { success = false, message = "Course not found" });
             }
 
-            // FIX: Use correct endpoint from Swagger: /api/QR/generate-enrollment
-            var result = await _api.PostAsync<object>($"/api/QR/generate-enrollment?courseId={courseId}", null);
+            // FIX: Send courseId as JSON body (not query string)
+            var requestBody = new { courseId = courseId };
+            var result = await _api.PostAsync<object>("/api/QR/generate-enrollment", requestBody);
 
             return result.Success && result.Data != null
                 ? Json(new { success = true, qrCode = result.Data, courseName = course.CourseName })
-                : Json(new { success = false, message = "Failed to generate QR code" });
+                : Json(new { success = false, message = result.Error ?? "Failed to generate QR code" });
         }
 
         // ─────────────────────────────────────────────────────
@@ -252,6 +292,9 @@ namespace AMS.Controllers
             return View(viewModel);
         }
 
+        // ─────────────────────────────────────────────────────
+        // INDEX - Redirect to Dashboard
+        // ─────────────────────────────────────────────────────
         public IActionResult Index()
         {
             if (!IsLoggedIn()) return RedirectToAction("Login", "Account");

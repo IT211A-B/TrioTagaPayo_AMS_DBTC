@@ -56,27 +56,27 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var s in Model.Students)
+                    @foreach (var student in Model.Students)
                     {
                         <tr>
                             <td class="student-cell">
                                 <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
-                                    @(s.StudentName.Length > 0 ? s.StudentName[0].ToString().ToUpper() : "?")
+                                    @(student.StudentName.Length > 0 ? student.StudentName[0].ToString().ToUpper() : "?")
                                 </div>
                                 <div>
-                                    <p class="cell-name">@s.StudentName</p>
-                                    <p class="cell-sub">@s.Email</p>
+                                    <p class="cell-name">@student.StudentName</p>
+                                    <p class="cell-sub">@student.Email</p>
                                 </div>
                             </td>
-                            <td><span class="id-badge">@s.StudentNo</span></td>
-                            <td>
+                            <td class="hide-sm"><span class="id-badge">@student.StudentNo</span></td>
+                            <td class="hide-sm">
                                 <div class="attend-mini">
-                                    <div class="attend-bar" style="width: @s.AttendanceRate%"></div>
+                                    <div class="attend-bar" style="width: @student.AttendanceRate%"></div>
                                 </div>
-                                <span class="attend-pct">@s.AttendanceRate%</span>
+                                <span class="attend-pct">@student.AttendanceRate%</span>
                             </td>
-                            <td>
-                                @if (s.IsEnrolled)
+                            <td class="hide-sm">
+                                @if (student.IsEnrolled)
                                 {
                                     <span class="status-badge badge-active">Enrolled</span>
                                 }
@@ -104,58 +104,42 @@
                 <thead>
                     <tr>
                         <th>Student</th>
-                        <th>ID No.</th>
+                        <th class="hide-sm">ID No.</th>
                         <th>Status</th>
                         <th>Remarks</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody id="attendanceBody">
-                    @foreach (var a in Model.TodayAttendance)
+                    @foreach (var record in Model.TodayAttendance)
                     {
-                        <tr data-studentid="@a.StudentId" data-attendanceid="@a.AttendanceId">
+                        <tr data-studentid="@record.StudentId" data-attendanceid="@record.AttendanceId">
                             <td class="student-cell">
                                 <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
-                                    @(a.StudentName.Length > 0 ? a.StudentName[0].ToString().ToUpper() : "?")
+                                    @(record.StudentName.Length > 0 ? record.StudentName[0].ToString().ToUpper() : "?")
                                 </div>
                                 <div>
-                                    <p class="cell-name">@a.StudentName</p>
+                                    <p class="cell-name">@record.StudentName</p>
                                 </div>
                             </td>
-                            <td><span class="id-badge">@a.StudentNo</span></td>
+                            <td class="hide-sm"><span class="id-badge">@record.StudentNo</span></td>
                             <td>
-                                <select class="status-select" data-studentid="@a.StudentId">
-                                    @if (a.Status == "Present")
-                                    {
-                                        <option value="Present" selected>● Present</option>
-                                        <option value="Absent">● Absent</option>
-                                        <option value="Late">● Late</option>
+                                <select class="status-select" data-studentid="@record.StudentId">
+                                    @{
+                                        var isPresent = record.Status == "Present";
+                                        var isAbsent = record.Status == "Absent";
+                                        var isLate = record.Status == "Late";
                                     }
-                                    else if (a.Status == "Absent")
-                                    {
-                                        <option value="Present">● Present</option>
-                                        <option value="Absent" selected>● Absent</option>
-                                        <option value="Late">● Late</option>
-                                    }
-                                    else if (a.Status == "Late")
-                                    {
-                                        <option value="Present">● Present</option>
-                                        <option value="Absent">● Absent</option>
-                                        <option value="Late" selected>● Late</option>
-                                    }
-                                    else
-                                    {
-                                        <option value="Present">● Present</option>
-                                        <option value="Absent">● Absent</option>
-                                        <option value="Late">● Late</option>
-                                    }
+                                    <option value="Present" selected="@isPresent">● Present</option>
+                                    <option value="Absent" selected="@isAbsent">● Absent</option>
+                                    <option value="Late" selected="@isLate">● Late</option>
                                 </select>
                             </td>
                             <td>
-                                <input type="text" class="remarks-input" data-studentid="@a.StudentId" value="@a.Remarks" placeholder="Remarks" />
+                                <input type="text" class="remarks-input" data-studentid="@record.StudentId" value="@record.Remarks" placeholder="Remarks" />
                             </td>
                             <td>
-                                <button class="btn-sm btn-save" data-studentid="@a.StudentId">Save</button>
+                                <button class="btn-sm btn-save" data-studentid="@record.StudentId">Save</button>
                             </td>
                         </tr>
                     }
@@ -177,7 +161,7 @@
             </div>
             <p><strong>Course:</strong> @Model.Course.CourseName</p>
             <p><strong>Course Code:</strong> @Model.Course.CourseCode</p>
-            <p style="font-size: 12px; color: var(--muted);">Students scan this QR to enroll in this course</p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
         </div>
         <div class="modal-footer">
             <button class="btn-primary" id="closeModalBtn">Close</button>

@@ -1,0 +1,68 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Student Login";
+    string errorMsg = ViewBag.Error as string ?? "";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Student Login - 3TagaPayu AMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/pages/student-login.css" />
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <div class="logo">
+                <h1>3TagaPayu <span>AMS</span></h1>
+                <p>Student Portal</p>
+            </div>
+
+            <div class="title">
+                <h2>Welcome Student!</h2>
+                <p>Login to mark your attendance</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMsg))
+            {
+                <div class="error-msg">
+                    ⚠️ @errorMsg
+                </div>
+            }
+
+            <form method="post" asp-action="StudentLogin" asp-controller="Account">
+                @Html.AntiForgeryToken()
+
+                <div class="input-group">
+                    <label>STUDENT ID / USERNAME</label>
+                    <input type="text" name="username" placeholder="e.g., 2024-00001" required autofocus />
+                </div>
+
+                <div class="input-group">
+                    <label>PASSWORD</label>
+                    <input type="password" name="password" placeholder="Enter your password" required />
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">LOGIN</button>
+            </form>
+
+            <div class="info-box">
+                <strong>💡 Don't have an account?</strong><br />
+                Scan the enrollment QR code from your teacher<br />
+                to create your account and enroll in courses.
+            </div>
+
+            <a href="@Url.Action("Login", "Account")" class="back-link">← Back to Admin/Teacher Login</a>
+
+            <div class="footer">
+                <p>3TagaPayu Attendance Management System</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/pages/student-login.js"></script>
+</body>
+</html>

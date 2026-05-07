@@ -1,230 +1,200 @@
-﻿/* pages/attendance.css */
+﻿/* pages/self-enroll.css */
 
-/* Two Column Layout */
-.attendance-two-columns {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 24px;
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/* QR Scanner Card */
-.qr-scanner-card {
-    background: linear-gradient(135deg, rgba(13, 26, 42, 0.9), rgba(11, 21, 34, 0.95));
-    border: 1px solid rgba(56, 189, 248, 0.1);
-    padding: 20px;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
-    position: sticky;
-    top: 80px;
-    height: fit-content;
-}
-
-.qr-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    color: #475569;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-}
-
-.qr-scanner-box {
-    background: #000;
-    border: 2px dashed rgba(56, 189, 248, 0.3);
-    border-radius: 8px;
-    aspect-ratio: 1;
+body {
+    background: linear-gradient(135deg, #0a0010 0%, #1a0030 40%, #2d0050 100%);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: 16px;
-}
-
-.scanner-placeholder {
-    text-align: center;
-    color: #64748b;
-}
-
-    .scanner-placeholder svg {
-        color: #38bdf8;
-        margin-bottom: 12px;
-    }
-
-    .scanner-placeholder p {
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 4px;
-    }
-
-    .scanner-placeholder span {
-        font-size: 11px;
-        opacity: 0.7;
-    }
-
-.qr-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Attendance Table Card */
-.attendance-table-card {
-    background: rgba(13, 26, 42, 0.5);
-    border: 1px solid rgba(56, 189, 248, 0.1);
     padding: 20px;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
 }
 
-/* Filter Bar */
-.filter-bar {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
-}
-
-.search-wrapper {
-    position: relative;
-    flex: 1;
-    min-width: 180px;
-}
-
-.search-icon {
-    position: absolute;
-    left: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: #64748b;
-}
-
-.search-input {
+.enroll-container {
     width: 100%;
-    padding: 9px 12px 9px 36px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(56, 189, 248, 0.1);
-    color: #e2eaf4;
-    font-size: 12px;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    max-width: 500px;
 }
 
-.filter-select, .filter-input {
-    padding: 9px 12px;
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(56, 189, 248, 0.1);
-    color: #e2eaf4;
-    font-size: 12px;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-    cursor: pointer;
+.enroll-card {
+    background: rgba(13, 26, 42, 0.95);
+    border: 1px solid rgba(216, 27, 96, 0.3);
+    padding: 32px;
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
 }
 
-.btn-secondary {
-    background: rgba(56, 189, 248, 0.1);
-    border: 1px solid rgba(56, 189, 248, 0.2);
-    padding: 9px 20px;
+.logo {
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+    .logo h1 {
+        font-size: 24px;
+        font-weight: 900;
+        color: #e2eaf4;
+    }
+
+    .logo span {
+        color: #d81b60;
+    }
+
+    .logo p {
+        font-size: 11px;
+        color: #64748b;
+        margin-top: 4px;
+    }
+
+.course-info {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 3px solid #38bdf8;
+    padding: 16px;
+    margin-bottom: 24px;
+    text-align: center;
+}
+
+.course-code {
     font-size: 11px;
     font-weight: 700;
     color: #38bdf8;
-    cursor: pointer;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
 }
 
-    .btn-secondary:hover {
-        background: rgba(56, 189, 248, 0.2);
-    }
-
-/* Summary Bar */
-.summary-bar {
-    display: flex;
-    gap: 12px;
-    flex-wrap: wrap;
-    margin-bottom: 20px;
+.course-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #e2eaf4;
+    margin: 8px 0 4px;
 }
 
-.summary-pill {
-    background: rgba(0, 0, 0, 0.2);
-    padding: 6px 14px;
+.course-meta, .course-teacher {
     font-size: 12px;
-    color: #94a3b8;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
-}
-
-.pill-dot {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 6px;
-}
-
-.dot-blue {
-    background: #38bdf8;
-}
-
-.dot-green {
-    background: #22c55e;
-}
-
-.dot-red {
-    background: #ef4444;
-}
-
-/* Pagination */
-.pagination-info {
-    margin-top: 16px;
-    text-align: right;
-    font-size: 11px;
     color: #64748b;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-    .attendance-two-columns {
-        grid-template-columns: 1fr;
-    }
+.loading {
+    color: #64748b;
+    font-size: 13px;
+}
 
-    .qr-scanner-card {
-        position: relative;
-        top: 0;
-    }
-    /* Skeleton Loading */
-    .skeleton {
-        background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-        background-size: 200% 100%;
-        animation: skeleton-loading 1.5s infinite;
-    }
+.form-group {
+    margin-bottom: 16px;
+}
 
-    @keyframes skeleton-loading {
-        0% {
-            background-position: 200% 0;
-        }
-
-        100% {
-            background-position: -200% 0;
-        }
-    }
-
-    .skeleton-avatar {
-        width: 36px;
-        height: 36px;
-        clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-    }
-
-    .skeleton-text {
-        height: 14px;
+    .form-group label {
+        display: block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #64748b;
         margin-bottom: 6px;
     }
 
-    .skeleton-text-sm {
-        height: 11px;
-        width: 80%;
+.required {
+    color: #d81b60;
+}
+
+.form-input {
+    width: 100%;
+    padding: 12px 14px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    color: #e2eaf4;
+    font-size: 14px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    transition: all 0.2s;
+}
+
+    .form-input:focus {
+        outline: none;
+        border-color: #d81b60;
+        background: rgba(216, 27, 96, 0.05);
     }
 
-    .skeleton-badge {
-        width: 80px;
-        height: 22px;
-        display: inline-block;
+    .form-input::placeholder {
+        color: #334155;
     }
 
-    .skeleton-row {
-        pointer-events: none;
+.enroll-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, #d81b60, #9c1040);
+    border: none;
+    color: white;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 10px;
+    clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+}
+
+    .enroll-btn:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+    }
+
+    .enroll-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+.message {
+    padding: 12px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    border-left: 3px solid;
+}
+
+    .message.success {
+        background: rgba(34, 197, 94, 0.1);
+        border-left-color: #22c55e;
+        color: #4ade80;
+    }
+
+    .message.error {
+        background: rgba(239, 68, 68, 0.1);
+        border-left-color: #ef4444;
+        color: #fca5a5;
+    }
+
+    .message.warning {
+        background: rgba(245, 158, 11, 0.1);
+        border-left-color: #f59e0b;
+        color: #fcd34d;
+    }
+
+.info-box {
+    background: rgba(56, 189, 248, 0.05);
+    padding: 12px;
+    margin-top: 20px;
+    font-size: 11px;
+    color: #64748b;
+    text-align: center;
+}
+
+    .info-box p {
+        margin: 4px 0;
+    }
+
+.footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 10px;
+    color: #334155;
+}
+
+@media (max-width: 480px) {
+    .enroll-card {
+        padding: 24px;
     }
 }
+    

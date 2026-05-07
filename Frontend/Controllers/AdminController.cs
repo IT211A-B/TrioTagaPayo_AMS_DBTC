@@ -3,7 +3,6 @@ using AMS.Models;
 using AMS.Services;
 using AMS.ViewModels;
 using System.Text.Json;
-using AMS.ViewModels;
 
 namespace AMS.Controllers;
 
@@ -32,24 +31,32 @@ public class AdminController(ApiService api) : Controller
     private JsonResult AjaxFail(string message) => Json(new { success = false, message });
 
     // ─────────────────────────────────────────────────────
-    // AUTO-GENERATE STUDENT NUMBER
+    // AUTO-GENERATE STUDENT NUMBER - UPDATED TO STU### FORMAT
     // ─────────────────────────────────────────────────────
     private async Task<string> GenerateStudentNumber()
     {
         var students = await api.GetAllAsync<StudentApiModel>("/api/Student");
-        var lastStudent = students.OrderByDescending(s => s.Id).FirstOrDefault();
 
-        int nextNumber = 1;
-        if (lastStudent != null && !string.IsNullOrEmpty(lastStudent.StudentNo))
+        int highestNumber = 0;
+
+        foreach (var student in students)
         {
-            var parts = lastStudent.StudentNo.Split('-');
-            if (parts.Length == 2 && int.TryParse(parts[1], out int lastNum))
+            var studentNo = student.StudentNo;
+            if (!string.IsNullOrEmpty(studentNo) && studentNo.StartsWith("STU"))
             {
-                nextNumber = lastNum + 1;
+                var numberPart = studentNo.Substring(3);
+                if (int.TryParse(numberPart, out int num))
+                {
+                    if (num > highestNumber)
+                    {
+                        highestNumber = num;
+                    }
+                }
             }
         }
 
-        return $"{DateTime.Now.Year}-{nextNumber:D5}";
+        int nextNumber = highestNumber + 1;
+        return $"STU{nextNumber:D3}";
     }
 
     // ─────────────────────────────────────────────────────
@@ -656,7 +663,7 @@ public class AdminController(ApiService api) : Controller
     }
 
     // =============================================
-    // NEW: COURSE DETAILS ACTIONS
+    // COURSE DETAILS ACTIONS
     // =============================================
 
     // 10. COURSE DETAILS - View students and attendance for a specific course

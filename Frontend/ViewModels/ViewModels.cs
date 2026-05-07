@@ -225,4 +225,17 @@
         public int EnrolledStudents { get; set; }
         public int TotalAttendanceRecords { get; set; }
     }
+    // ── Student Dashboard ViewModel ──────────────────────────────
+    public class StudentDashboardViewModel
+    {
+        public string StudentName { get; set; } = "";
+        public string StudentNo { get; set; } = "";
+        public int AttendanceRate { get; set; }
+        public int PresentCount { get; set; }
+        public int LateCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int TotalClasses { get; set; }
+        public List<AttendanceEntryViewModel> RecentAttendance { get; set; } = new();
+        public List<CourseViewModel> MyCourses { get; set; } = new();
+    }
 }
