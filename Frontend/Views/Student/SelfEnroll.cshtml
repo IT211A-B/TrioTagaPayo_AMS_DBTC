@@ -1,0 +1,78 @@
+﻿// self-enroll.js
+
+var courseId = new URLSearchParams(window.location.search).get('courseId');
+
+// Load course info
+fetch('/api/Course/' + courseId)
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        var courseInfo = document.getElementById('courseInfo');
+        if (courseInfo) {
+            courseInfo.innerHTML = '<span style="color:#38bdf8;">' + (data.courseCode || '') + '</span>
+<br><span style="color:#e2eaf4; font-weight:600;">' + (data.courseName || 'Course') + '</span>';
+        }
+    })
+    .catch(function() {
+        var courseInfo = document.getElementById('courseInfo');
+        if (courseInfo) {
+            courseInfo.innerHTML = '<span style="color:#38bdf8;">Course ready</span>';
+        }
+    });
+
+// Submit enrollment
+window.submitEnrollment = async function() {
+    var studentId = document.getElementById('studentId').value.trim();
+    var fullName = document.getElementById('fullName').value.trim();
+    var btn = document.getElementById('enrollBtn');
+
+    if (!studentId || !fullName) {
+        showMessage('Please enter both Student ID and Full Name', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enrolling...';
+
+    try {
+        var response = await fetch('/api/Enrollment/self-enroll', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                studentId: studentId,
+                fullName: fullName,
+                courseId: parseInt(courseId)
+            })
+        });
+
+        var data = await response.json();
+
+        if (data.success) {
+            showMessage('✓ Successfully enrolled in course!', 'success');
+            setTimeout(function() { window.close(); }, 2000);
+        } else {
+            showMessage(data.message || 'Enrollment failed', 'error');
+        }
+    } catch (error) {
+        showMessage('Connection error. Please try again.', 'error');
+    } finally {
+        btn.disabled = false;
+        btn.textContent = 'Enroll Now';
+    }
+};
+
+function showMessage(msg, type) {
+    var messageArea = document.getElementById('messageArea');
+    if (!messageArea) return;
+    messageArea.innerHTML = '<div class="message ' + type + '">' + msg + '</div>';
+    setTimeout(function() {
+        if (messageArea.firstChild) messageArea.firstChild.remove();
+    }, 5000);
+}
+
+// Enter key submits
+document.getElementById('studentId')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') window.submitEnrollment();
+});
+document.getElementById('fullName')?.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') window.submitEnrollment();
+});

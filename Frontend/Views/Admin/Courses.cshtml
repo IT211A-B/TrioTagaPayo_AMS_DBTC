@@ -58,7 +58,10 @@
                 </div>
                 <div class="course-card-footer">
                     <span class="student-count">👥 0 Students</span>
-                    <button class="btn-manage" onclick="manageCourse(@c.DbId)">Manage</button>
+                    <div class="action-btns">
+                        <button class="btn-sm btn-view" onclick="viewCourseDetails(@c.DbId)">Details</button>
+                        <button class="btn-manage" onclick="manageCourse(@c.DbId)">Manage</button>
+                    </div>
                 </div>
             </div>
         }
@@ -202,6 +205,10 @@
             window.location.href = '/Admin/CourseManage/' + id;
         }
 
+        function viewCourseDetails(id) {
+            window.location.href = '/Admin/CourseDetails/' + id;
+        }
+
         function openAddModal() {
             isEditing = false;
             document.getElementById('modalTitle').textContent = 'Add Course';
@@ -225,13 +232,13 @@
         function viewCourse(id, name, code, section, schedule, units, teacher) {
             document.getElementById('viewBody').innerHTML = `
                 <div class="profile-view">
-                    <div class="profile-avatar" style="font-size:12px;letter-spacing:.05em;">${code}</div>
-                    <h3 class="profile-name">${name}</h3>
+                    <div class="profile-avatar" style="font-size:12px;letter-spacing:.05em;">${escapeHtml(code)}</div>
+                    <h3 class="profile-name">${escapeHtml(name)}</h3>
                     <div class="profile-details">
-                        <div class="detail-row"><span class="detail-label">Section</span><span>${section}</span></div>
-                        <div class="detail-row"><span class="detail-label">Schedule</span><span>${schedule}</span></div>
+                        <div class="detail-row"><span class="detail-label">Section</span><span>${escapeHtml(section)}</span></div>
+                        <div class="detail-row"><span class="detail-label">Schedule</span><span>${escapeHtml(schedule)}</span></div>
                         <div class="detail-row"><span class="detail-label">Units</span><span>${units} units</span></div>
-                        <div class="detail-row"><span class="detail-label">Teacher</span><span>${teacher}</span></div>
+                        <div class="detail-row"><span class="detail-label">Teacher</span><span>${escapeHtml(teacher)}</span></div>
                     </div>
                 </div>`;
             openModal('viewModal');
@@ -250,13 +257,16 @@
             const schedule = document.getElementById('schedule').value.trim();
             const teacher = document.getElementById('teacherId').value;
             const units = document.getElementById('units').value;
+
             if (!code || !name || !section || !schedule || !teacher) {
                 if (typeof Toast !== 'undefined') Toast.warning('Please fill in all required fields.');
                 return;
             }
+
             const btn = document.getElementById('saveBtn');
             btn.disabled = true;
             btn.textContent = 'Saving...';
+
             const url = isEditing ? '/Admin/UpdateCourse' : '/Admin/AddCourse';
             const payload = new URLSearchParams({
                 __RequestVerificationToken: antiForgery,
@@ -268,6 +278,7 @@
                 schedule: schedule,
                 teacherId: teacher
             });
+
             try {
                 const res = await fetch(url, {
                     method: 'POST',
@@ -294,10 +305,12 @@
             const btn = document.getElementById('confirmDeleteBtn');
             btn.disabled = true;
             btn.textContent = 'Deleting...';
+
             const payload = new URLSearchParams({
                 __RequestVerificationToken: antiForgery,
                 id: pendingDeleteId
             });
+
             try {
                 const res = await fetch('/Admin/DeleteCourse', {
                     method: 'POST',
@@ -308,12 +321,7 @@
                 if (data.success) {
                     if (typeof Toast !== 'undefined') Toast.success(data.message);
                     closeModal('deleteModal');
-                    const row = document.getElementById(`row-${pendingDeleteId}`);
-                    if (row) {
-                        row.style.transition = 'opacity 0.3s';
-                        row.style.opacity = '0';
-                        setTimeout(() => row.remove(), 300);
-                    }
+                    location.reload();
                 } else {
                     if (typeof Toast !== 'undefined') Toast.error(data.message);
                 }
@@ -326,7 +334,8 @@
         }
 
         function clearForm() {
-            ['dbId', 'courseCode', 'courseName', 'section', 'schedule'].forEach(id => {
+            const ids = ['dbId', 'courseCode', 'courseName', 'section', 'schedule'];
+            ids.forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.value = '';
             });
@@ -346,6 +355,16 @@
             if (modal) modal.classList.remove('active');
         }
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/[&<>]/g, function(m) {
+                if (m === '&') return '&amp;';
+                if (m === '<') return '&lt;';
+                if (m === '>') return '&gt;';
+                return m;
+            });
+        }
+
         document.querySelectorAll('.modal-overlay').forEach(o => {
             o.addEventListener('click', e => {
                 if (e.target === o) o.classList.remove('active');
@@ -357,5 +376,8 @@
                 document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
             }
         });
+                function viewCourseDetails(id) {
+            window.location.href = '/Admin/CourseDetails/' + id;
+        }
     </script>
 }

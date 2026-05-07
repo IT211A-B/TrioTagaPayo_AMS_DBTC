@@ -33,7 +33,6 @@ namespace AMS.Controllers
         {
             if (!IsLoggedIn()) return RequireLogin();
 
-            // If admin tries to access teacher dashboard, redirect to admin dashboard
             if (!IsTeacher())
             {
                 return RedirectToAction("Dashboard", "Admin");
@@ -42,32 +41,33 @@ namespace AMS.Controllers
             ViewData["ActivePage"] = "Dashboard";
             ViewData["PageTitle"] = "Teacher Dashboard";
 
-            // Get teacher-specific data from session
-            var teacherId = HttpContext.Session.GetString("TeacherId");
+            var teacherIdStr = HttpContext.Session.GetString("TeacherId");
             var teacherName = HttpContext.Session.GetString("TeacherName") ??
                               HttpContext.Session.GetString("Username") ?? "Teacher";
 
-            // Get all data from API
             var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
             var students = await _api.GetAllAsync<StudentApiModel>("/api/Student");
             var attendance = await _api.GetAllAsync<AttendanceApiModel>("/api/Attendance");
 
-            // Filter for this teacher
-            var myCourses = string.IsNullOrEmpty(teacherId)
-                ? courses.Where(c => c.TeacherName == teacherName).ToList()
-                : courses.Where(c => c.TeacherId.ToString() == teacherId || c.TeacherName == teacherName).ToList();
+            // Use TeacherId if available
+            List<CourseApiModel> myCourses;
+            if (!string.IsNullOrEmpty(teacherIdStr) && int.TryParse(teacherIdStr, out int teacherId))
+            {
+                myCourses = courses.Where(c => c.TeacherId == teacherId).ToList();
+            }
+            else
+            {
+                myCourses = courses.Where(c => c.TeacherName == teacherName).ToList();
+            }
 
             var myStudents = students.Where(s => myCourses.Any(c => c.Section == s.Section)).ToList();
-
             var myAttendance = attendance.Where(a => myCourses.Any(c => c.CourseName == a.CourseName)).ToList();
 
-            // Calculate today's attendance rate
             var today = DateTime.Today.ToString("yyyy-MM-dd");
             var todayAttendance = myAttendance.Where(a => a.Date == today).ToList();
             int todayRate = todayAttendance.Count == 0 ? 0
                 : (int)Math.Round(todayAttendance.Count(a => a.Status == "Present") * 100.0 / todayAttendance.Count);
 
-            // Get recent attendance (last 10 records)
             var recentAttendance = myAttendance
                 .OrderByDescending(a => a.CreatedAt)
                 .Take(10)
@@ -102,7 +102,32 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
-        // MY STUDENTS (Teacher's students)
+        // GENERATE QR CODE FOR COURSE ENROLLMENT - FIXED
+        // ─────────────────────────────────────────────────────
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateCourseQRCode(int courseId)
+        {
+            if (!IsLoggedIn() || !IsTeacher()) return Unauthorized();
+
+            var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
+            var course = courses.FirstOrDefault(c => c.Id == courseId);
+
+            if (course == null)
+            {
+                return Json(new { success = false, message = "Course not found" });
+            }
+
+            // FIX: Use correct endpoint from Swagger: /api/QR/generate-enrollment
+            var result = await _api.PostAsync<object>($"/api/QR/generate-enrollment?courseId={courseId}", null);
+
+            return result.Success && result.Data != null
+                ? Json(new { success = true, qrCode = result.Data, courseName = course.CourseName })
+                : Json(new { success = false, message = "Failed to generate QR code" });
+        }
+
+        // ─────────────────────────────────────────────────────
+        // MY STUDENTS
         // ─────────────────────────────────────────────────────
         public async Task<IActionResult> MyStudents(string? search)
         {
@@ -112,14 +137,21 @@ namespace AMS.Controllers
             ViewData["ActivePage"] = "MyStudents";
             ViewData["PageTitle"] = "My Students";
 
-            var teacherId = HttpContext.Session.GetString("TeacherId");
+            var teacherIdStr = HttpContext.Session.GetString("TeacherId");
             var teacherName = HttpContext.Session.GetString("TeacherName") ??
                               HttpContext.Session.GetString("Username") ?? "Teacher";
 
             var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
-            var myCourses = string.IsNullOrEmpty(teacherId)
-                ? courses.Where(c => c.TeacherName == teacherName).ToList()
-                : courses.Where(c => c.TeacherId.ToString() == teacherId || c.TeacherName == teacherName).ToList();
+
+            List<CourseApiModel> myCourses;
+            if (!string.IsNullOrEmpty(teacherIdStr) && int.TryParse(teacherIdStr, out int teacherId))
+            {
+                myCourses = courses.Where(c => c.TeacherId == teacherId).ToList();
+            }
+            else
+            {
+                myCourses = courses.Where(c => c.TeacherName == teacherName).ToList();
+            }
 
             var students = await _api.GetAllAsync<StudentApiModel>("/api/Student");
             var myStudents = students.Where(s => myCourses.Any(c => c.Section == s.Section)).ToList();
@@ -148,7 +180,7 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
-        // MY ATTENDANCE (Teacher's class attendance)
+        // MY ATTENDANCE
         // ─────────────────────────────────────────────────────
         public async Task<IActionResult> MyAttendance(int? courseId, string? from, string? to)
         {
@@ -158,14 +190,21 @@ namespace AMS.Controllers
             ViewData["ActivePage"] = "MyAttendance";
             ViewData["PageTitle"] = "Class Attendance";
 
-            var teacherId = HttpContext.Session.GetString("TeacherId");
+            var teacherIdStr = HttpContext.Session.GetString("TeacherId");
             var teacherName = HttpContext.Session.GetString("TeacherName") ??
                               HttpContext.Session.GetString("Username") ?? "Teacher";
 
             var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
-            var myCourses = string.IsNullOrEmpty(teacherId)
-                ? courses.Where(c => c.TeacherName == teacherName).ToList()
-                : courses.Where(c => c.TeacherId.ToString() == teacherId || c.TeacherName == teacherName).ToList();
+
+            List<CourseApiModel> myCourses;
+            if (!string.IsNullOrEmpty(teacherIdStr) && int.TryParse(teacherIdStr, out int teacherId))
+            {
+                myCourses = courses.Where(c => c.TeacherId == teacherId).ToList();
+            }
+            else
+            {
+                myCourses = courses.Where(c => c.TeacherName == teacherName).ToList();
+            }
 
             List<AttendanceApiModel> attendance;
 
@@ -179,7 +218,6 @@ namespace AMS.Controllers
                 attendance = attendance.Where(a => myCourses.Any(c => c.CourseName == a.CourseName)).ToList();
             }
 
-            // Apply date filters
             if (DateOnly.TryParse(from, out var fromDate))
                 attendance = attendance.Where(a => DateOnly.TryParse(a.Date, out var d) && d >= fromDate).ToList();
             if (DateOnly.TryParse(to, out var toDate))
@@ -214,9 +252,6 @@ namespace AMS.Controllers
             return View(viewModel);
         }
 
-        // ─────────────────────────────────────────────────────
-        // Index (Redirect to Dashboard)
-        // ─────────────────────────────────────────────────────
         public IActionResult Index()
         {
             if (!IsLoggedIn()) return RedirectToAction("Login", "Account");

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using AMS.Services;
+using AMS.Models;
 using System.Text.Json;
 
 namespace AMS.Controllers
@@ -55,6 +56,25 @@ namespace AMS.Controllers
                 if (userRole.Equals("Teacher", StringComparison.OrdinalIgnoreCase))
                 {
                     HttpContext.Session.SetString("TeacherName", result.Username);
+
+                    // FIX: Fetch teacher by username to get ID
+                    var teachers = await _api.GetAllAsync<TeacherApiModel>("/api/Teacher");
+                    var teacher = teachers.FirstOrDefault(t =>
+                        t.Username?.Equals(username, StringComparison.OrdinalIgnoreCase) == true);
+                    if (teacher != null)
+                    {
+                        HttpContext.Session.SetString("TeacherId", teacher.Id.ToString());
+                    }
+                    else
+                    {
+                        // Fallback: try to find by name if username match fails
+                        teacher = teachers.FirstOrDefault(t =>
+                            $"{t.FirstName} {t.LastName}".Equals(result.Username, StringComparison.OrdinalIgnoreCase));
+                        if (teacher != null)
+                        {
+                            HttpContext.Session.SetString("TeacherId", teacher.Id.ToString());
+                        }
+                    }
                 }
 
                 // Redirect based on user role

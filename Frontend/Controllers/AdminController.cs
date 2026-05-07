@@ -3,6 +3,7 @@ using AMS.Models;
 using AMS.Services;
 using AMS.ViewModels;
 using System.Text.Json;
+using AMS.ViewModels;
 
 namespace AMS.Controllers;
 
@@ -133,6 +134,16 @@ public class AdminController(ApiService api) : Controller
             Search = search,
             SectionFilter = section
         });
+    }
+
+    // TEACHERS PARTIAL
+    [HttpGet]
+    public async Task<IActionResult> TeachersPartial(string? search, string? status)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        var teachers = await BuildTeacherVMs(search, status);
+        return PartialView("_TeacherTableRows", teachers);
     }
 
     [HttpPost]
@@ -403,7 +414,7 @@ public class AdminController(ApiService api) : Controller
         ViewData["PageTitle"] = "Attendance";
 
         var courses = await api.GetAllAsync<CourseApiModel>("/api/Course");
-        var attendance = await FetchAttendance(courseId, from, to);
+        var attendance = await FetchAttendance(courseId, from, to, null);
 
         var courseVMs = courses.Select(c => new CourseViewModel
         {
@@ -424,10 +435,10 @@ public class AdminController(ApiService api) : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> AttendanceFilter(int? courseId, string? from, string? to)
+    public async Task<IActionResult> AttendanceFilter(int? courseId, string? from, string? to, string? status)
     {
         if (!IsLoggedIn()) return Unauthorized();
-        var attendance = await FetchAttendance(courseId, from, to);
+        var attendance = await FetchAttendance(courseId, from, to, status);
         return PartialView("_AttendanceTableRows", MapAttendanceRows(attendance));
     }
 
@@ -456,6 +467,10 @@ public class AdminController(ApiService api) : Controller
                 var attendanceRate = studentAttendance.Count == 0 ? 0 :
                     (int)Math.Round(studentAttendance.Count(a => a.Status == "Present") * 100.0 / studentAttendance.Count);
 
+                var enrollmentDate = studentAttendance.Any()
+                    ? studentAttendance.Min(a => a.Date)
+                    : DateTime.Today.ToString("yyyy-MM-dd");
+
                 enrollments.Add(new EnrollmentViewModel
                 {
                     StudentId = student.Id,
@@ -464,8 +479,10 @@ public class AdminController(ApiService api) : Controller
                     Email = student.Email,
                     CourseId = courseItem.Id,
                     CourseName = courseItem.CourseName,
+                    Section = courseItem.Section,
                     AttendanceRate = attendanceRate,
-                    Status = attendanceRate >= 75 ? "Enrolled" : attendanceRate >= 50 ? "At Risk" : "Probation"
+                    Status = attendanceRate >= 75 ? "Enrolled" : attendanceRate >= 50 ? "At Risk" : "Probation",
+                    EnrollmentDate = enrollmentDate
                 });
             }
         }
@@ -488,7 +505,13 @@ public class AdminController(ApiService api) : Controller
         }
 
         var courseList = courses.Select(c => c.CourseName).Distinct().ToList();
+
+        var allStudents = students.Select(s => new { s.Id, Name = $"{s.FirstName} {s.LastName} (ID: {s.StudentNo})", s.Section }).ToList();
+        var allCourses = courses.Select(c => new { c.Id, Name = $"{c.CourseName} - {c.Section}", c.Section }).ToList();
+
         ViewBag.Courses = courseList;
+        ViewBag.AllStudents = allStudents;
+        ViewBag.AllCourses = allCourses;
 
         return View(new EnrollmentPageViewModel
         {
@@ -498,6 +521,290 @@ public class AdminController(ApiService api) : Controller
             CourseFilter = course,
             StatusFilter = status
         });
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> CreateEnrollment(int studentId, int courseId)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        try
+        {
+            if (studentId <= 0 || courseId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid student or course ID." });
+            }
+
+            var students = await api.GetAllAsync<StudentApiModel>("/api/Student");
+            var courses = await api.GetAllAsync<CourseApiModel>("/api/Course");
+
+            var student = students.FirstOrDefault(s => s.Id == studentId);
+            var course = courses.FirstOrDefault(c => c.Id == courseId);
+
+            if (student == null)
+            {
+                return Json(new { success = false, message = "Student not found." });
+            }
+
+            if (course == null)
+            {
+                return Json(new { success = false, message = "Course not found." });
+            }
+
+            if (!string.Equals(student.Section, course.Section, StringComparison.OrdinalIgnoreCase))
+            {
+                return Json(new { success = false, message = $"Student section '{student.Section}' does not match course section '{course.Section}'." });
+            }
+
+            var existingAttendance = await api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/student/{studentId}");
+            var alreadyEnrolled = existingAttendance.Any(a => a.CourseId == courseId);
+
+            if (alreadyEnrolled)
+            {
+                return Json(new { success = false, message = "Student is already enrolled in this course." });
+            }
+
+            var today = DateTime.Today.ToString("yyyy-MM-dd");
+            var body = new
+            {
+                studentId = studentId,
+                courseId = courseId,
+                date = today,
+                status = "Present",
+                remarks = "Enrolled via admin"
+            };
+
+            var result = await api.PostAsync<object>("/api/Attendance", body);
+
+            if (result.Success)
+            {
+                return Json(new { success = true, message = $"Student '{student.FirstName} {student.LastName}' successfully enrolled in '{course.CourseName}'." });
+            }
+            else
+            {
+                return Json(new { success = false, message = $"Failed to enroll student: {ParseError(result.Error)}" });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteEnrollment(int studentId, int courseId)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        try
+        {
+            if (studentId <= 0 || courseId <= 0)
+            {
+                return Json(new { success = false, message = "Invalid student or course ID." });
+            }
+
+            var allAttendance = await api.GetAllAsync<AttendanceApiModel>("/api/Attendance");
+            var recordsToDelete = allAttendance.Where(a => a.StudentId == studentId && a.CourseId == courseId).ToList();
+
+            if (!recordsToDelete.Any())
+            {
+                return Json(new { success = false, message = "No enrollment records found for this student in this course." });
+            }
+
+            var students = await api.GetAllAsync<StudentApiModel>("/api/Student");
+            var courses = await api.GetAllAsync<CourseApiModel>("/api/Course");
+
+            var student = students.FirstOrDefault(s => s.Id == studentId);
+            var course = courses.FirstOrDefault(c => c.Id == courseId);
+
+            string studentName = student != null ? $"{student.FirstName} {student.LastName}" : "Student";
+            string courseName = course != null ? course.CourseName : "Course";
+
+            bool allDeleted = true;
+            int deletedCount = 0;
+            int failedCount = 0;
+
+            foreach (var record in recordsToDelete)
+            {
+                var result = await api.DeleteAsync($"/api/Attendance/{record.Id}");
+                if (result.Success)
+                {
+                    deletedCount++;
+                }
+                else
+                {
+                    allDeleted = false;
+                    failedCount++;
+                }
+            }
+
+            if (allDeleted)
+            {
+                return Json(new { success = true, message = $"Successfully unenrolled '{studentName}' from '{courseName}'. ({deletedCount} attendance records removed)" });
+            }
+            else
+            {
+                return Json(new { success = false, message = $"Partially completed: {deletedCount} records deleted, {failedCount} failed to delete." });
+            }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"An error occurred: {ex.Message}" });
+        }
+    }
+
+    // =============================================
+    // NEW: COURSE DETAILS ACTIONS
+    // =============================================
+
+    // 10. COURSE DETAILS - View students and attendance for a specific course
+    public async Task<IActionResult> CourseDetails(int id, string? date)
+    {
+        var adminCheck = RequireAdmin();
+        if (adminCheck != null) return adminCheck;
+
+        ViewData["ActivePage"] = "Courses";
+        ViewData["PageTitle"] = "Course Details";
+
+        var courses = await api.GetAllAsync<CourseApiModel>("/api/Course");
+        var course = courses.FirstOrDefault(c => c.Id == id);
+
+        if (course == null)
+        {
+            TempData["Error"] = "Course not found";
+            return RedirectToAction("Courses", "Admin");
+        }
+
+        var allStudents = await api.GetAllAsync<StudentApiModel>("/api/Student");
+        var studentsInCourse = allStudents.Where(s => s.Section == course.Section).ToList();
+        var attendance = await api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/course/{id}");
+
+        var studentVMs = new List<StudentCourseViewModel>();
+        foreach (var student in studentsInCourse)
+        {
+            var studentAttendance = attendance.Where(a => a.StudentId == student.Id).ToList();
+            var attendanceRate = studentAttendance.Count == 0 ? 0 :
+                (int)Math.Round(studentAttendance.Count(a => a.Status == "Present") * 100.0 / studentAttendance.Count);
+
+            studentVMs.Add(new StudentCourseViewModel
+            {
+                StudentId = student.Id,
+                StudentNo = student.StudentNo,
+                StudentName = $"{student.FirstName} {student.LastName}",
+                Email = student.Email,
+                AttendanceRate = attendanceRate,
+                PresentCount = studentAttendance.Count(a => a.Status == "Present"),
+                AbsentCount = studentAttendance.Count(a => a.Status == "Absent"),
+                LateCount = studentAttendance.Count(a => a.Status == "Late"),
+                IsEnrolled = studentAttendance.Any()
+            });
+        }
+
+        var attendanceByDate = attendance
+            .GroupBy(a => a.Date)
+            .Select(g => new AttendanceDateSummary
+            {
+                Date = g.Key,
+                PresentCount = g.Count(a => a.Status == "Present"),
+                AbsentCount = g.Count(a => a.Status == "Absent"),
+                LateCount = g.Count(a => a.Status == "Late"),
+                TotalCount = g.Count()
+            })
+            .OrderBy(g => g.Date)
+            .ToList();
+
+        var selectedDate = date ?? DateTime.Today.ToString("yyyy-MM-dd");
+        var todayAttendance = attendance.Where(a => a.Date == selectedDate).ToList();
+
+        var todayAttendanceVMs = todayAttendance.Select(a => new AttendanceEntryViewModel
+        {
+            AttendanceId = a.Id,
+            StudentId = a.StudentId,
+            StudentName = a.StudentName,
+            StudentNo = a.StudentNo,
+            Status = a.Status,
+            Remarks = a.Remarks,
+            Date = a.Date
+        }).ToList();
+
+        var teachers = await api.GetAllAsync<TeacherApiModel>("/api/Teacher");
+        var teacherOptions = teachers.Where(t => t.IsActive).Select(t => new
+        {
+            Id = t.Id,
+            Name = $"{t.FirstName} {t.LastName}"
+        }).ToList();
+
+        ViewBag.Teachers = teacherOptions;
+        ViewBag.SelectedDate = selectedDate;
+
+        var viewModel = new CourseDetailsViewModel
+        {
+            Course = new CourseViewModel
+            {
+                DbId = course.Id,
+                CourseCode = course.CourseCode,
+                CourseName = course.CourseName,
+                Units = course.Units,
+                Section = course.Section,
+                Schedule = course.Schedule,
+                TeacherId = course.TeacherId,
+                TeacherName = course.TeacherName
+            },
+            Students = studentVMs,
+            AttendanceByDate = attendanceByDate,
+            TodayAttendance = todayAttendanceVMs,
+            TotalStudents = studentsInCourse.Count,
+            EnrolledStudents = studentVMs.Count(s => s.IsEnrolled),
+            TotalAttendanceRecords = attendance.Count
+        };
+
+        return View(viewModel);
+    }
+
+    // 11. UPDATE SINGLE ATTENDANCE
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateAttendance(int attendanceId, string status, string remarks)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        var body = new { status, remarks };
+        var result = await api.PutAsync($"/api/Attendance/{attendanceId}", body);
+
+        return result.Success
+            ? Json(new { success = true, message = "Attendance updated successfully." })
+            : Json(new { success = false, message = $"Failed: {ParseError(result.Error)}" });
+    }
+
+    // 12. MARK ALL PRESENT FOR COURSE
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> MarkAllPresent(int courseId, string date)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        var courses = await api.GetAllAsync<CourseApiModel>("/api/Course");
+        var course = courses.FirstOrDefault(c => c.Id == courseId);
+        if (course == null) return Json(new { success = false, message = "Course not found" });
+
+        var students = await api.GetAllAsync<StudentApiModel>("/api/Student");
+        var courseStudents = students.Where(s => s.Section == course.Section).ToList();
+
+        var attendances = courseStudents.Select(s => new
+        {
+            studentId = s.Id,
+            status = "Present",
+            remarks = "Marked all present by admin"
+        }).ToList();
+
+        var body = new { courseId, date, attendances };
+        var result = await api.PostAsync<object>("/api/Attendance/bulk", body);
+
+        return result.Success
+            ? Json(new { success = true, message = $"Marked {courseStudents.Count} students as present." })
+            : Json(new { success = false, message = $"Failed: {ParseError(result.Error)}" });
     }
 
     // 8. DEBUG
@@ -592,24 +899,37 @@ public class AdminController(ApiService api) : Controller
         return result;
     }
 
-    private async Task<List<AttendanceApiModel>> FetchAttendance(int? courseId, string? from, string? to)
+    private async Task<List<AttendanceApiModel>> FetchAttendance(int? courseId, string? from, string? to, string? status)
     {
+        List<AttendanceApiModel> result;
+
         if (courseId.HasValue && courseId.Value > 0)
         {
             if (DateOnly.TryParse(from, out var f) && DateOnly.TryParse(to, out var t))
             {
-                return await api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/filter?courseId={courseId}&from={f:yyyy-MM-dd}&to={t:yyyy-MM-dd}");
+                result = await api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/filter?courseId={courseId}&from={f:yyyy-MM-dd}&to={t:yyyy-MM-dd}");
             }
-            return await api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/course/{courseId}");
+            else
+            {
+                result = await api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/course/{courseId}");
+            }
         }
-
-        if (DateOnly.TryParse(from, out var fromDate) && DateOnly.TryParse(to, out var toDate))
+        else if (DateOnly.TryParse(from, out var fromDate) && DateOnly.TryParse(to, out var toDate))
         {
             var all = await api.GetAllAsync<AttendanceApiModel>("/api/Attendance");
-            return [.. all.Where(a => DateOnly.TryParse(a.Date, out var d) && d >= fromDate && d <= toDate)];
+            result = [.. all.Where(a => DateOnly.TryParse(a.Date, out var d) && d >= fromDate && d <= toDate)];
+        }
+        else
+        {
+            result = await api.GetAllAsync<AttendanceApiModel>("/api/Attendance");
         }
 
-        return await api.GetAllAsync<AttendanceApiModel>("/api/Attendance");
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            result = result.Where(a => a.Status == status).ToList();
+        }
+
+        return result;
     }
 
     private static List<AttendanceEntryViewModel> MapAttendanceRows(List<AttendanceApiModel> src)
@@ -642,6 +962,10 @@ public class AdminController(ApiService api) : Controller
             if (doc.RootElement.TryGetProperty("title", out var title))
             {
                 return title.GetString() ?? rawJson;
+            }
+            if (doc.RootElement.TryGetProperty("errors", out var errors))
+            {
+                return "Validation error occurred.";
             }
         }
         catch

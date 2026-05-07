@@ -32,17 +32,20 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 });
 
+// FIXED: Updated handleSearch to work with TeachersPartial endpoint (no page parameter needed)
 function handleSearch() {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(async function () {
-        var s = document.getElementById('searchInput').value;
-        var f = document.getElementById('statusFilter').value;
+        var searchValue = document.getElementById('searchInput').value;
+        var statusValue = document.getElementById('statusFilter').value;
         try {
-            var res = await fetch('/Admin/TeachersPartial?page=1&search=' + encodeURIComponent(s) + '&status=' + encodeURIComponent(f));
+            // FIX: Use TeachersPartial endpoint without page parameter
+            var res = await fetch('/Admin/TeachersPartial?search=' + encodeURIComponent(searchValue) + '&status=' + encodeURIComponent(statusValue));
             var html = await res.text();
             document.getElementById('teachersBody').innerHTML = html || emptyRow();
             currentPage = 1;
         } catch (error) {
+            console.error('Search failed:', error);
             if (typeof Toast !== 'undefined') Toast.error('Search failed.');
         }
     }, 350);
@@ -132,6 +135,7 @@ async function submitTeacher() {
             if (typeof Toast !== 'undefined') Toast.error(data.message);
         }
     } catch (error) {
+        console.error('Submit teacher error:', error);
         if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
     } finally {
         btn.disabled = false;
@@ -164,6 +168,7 @@ async function submitDelete() {
             if (typeof Toast !== 'undefined') Toast.error(data.message);
         }
     } catch (error) {
+        console.error('Delete teacher error:', error);
         if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
     } finally {
         btn.disabled = false;

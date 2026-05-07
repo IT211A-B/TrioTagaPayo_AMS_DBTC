@@ -38,6 +38,8 @@
 
     public class AttendanceEntryViewModel
     {
+        public int? AttendanceId { get; set; }
+        public int? StudentId { get; set; }
         public string StudentName { get; set; } = "";
         public string StudentNo { get; set; } = "";
         public string CourseName { get; set; } = "";
@@ -77,7 +79,7 @@
 
     // ── Teachers ─────────────────────────────────────────────
 
-     public class TeacherViewModel
+    public class TeacherViewModel
     {
         public int DbId { get; set; }
         public string TeacherNo { get; set; } = "";
@@ -138,12 +140,12 @@
         public string? FromDate { get; set; }
         public string? ToDate { get; set; }
 
-        // Computed from Records — no separate API call needed
         public int TotalCount => Records.Count;
         public int PresentCount => Records.Count(r => r.Status == "Present");
         public int AbsentCount => Records.Count(r => r.Status == "Absent");
         public int LateCount => Records.Count(r => r.Status == "Late");
     }
+
     // ── Teacher Dashboard ViewModels ─────────────────────────────
     public class TeacherDashboardViewModel
     {
@@ -163,6 +165,7 @@
         public string? FromDate { get; set; }
         public string? ToDate { get; set; }
     }
+
     // ── Enrollment ──────────────────────────────────────────────
     public class EnrollmentViewModel
     {
@@ -172,8 +175,10 @@
         public string Email { get; set; } = "";
         public int CourseId { get; set; }
         public string CourseName { get; set; } = "";
+        public string Section { get; set; } = "";
         public int AttendanceRate { get; set; }
         public string Status { get; set; } = "";
+        public string EnrollmentDate { get; set; } = "";
     }
 
     public class EnrollmentPageViewModel
@@ -183,5 +188,41 @@
         public string? Search { get; set; }
         public string? CourseFilter { get; set; }
         public string? StatusFilter { get; set; }
+    }
+
+    // ── Course Details ViewModels ──────────────────────────────
+    // THESE ARE THE NEW CLASSES - ADDED ONCE ONLY
+
+    public class StudentCourseViewModel
+    {
+        public int StudentId { get; set; }
+        public string StudentNo { get; set; } = "";
+        public string StudentName { get; set; } = "";
+        public string Email { get; set; } = "";
+        public int AttendanceRate { get; set; }
+        public int PresentCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int LateCount { get; set; }
+        public bool IsEnrolled { get; set; }
+    }
+
+    public class AttendanceDateSummary
+    {
+        public string Date { get; set; } = "";
+        public int PresentCount { get; set; }
+        public int AbsentCount { get; set; }
+        public int LateCount { get; set; }
+        public int TotalCount { get; set; }
+    }
+
+    public class CourseDetailsViewModel
+    {
+        public CourseViewModel Course { get; set; } = new();
+        public List<StudentCourseViewModel> Students { get; set; } = new();
+        public List<AttendanceDateSummary> AttendanceByDate { get; set; } = new();
+        public List<AttendanceEntryViewModel> TodayAttendance { get; set; } = new();
+        public int TotalStudents { get; set; }
+        public int EnrolledStudents { get; set; }
+        public int TotalAttendanceRecords { get; set; }
     }
 }

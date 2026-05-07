@@ -7,15 +7,14 @@
 }
 @section PageStyles {
     <link rel="stylesheet" href="~/css/pages/dashboard.css" />
+    <link rel="stylesheet" href="~/css/components/modals.css" />
 }
 
-<!-- GREETING SECTION -->
 <div class="greeting-section">
     <h1>Good Morning, @Model.TeacherName</h1>
     <p>Here's your teaching overview for today - @DateTime.Now.ToString("dddd, MMMM d, yyyy").ToUpper()</p>
 </div>
 
-<!-- STAT CARDS -->
 <div class="stats-row">
     <div class="stat-card">
         <div class="stat-icon">◧</div>
@@ -37,7 +36,6 @@
     </div>
 </div>
 
-<!-- MY COURSES SECTION -->
 <div class="section-header">
     <span class="section-title">MY COURSES</span>
 </div>
@@ -60,7 +58,10 @@
                 </div>
                 <div class="course-card-footer">
                     <span class="student-count">👥 Students</span>
-                    <button class="btn-manage" onclick="location.href='/Teacher/MyStudents'">View Students</button>
+                    <div class="action-btns">
+                        <button class="btn-sm btn-view" onclick="location.href='/Teacher/MyStudents?courseId=@course.DbId'">View Students</button>
+                        <button class="btn-sm btn-primary" onclick="generateEnrollmentQR(@course.DbId, '@course.CourseName')">📱 QR Code</button>
+                    </div>
                 </div>
             </div>
         }
@@ -75,7 +76,6 @@
     }
 </div>
 
-<!-- TODAY'S LOG / RECENT ATTENDANCE -->
 <div class="section-header">
     <span class="section-title">TODAY'S LOG</span>
     <a href="@Url.Action("MyAttendance", "Teacher")" class="section-link">VIEW ALL →</a>
@@ -97,7 +97,7 @@
                 foreach (var a in Model.RecentAttendance.Take(5))
                 {
                     <tr class="table-row">
-                        <td>
+                        <td class="student-cell">
                             <div class="student-cell">
                                 <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
                                     @(a.StudentName?.Length > 0 ? a.StudentName[0].ToString().ToUpper() : "?")
@@ -108,9 +108,9 @@
                                 </div>
                             </div>
                         </td>
-                        <td>@a.CourseName</td>
-                        <td>@a.Date</td>
-                        <td>
+                        <td class="hide-sm">@a.CourseName</td>
+                        <td class="hide-md">@a.Date</td>
+                        <td class="hide-sm">
                             <span class="status-badge @(a.Status == "Present" ? "badge-active" : a.Status == "Late" ? "badge-warning" : "badge-inactive")">
                                 @a.Status
                             </span>
@@ -120,7 +120,7 @@
             }
             else
             {
-                <tr>
+                <tr class="empty-row">
                     <td colspan="4" class="empty-state-small" style="text-align:center; padding:40px;">
                         No attendance records yet
                     </td>
@@ -129,3 +129,28 @@
         </tbody>
     </table>
 </div>
+
+<!-- QR CODE MODAL -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Course Enrollment QR</h3>
+            <button class="modal-close" onclick="closeModal('qrModal')">×</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
+                <div class="spinner-ring"></div>
+            </div>
+            <p><strong>Course:</strong> <span id="qrCourseName"></span></p>
+            <p style="font-size: 12px; color: var(--muted);">Students scan this QR to enroll in this course</p>
+            <p style="font-size: 12px; color: var(--muted);">Students will need their Student ID and Full Name</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeModal('qrModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/teacher-dashboard.js"></script>
+}
