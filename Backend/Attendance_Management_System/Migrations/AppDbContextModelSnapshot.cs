@@ -62,7 +62,7 @@ namespace Attendance_Management_System.Migrations
 
                     b.HasIndex("StudentId");
 
-                    b.ToTable("Attendances");
+                    b.ToTable("Attendances", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.Course", b =>
@@ -102,7 +102,7 @@ namespace Attendance_Management_System.Migrations
 
                     b.HasIndex("TeacherId");
 
-                    b.ToTable("Courses");
+                    b.ToTable("Courses", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.Enrollment", b =>
@@ -129,7 +129,7 @@ namespace Attendance_Management_System.Migrations
                     b.HasIndex("StudentId", "CourseId")
                         .IsUnique();
 
-                    b.ToTable("Enrollments");
+                    b.ToTable("Enrollments", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.QRScan", b =>
@@ -156,7 +156,7 @@ namespace Attendance_Management_System.Migrations
                     b.HasIndex("QRSessionId", "StudentId")
                         .IsUnique();
 
-                    b.ToTable("QRScans");
+                    b.ToTable("QRScans", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.QRSession", b =>
@@ -190,7 +190,7 @@ namespace Attendance_Management_System.Migrations
 
                     b.HasIndex("CourseId");
 
-                    b.ToTable("QRSessions");
+                    b.ToTable("QRSessions", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.Student", b =>
@@ -234,7 +234,7 @@ namespace Attendance_Management_System.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Students");
+                    b.ToTable("Students", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.Teacher", b =>
@@ -269,7 +269,7 @@ namespace Attendance_Management_System.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Teachers");
+                    b.ToTable("Teachers", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.User", b =>
@@ -303,7 +303,7 @@ namespace Attendance_Management_System.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Attendance_Management_System.Models.Attendance", b =>

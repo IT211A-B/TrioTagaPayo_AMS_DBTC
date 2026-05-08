@@ -13,19 +13,22 @@ namespace Attendance_Management_System.Services
         private readonly IJwtTokenGenerator _tokenGenerator;
         private readonly ILogger<AuthService> _logger;
         private readonly IStudentRepository _studentRepository;
+        private readonly ITeacherRepository _teacherRepository;  // ✅ Add this
 
         public AuthService(
             IUserRepository userRepository,
             IPasswordHasher hasher,
             IJwtTokenGenerator tokenGenerator,
             ILogger<AuthService> logger,
-            IStudentRepository studentRepository)  // Add this parameter
+            IStudentRepository studentRepository,
+            ITeacherRepository teacherRepository)  // ✅ Add this parameter
         {
             _userRepository = userRepository;
             _hasher = hasher;
             _tokenGenerator = tokenGenerator;
             _logger = logger;
-            _studentRepository = studentRepository;  // Add this
+            _studentRepository = studentRepository;
+            _teacherRepository = teacherRepository;  // ✅ Add this
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -64,6 +67,32 @@ namespace Attendance_Management_System.Services
                 }
 
                 _logger.LogInformation("[LOGIN] Password verified successfully");
+
+                // ✅ If user is Teacher, get and store TeacherId in User record
+                if (user.Role == "Teacher")
+                {
+                    try
+                    {
+                        var teacher = await _teacherRepository.FindAsync(t => t.TeacherNo == user.Username ||
+                                                                              t.Email == user.Username ||
+                                                                              (t.FirstName + "." + t.LastName).ToLower() == user.Username.ToLower());
+                        if (teacher != null)
+                        {
+                            user.TeacherId = teacher.Id;
+                            _userRepository.Update(user);
+                            await _userRepository.SaveChangesAsync();
+                            _logger.LogInformation("[LOGIN] TeacherId {TeacherId} stored for user {Username}", teacher.Id, user.Username);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("[LOGIN] No Teacher found for username: {Username}", user.Username);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "[LOGIN] Error getting TeacherId for {Username}", user.Username);
+                    }
+                }
 
                 _logger.LogInformation("[LOGIN] Generating JWT token for: {Username}", request.Username);
                 var token = _tokenGenerator.Generate(user);

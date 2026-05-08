@@ -4,45 +4,66 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
+using Attendance_Management_System.DBCONTEXT;
+using Microsoft.EntityFrameworkCore;
 
 namespace Attendance_Management_System.Services
 {
     public class JwtTokenGenerator : IJwtTokenGenerator
     {
         private readonly IConfiguration _config;
+        private readonly AppDbContext _context;
 
-        public JwtTokenGenerator(IConfiguration config)
+        public JwtTokenGenerator(IConfiguration config, AppDbContext context)
         {
             _config = config;
+            _context = context;
         }
 
         public string Generate(User user)
         {
-            // ✅ PART 1 — Claims Info
-            // Kini ang "valid string" / payload sulod sa JWT
-            // Ma-decode ni sa jwt.io — but dili ma-tamper (signed)
-            var claims = new[]
+            var claims = new List<Claim>
             {
-                // Who is this user? (identity claims)
-                new Claim(JwtRegisteredClaimNames.Sub,  user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Name, user.Username),
-                new Claim(ClaimTypes.NameIdentifier,    user.Id.ToString()),
-                new Claim(ClaimTypes.Name,              user.Username),
-                new Claim(ClaimTypes.Role,              user.Role),
-
-                // Token metadata claims
-                new Claim(JwtRegisteredClaimNames.Jti,  Guid.NewGuid().ToString()), // unique token ID
-                new Claim(JwtRegisteredClaimNames.Iat,                              // issued at
-                    DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
-                    ClaimValueTypes.Integer64)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.Role),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
-            // ✅ Signing key — must match Program.cs config
-            var key = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+            // ADD TEACHERID CLAIM IF USER IS TEACHER
+            if (user.Role == "Teacher")
+            {
+                try
+                {
+                    // Try to find teacher by username
+                    var teacher = _context.Teachers
+                        .FirstOrDefault(t => t.TeacherNo == user.Username || t.Email == user.Username);
+
+                    if (teacher != null)
+                    {
+                        claims.Add(new Claim("TeacherId", teacher.Id.ToString()));
+                        claims.Add(new Claim("TeacherNo", teacher.TeacherNo));
+                    }
+                }
+                catch
+                {
+                    // Silently fail
+                }
+            }
+
+            // Get JWT key with null check
+            var jwtKey = _config["Jwt:Key"];
+            if (string.IsNullOrEmpty(jwtKey))
+            {
+                throw new InvalidOperationException("JWT Key is not configured in appsettings.json");
+            }
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            // ✅ Build the token
             var token = new JwtSecurityToken(
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
