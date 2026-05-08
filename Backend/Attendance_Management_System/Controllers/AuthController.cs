@@ -31,10 +31,169 @@ namespace Attendance_Management_System.Controllers
             _hasher = hasher;
         }
 
-        // ... (your existing methods: Login, Refresh, Logout, GetMe, Register)
+        [AllowAnonymous]
+        [HttpGet("test-bcrypt")]
+        public IActionResult TestBcrypt()
+        {
+            try
+            {
+                var testPassword = "admin123";
+                var testHash = BCrypt.Net.BCrypt.HashPassword(testPassword);
+                var isValid = BCrypt.Net.BCrypt.Verify(testPassword, testHash);
+
+                return Ok(new { success = true, isValid, message = isValid ? "BCrypt is working!" : "BCrypt failed!" });
+            }
+            catch (Exception ex)
+            {
+                return Ok(new { success = false, error = ex.Message });
+            }
+        }
+
+        [AllowAnonymous]
+        [HttpPost("login")]
+        [EnableRateLimiting("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest(new { message = "Username and password are required." });
+
+            var result = await _authService.LoginAsync(request);
+
+            if (result == null)
+                return Unauthorized(new { message = "Invalid username or password." });
+
+            Response.Cookies.Append("accessToken", result.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = result.Expiration
+            });
+
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = result.RefreshTokenExpiry,
+                Path = "/api/Auth/refresh"
+            });
+
+            return Ok(result);
+        }
+
+        [AllowAnonymous]
+        [HttpPost("refresh")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest? request)
+        {
+            var token = Request.Cookies["refreshToken"] ?? request?.RefreshToken;
+
+            if (string.IsNullOrWhiteSpace(token))
+                return BadRequest(new { message = "Refresh token is required." });
+
+            var result = await _authService.RefreshAsync(token);
+
+            if (result == null)
+                return Unauthorized(new { message = "Refresh token is invalid or has expired." });
+
+            Response.Cookies.Append("accessToken", result.Token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = result.Expiration
+            });
+
+            Response.Cookies.Append("refreshToken", result.RefreshToken, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = true,
+                SameSite = SameSiteMode.Strict,
+                Expires = result.RefreshTokenExpiry,
+                Path = "/api/Auth/refresh"
+            });
+
+            return Ok(result);
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            Response.Cookies.Delete("accessToken");
+            Response.Cookies.Delete("refreshToken");
+            return Ok(new { message = "Logged out successfully." });
+        }
+
+        [Authorize]
+        [HttpGet("me")]
+        public IActionResult GetMe()
+        {
+            var userId = User.GetUserId();
+            var username = User.GetUsername();
+            var role = User.GetRole();
+
+            return Ok(new { userId, username, role });
+        }
+
+        [AllowAnonymous]
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Username) ||
+                string.IsNullOrWhiteSpace(dto.Password) ||
+                string.IsNullOrWhiteSpace(dto.FullName))
+            {
+                return BadRequest(new { success = false, message = "Username, password, and full name are required" });
+            }
+
+            var existingUser = await _userRepository.FindAsync(u => u.Username == dto.Username);
+            if (existingUser != null)
+            {
+                return BadRequest(new { success = false, message = "Username already exists" });
+            }
+
+            var (firstName, lastName) = ParseFullName(dto.FullName);
+            var studentNo = await GenerateStudentNumber();
+
+            var user = new User
+            {
+                Username = dto.Username,
+                PasswordHash = _hasher.Hash(dto.Password),
+                Role = "Student",
+                CreatedAt = DateTime.UtcNow,
+                RefreshToken = null,
+                RefreshTokenExpiry = null
+            };
+            await _userRepository.AddAsync(user);
+            await _userRepository.SaveChangesAsync();
+
+            var student = new Student
+            {
+                StudentNo = studentNo,
+                FirstName = firstName,
+                LastName = lastName,
+                MiddleName = "",
+                Email = $"{studentNo}@student.edu",
+                Section = "",
+                MobileNo = "",
+                CreatedAt = DateTime.UtcNow
+            };
+            await _studentRepository.AddAsync(student);
+            await _studentRepository.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                message = "Registration successful",
+                studentId = student.Id,
+                studentNo = student.StudentNo,
+                username = user.Username
+            });
+        }
 
         /// <summary>
-        /// Allows a user to change their password
+        /// Change password for authenticated user
         /// </summary>
         [Authorize]
         [HttpPost("change-password")]
@@ -52,7 +211,7 @@ namespace Attendance_Management_System.Controllers
                 return BadRequest(new { success = false, message = "Username, current password, and new password are required" });
             }
 
-            // Validate new password length
+            // Check if new password is at least 6 characters
             if (dto.NewPassword.Length < 6)
             {
                 return BadRequest(new { success = false, message = "New password must be at least 6 characters" });
@@ -72,19 +231,33 @@ namespace Attendance_Management_System.Controllers
                 return BadRequest(new { success = false, message = "Current password is incorrect" });
             }
 
-            // Check if new password is same as current
-            bool sameAsCurrent = BCrypt.Net.BCrypt.Verify(dto.NewPassword, user.PasswordHash);
-            if (sameAsCurrent)
-            {
-                return BadRequest(new { success = false, message = "New password must be different from current password" });
-            }
-
-            // Update password
+            // Update to new password
             user.PasswordHash = _hasher.Hash(dto.NewPassword);
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
             return Ok(new { success = true, message = "Password changed successfully" });
+        }
+
+        private async Task<string> GenerateStudentNumber()
+        {
+            var students = await _studentRepository.GetAllAsync();
+            var count = students.Count() + 1;
+            return $"STU{count:D3}";
+        }
+
+        private (string FirstName, string LastName) ParseFullName(string fullName)
+        {
+            var trimmed = fullName.Trim();
+            var parts = trimmed.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length == 0)
+                return ("", "");
+
+            if (parts.Length == 1)
+                return (parts[0], "");
+
+            return (parts[0], string.Join(" ", parts.Skip(1)));
         }
     }
 }
