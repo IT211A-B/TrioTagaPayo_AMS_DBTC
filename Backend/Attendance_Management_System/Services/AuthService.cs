@@ -13,7 +13,7 @@ namespace Attendance_Management_System.Services
         private readonly IJwtTokenGenerator _tokenGenerator;
         private readonly ILogger<AuthService> _logger;
         private readonly IStudentRepository _studentRepository;
-        private readonly ITeacherRepository _teacherRepository;  // ✅ Add this
+        private readonly ITeacherRepository _teacherRepository;
 
         public AuthService(
             IUserRepository userRepository,
@@ -21,14 +21,14 @@ namespace Attendance_Management_System.Services
             IJwtTokenGenerator tokenGenerator,
             ILogger<AuthService> logger,
             IStudentRepository studentRepository,
-            ITeacherRepository teacherRepository)  // ✅ Add this parameter
+            ITeacherRepository teacherRepository)
         {
             _userRepository = userRepository;
             _hasher = hasher;
             _tokenGenerator = tokenGenerator;
             _logger = logger;
             _studentRepository = studentRepository;
-            _teacherRepository = teacherRepository;  // ✅ Add this
+            _teacherRepository = teacherRepository;
         }
 
         public async Task<LoginResponse?> LoginAsync(LoginRequest request)
@@ -45,8 +45,7 @@ namespace Attendance_Management_System.Services
                     return null;
                 }
 
-                _logger.LogInformation("[LOGIN] User found: {Username}, Role: {Role}, HashLength: {Length}",
-                    user.Username, user.Role, user.PasswordHash?.Length ?? 0);
+                _logger.LogInformation("[LOGIN] User found: {Username}, Role: {Role}", user.Username, user.Role);
 
                 if (string.IsNullOrEmpty(user.PasswordHash))
                 {
@@ -54,11 +53,7 @@ namespace Attendance_Management_System.Services
                     return null;
                 }
 
-                _logger.LogInformation("[LOGIN] Verifying password with BCrypt...");
-
                 bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-
-                _logger.LogInformation("[LOGIN] BCrypt verification result: {Result}", passwordValid);
 
                 if (!passwordValid)
                 {
@@ -68,29 +63,35 @@ namespace Attendance_Management_System.Services
 
                 _logger.LogInformation("[LOGIN] Password verified successfully");
 
-                // ✅ If user is Teacher, get and store TeacherId in User record
+                // ✅ STORE TEACHERID IF USER IS TEACHER
                 if (user.Role == "Teacher")
                 {
                     try
                     {
-                        var teacher = await _teacherRepository.FindAsync(t => t.TeacherNo == user.Username ||
-                                                                              t.Email == user.Username ||
-                                                                              (t.FirstName + "." + t.LastName).ToLower() == user.Username.ToLower());
-                        if (teacher != null)
+                        // Find teacher by username or email - using inherited FindAsync
+                        var teacher = await _teacherRepository.FindAsync(t =>
+                            t.TeacherNo == user.Username ||
+                            t.Email == user.Username);
+
+                        if (teacher != null && user.TeacherId == null)
                         {
                             user.TeacherId = teacher.Id;
                             _userRepository.Update(user);
                             await _userRepository.SaveChangesAsync();
                             _logger.LogInformation("[LOGIN] TeacherId {TeacherId} stored for user {Username}", teacher.Id, user.Username);
                         }
+                        else if (teacher != null)
+                        {
+                            _logger.LogInformation("[LOGIN] TeacherId already set: {TeacherId}", user.TeacherId);
+                        }
                         else
                         {
-                            _logger.LogWarning("[LOGIN] No Teacher found for username: {Username}", user.Username);
+                            _logger.LogWarning("[LOGIN] No teacher found for username: {Username}", user.Username);
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "[LOGIN] Error getting TeacherId for {Username}", user.Username);
+                        _logger.LogError(ex, "[LOGIN] Error storing TeacherId for {Username}", user.Username);
                     }
                 }
 
@@ -204,7 +205,8 @@ namespace Attendance_Management_System.Services
                     Username = "admin",
                     PasswordHash = _hasher.Hash("admin123"),
                     Role = "Admin",
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
+                    TeacherId = null
                 };
 
                 await _userRepository.AddAsync(admin);

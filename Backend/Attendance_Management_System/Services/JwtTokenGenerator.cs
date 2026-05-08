@@ -46,6 +46,12 @@ namespace Attendance_Management_System.Services
                     {
                         claims.Add(new Claim("TeacherId", teacher.Id.ToString()));
                         claims.Add(new Claim("TeacherNo", teacher.TeacherNo));
+
+                        // Update User record with TeacherId if not already set
+                        if (user.TeacherId == null)
+                        {
+                            user.TeacherId = teacher.Id;
+                        }
                     }
                 }
                 catch
