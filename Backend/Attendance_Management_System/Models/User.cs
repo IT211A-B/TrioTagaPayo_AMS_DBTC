@@ -12,5 +12,7 @@ namespace Attendance_Management_System.Models
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiry { get; set; }
         public int? TeacherId { get; set; }
+        public string? ProfilePhotoUrl { get; set; }
+
     }
 }
