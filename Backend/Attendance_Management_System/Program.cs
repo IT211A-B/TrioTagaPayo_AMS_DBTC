@@ -86,6 +86,7 @@ builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<ICourseService, CourseService>();
 builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 builder.Services.AddScoped<IQRService, QRService>();
+builder.Services.AddScoped<SmtpEmailService>();
 
 // =============================================
 // JWT Authentication

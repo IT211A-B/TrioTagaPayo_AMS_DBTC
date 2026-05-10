@@ -6,7 +6,7 @@ using Attendance_Management_System.Interfacess;
 
 namespace Attendance_Management_System.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     [ApiController]
     [Route("api/[controller]")]
     public class StudentController : ControllerBase
@@ -48,11 +48,8 @@ namespace Attendance_Management_System.Controllers
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Create([FromBody] CreateStudentDto dto)
         {
-            // Auto-generate student number if not provided
             if (string.IsNullOrWhiteSpace(dto.StudentNo))
-            {
                 dto.StudentNo = await GenerateStudentNumber();
-            }
 
             var created = await _studentService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
@@ -79,19 +76,14 @@ namespace Attendance_Management_System.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _studentService.DeleteAsync(id);
-            return deleted
-                ? NoContent()
-                : NotFound(new { message = $"Student with ID {id} not found." });
+            return deleted ? NoContent() : NotFound(new { message = $"Student with ID {id} not found." });
         }
 
-        /// <summary>
-        /// Generates a student number in STU001 format
-        /// </summary>
         private async Task<string> GenerateStudentNumber()
         {
             var students = await _studentService.GetAllAsync();
             var count = students.Count() + 1;
-            return $"STU{count:D3}";  // STU001, STU002, STU003...
+            return $"STU{count:D3}";
         }
     }
 }

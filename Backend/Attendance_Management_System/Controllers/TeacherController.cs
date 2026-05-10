@@ -6,12 +6,13 @@ using Attendance_Management_System.Interfacess;
 
 namespace Attendance_Management_System.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class TeacherController : ControllerBase
     {
         private readonly ITeacherService _teacherService;
+
         public TeacherController(ITeacherService teacherService) => _teacherService = teacherService;
 
         /// <summary>Gets all teachers with optional pagination.</summary>

@@ -31,8 +31,7 @@ namespace Attendance_Management_System.Helpers
         }
 
         /// <summary>
-        /// Sends an attendance notification email to the student via EmailJS REST API.
-        /// Uses your Gmail service (service_g2chu6n) connected as maanojamesneil123@gmail.com.
+        /// Sends an attendance notification email to the student.
         /// </summary>
         public async Task<bool> SendAttendanceNotificationAsync(
             string studentEmail,
@@ -61,10 +60,10 @@ namespace Attendance_Management_System.Helpers
 
                 var payload = new
                 {
-                    service_id = _options.ServiceId,   // from Render env: EmailJS:ServiceId
-                    template_id = _options.TemplateId,  // from Render env: EmailJS:TemplateId
-                    user_id = _options.PublicKey,   // from Render env: EmailJS:PublicKey
-                    accessToken = _options.PrivateKey,  // from Render env: EmailJS:PrivateKey
+                    service_id = _options.ServiceId,
+                    template_id = _options.TemplateId,
+                    user_id = _options.PublicKey,
+                    accessToken = _options.PrivateKey,
                     template_params = templateParams
                 };
 
@@ -75,22 +74,62 @@ namespace Attendance_Management_System.Helpers
 
                 if (response.IsSuccessStatusCode)
                 {
-                    _logger.LogInformation(
-                        "[EmailJS]  Email sent → {Email} | Student: {No} | Status: {Status}",
-                        studentEmail, studentNo, status);
+                    _logger.LogInformation("[EmailJS] Attendance email sent → {Email}", studentEmail);
                     return true;
                 }
 
                 var errorBody = await response.Content.ReadAsStringAsync();
-                _logger.LogWarning(
-                    "[EmailJS]  Failed → {Code} | Body: {Body}",
-                    response.StatusCode, errorBody);
+                _logger.LogWarning("[EmailJS] Attendance email failed → {Code} | Body: {Body}", response.StatusCode, errorBody);
                 return false;
             }
             catch (Exception ex)
             {
-                // Email failure must NEVER crash the attendance save
-                _logger.LogError(ex, "[EmailJS] Exception while sending to {Email}", studentEmail);
+                _logger.LogError(ex, "[EmailJS] Exception sending attendance email to {Email}", studentEmail);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Sends email verification link using a dedicated EmailJS template.
+        /// </summary>
+        public async Task<bool> SendVerificationEmailAsync(string email, string username, string verificationLink)
+        {
+            try
+            {
+                var templateParams = new Dictionary<string, string>
+                {
+                    { "to_email", email },
+                    { "username", username },
+                    { "verification_link", verificationLink }
+                };
+
+                var payload = new
+                {
+                    service_id = _options.ServiceId,
+                    template_id = _options.TemplateId,   // You can use a separate template for verification
+                    user_id = _options.PublicKey,
+                    accessToken = _options.PrivateKey,
+                    template_params = templateParams
+                };
+
+                var json = JsonSerializer.Serialize(payload);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync(EmailJSApiUrl, content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    _logger.LogInformation("[EmailJS] Verification email sent to {Email}", email);
+                    return true;
+                }
+
+                var errorBody = await response.Content.ReadAsStringAsync();
+                _logger.LogWarning("[EmailJS] Verification email failed → {Code} | Body: {Body}", response.StatusCode, errorBody);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "[EmailJS] Exception sending verification email to {Email}", email);
                 return false;
             }
         }

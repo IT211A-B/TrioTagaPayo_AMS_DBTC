@@ -4,20 +4,16 @@ using System.Text;
 using Microsoft.IdentityModel.Tokens;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
-using Attendance_Management_System.DBCONTEXT;
-using Microsoft.EntityFrameworkCore;
 
 namespace Attendance_Management_System.Services
 {
     public class JwtTokenGenerator : IJwtTokenGenerator
     {
         private readonly IConfiguration _config;
-        private readonly AppDbContext _context;
 
-        public JwtTokenGenerator(IConfiguration config, AppDbContext context)
+        public JwtTokenGenerator(IConfiguration config)
         {
             _config = config;
-            _context = context;
         }
 
         public string Generate(User user)
@@ -33,39 +29,15 @@ namespace Attendance_Management_System.Services
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
-            // ADD TEACHERID CLAIM IF USER IS TEACHER
-            if (user.Role == "Teacher")
+            // TeacherId claim – use the value already stored in User object (set during login)
+            if (user.Role == "Teacher" && user.TeacherId.HasValue)
             {
-                try
-                {
-                    // Try to find teacher by username
-                    var teacher = _context.Teachers
-                        .FirstOrDefault(t => t.TeacherNo == user.Username || t.Email == user.Username);
-
-                    if (teacher != null)
-                    {
-                        claims.Add(new Claim("TeacherId", teacher.Id.ToString()));
-                        claims.Add(new Claim("TeacherNo", teacher.TeacherNo));
-
-                        // Update User record with TeacherId if not already set
-                        if (user.TeacherId == null)
-                        {
-                            user.TeacherId = teacher.Id;
-                        }
-                    }
-                }
-                catch
-                {
-                    // Silently fail
-                }
+                claims.Add(new Claim("TeacherId", user.TeacherId.Value.ToString()));
             }
 
-            // Get JWT key with null check
             var jwtKey = _config["Jwt:Key"];
             if (string.IsNullOrEmpty(jwtKey))
-            {
-                throw new InvalidOperationException("JWT Key is not configured in appsettings.json");
-            }
+                throw new InvalidOperationException("JWT Key is not configured");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

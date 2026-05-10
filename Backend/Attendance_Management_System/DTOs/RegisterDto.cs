@@ -17,6 +17,11 @@ namespace Attendance_Management_System.DTOs
         [MaxLength(100, ErrorMessage = "Full name must not exceed 100 characters")]
         public string FullName { get; set; } = "";
 
+        [Required(ErrorMessage = "Email address is required")]
+        [EmailAddress(ErrorMessage = "Invalid email address")]
+        [MaxLength(100, ErrorMessage = "Email must not exceed 100 characters")]
+        public string Email { get; set; } = "";   // ✅ NEW
+
         public string Role { get; set; } = "Student";
     }
 }

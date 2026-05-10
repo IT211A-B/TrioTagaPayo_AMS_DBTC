@@ -1,15 +1,13 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Interfacess;
 using System.Security.Claims;
-using QRCoder; // ✅ Add this using
+using QRCoder;
 
 namespace Attendance_Management_System.Controllers
 {
-    /// <summary>
-    /// Handles QR code generation (teacher) and scanning (student).
-    /// </summary>
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
@@ -17,13 +15,13 @@ namespace Attendance_Management_System.Controllers
     {
         private readonly IQRService _qrService;
         private readonly ICourseService _courseService;
-        private readonly IConfiguration _configuration; // ✅ Add this
+        private readonly IConfiguration _configuration;
 
         public QRController(IQRService qrService, ICourseService courseService, IConfiguration configuration)
         {
             _qrService = qrService;
             _courseService = courseService;
-            _configuration = configuration; // ✅ Add this
+            _configuration = configuration;
         }
 
         /// <summary>
@@ -31,20 +29,17 @@ namespace Attendance_Management_System.Controllers
         /// </summary>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpPost("generate-enrollment")]
+        [EnableRateLimiting("qrgenerate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GenerateEnrollmentQR([FromBody] GenerateEnrollmentQRDto dto)
         {
-            // Verify course exists
             var course = await _courseService.GetByIdAsync(dto.CourseId);
             if (course == null)
-            {
                 return NotFound(new { success = false, message = "Course not found" });
-            }
 
-            // Verify teacher owns the course (if teacher, not admin)
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
             if (role == "Teacher")
             {
@@ -57,11 +52,8 @@ namespace Attendance_Management_System.Controllers
                     return StatusCode(403, new { success = false, message = "You don't own this course." });
             }
 
-            // Get frontend URL from configuration (read from appsettings.json)
             var frontendUrl = _configuration["FrontendUrl"] ?? "https://your-frontend.onrender.com";
             var enrollmentUrl = $"{frontendUrl}/Student/SelfEnroll?courseId={dto.CourseId}";
-
-            // Generate QR code
             var qrCodeBase64 = GenerateQRCodeBase64(enrollmentUrl);
 
             return Ok(new
@@ -77,10 +69,11 @@ namespace Attendance_Management_System.Controllers
         }
 
         /// <summary>
-        /// Teacher generates a QR code for attendance (original functionality)
+        /// Teacher generates QR code for attendance
         /// </summary>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpPost("generate")]
+        [EnableRateLimiting("qrgenerate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -88,7 +81,6 @@ namespace Attendance_Management_System.Controllers
         public async Task<IActionResult> Generate([FromBody] GenerateQRDto dto)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
             if (role == "Teacher")
             {
                 var teacherIdClaim = User.FindFirst("TeacherId")?.Value;
@@ -97,10 +89,8 @@ namespace Attendance_Management_System.Controllers
 
                 var teacherId = int.Parse(teacherIdClaim);
                 var course = await _courseService.GetByIdAsync(dto.CourseId);
-
                 if (course == null)
                     return NotFound(new { message = "Course not found." });
-
                 if (course.TeacherId != teacherId)
                     return StatusCode(403, new { message = "You don't own this course." });
             }
@@ -110,35 +100,29 @@ namespace Attendance_Management_System.Controllers
         }
 
         /// <summary>
-        /// Student scans the QR code and submits their StudentId.
-        /// Automatically marks them Present or Late based on scan time.
+        /// Student scans the QR code
         /// </summary>
         [AllowAnonymous]
         [HttpPost("scan")]
+        [EnableRateLimiting("qrscan")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Scan([FromBody] ScanQRDto dto)
         {
             var result = await _qrService.ScanAsync(dto);
-
             if (!result.Success)
                 return BadRequest(new { message = result.Message });
-
             return Ok(result);
         }
 
         /// <summary>
-        /// Teacher manually deactivates a QR session before it expires.
+        /// Deactivate an active QR session
         /// </summary>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpPatch("{sessionId}/deactivate")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> Deactivate(int sessionId)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
             if (role == "Teacher")
             {
                 var teacherIdClaim = User.FindFirst("TeacherId")?.Value;
@@ -146,7 +130,6 @@ namespace Attendance_Management_System.Controllers
                     return Unauthorized();
 
                 var teacherId = int.Parse(teacherIdClaim);
-
                 var session = await _qrService.GetSessionByIdAsync(sessionId);
                 if (session == null)
                     return NotFound(new { message = $"QR session {sessionId} not found." });
@@ -164,16 +147,13 @@ namespace Attendance_Management_System.Controllers
         }
 
         /// <summary>
-        /// Get all currently active QR sessions for a course.
+        /// Get active QR sessions for a course
         /// </summary>
         [Authorize(Roles = "Admin,Teacher")]
         [HttpGet("active/{courseId}")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GetActiveSessions(int courseId)
         {
             var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
             if (role == "Teacher")
             {
                 var teacherIdClaim = User.FindFirst("TeacherId")?.Value;
@@ -182,10 +162,8 @@ namespace Attendance_Management_System.Controllers
 
                 var teacherId = int.Parse(teacherIdClaim);
                 var course = await _courseService.GetByIdAsync(courseId);
-
                 if (course == null)
                     return NotFound(new { message = "Course not found." });
-
                 if (course.TeacherId != teacherId)
                     return StatusCode(403, new { message = "You don't own this course." });
             }
@@ -194,9 +172,6 @@ namespace Attendance_Management_System.Controllers
             return Ok(sessions);
         }
 
-        /// <summary>
-        /// Generate QR code base64 from text
-        /// </summary>
         private string GenerateQRCodeBase64(string text)
         {
             using var qrGenerator = new QRCodeGenerator();
@@ -207,9 +182,6 @@ namespace Attendance_Management_System.Controllers
         }
     }
 
-    /// <summary>
-    /// DTO for generating enrollment QR code
-    /// </summary>
     public class GenerateEnrollmentQRDto
     {
         public int CourseId { get; set; }

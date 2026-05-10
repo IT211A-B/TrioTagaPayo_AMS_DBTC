@@ -38,40 +38,41 @@ namespace Attendance_Management_System.Services
                 _logger.LogInformation("[LOGIN] Attempt for user: {Username}", request.Username);
 
                 var user = await _userRepository.FindAsync(u => u.Username == request.Username);
-
                 if (user == null)
                 {
                     _logger.LogWarning("[LOGIN] User not found: {Username}", request.Username);
                     return null;
                 }
 
-                _logger.LogInformation("[LOGIN] User found: {Username}, Role: {Role}", user.Username, user.Role);
-
                 if (string.IsNullOrEmpty(user.PasswordHash))
                 {
-                    _logger.LogError("[LOGIN] Password hash is null for user: {Username}", request.Username);
+                    _logger.LogError("[LOGIN] Password hash missing for: {Username}", request.Username);
                     return null;
                 }
 
                 bool passwordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
-
                 if (!passwordValid)
                 {
-                    _logger.LogWarning("[LOGIN] Invalid password for user: {Username}", request.Username);
+                    _logger.LogWarning("[LOGIN] Invalid password for: {Username}", request.Username);
                     return null;
                 }
 
-                _logger.LogInformation("[LOGIN] Password verified successfully");
+                // ✅ Block login if email not verified for Student or Teacher
+                if (!user.IsEmailVerified && (user.Role == "Student" || user.Role == "Teacher"))
+                {
+                    _logger.LogWarning("[LOGIN] Email not verified for user: {Username}", request.Username);
+                    return null; // Frontend should show "Please verify your email" based on this
+                }
 
-                // ✅ STORE TEACHERID IF USER IS TEACHER
+                // Store TeacherId if user is Teacher
                 if (user.Role == "Teacher")
                 {
                     try
                     {
-                        // Find teacher by username or email - using inherited FindAsync
                         var teacher = await _teacherRepository.FindAsync(t =>
                             t.TeacherNo == user.Username ||
-                            t.Email == user.Username);
+                            t.Email == user.Username ||
+                            (t.FirstName + "." + t.LastName).ToLower() == user.Username.ToLower());
 
                         if (teacher != null && user.TeacherId == null)
                         {
@@ -80,14 +81,6 @@ namespace Attendance_Management_System.Services
                             await _userRepository.SaveChangesAsync();
                             _logger.LogInformation("[LOGIN] TeacherId {TeacherId} stored for user {Username}", teacher.Id, user.Username);
                         }
-                        else if (teacher != null)
-                        {
-                            _logger.LogInformation("[LOGIN] TeacherId already set: {TeacherId}", user.TeacherId);
-                        }
-                        else
-                        {
-                            _logger.LogWarning("[LOGIN] No teacher found for username: {Username}", user.Username);
-                        }
                     }
                     catch (Exception ex)
                     {
@@ -95,11 +88,8 @@ namespace Attendance_Management_System.Services
                     }
                 }
 
-                _logger.LogInformation("[LOGIN] Generating JWT token for: {Username}", request.Username);
                 var token = _tokenGenerator.Generate(user);
                 var expiration = DateTime.UtcNow.AddHours(8);
-
-                _logger.LogInformation("[LOGIN] Generating refresh token");
                 var refreshToken = RefreshTokenHelper.GenerateRefreshToken();
                 var refreshExpiry = DateTime.UtcNow.AddDays(7);
 
@@ -134,26 +124,11 @@ namespace Attendance_Management_System.Services
                 _logger.LogInformation("[REFRESH] Attempt with token");
 
                 var user = await _userRepository.FindAsync(u => u.RefreshToken == refreshToken);
-
-                if (user == null)
+                if (user == null || user.RefreshTokenExpiry == null || user.RefreshTokenExpiry < DateTime.UtcNow)
                 {
-                    _logger.LogWarning("[REFRESH] No user found with this refresh token");
+                    _logger.LogWarning("[REFRESH] Invalid or expired refresh token");
                     return null;
                 }
-
-                if (user.RefreshTokenExpiry == null)
-                {
-                    _logger.LogWarning("[REFRESH] Refresh token expiry is null for user: {Username}", user.Username);
-                    return null;
-                }
-
-                if (user.RefreshTokenExpiry < DateTime.UtcNow)
-                {
-                    _logger.LogWarning("[REFRESH] Refresh token expired for user: {Username}", user.Username);
-                    return null;
-                }
-
-                _logger.LogInformation("[REFRESH] Valid refresh token for user: {Username}", user.Username);
 
                 var newAccessToken = _tokenGenerator.Generate(user);
                 var newExpiration = DateTime.UtcNow.AddHours(8);
@@ -164,8 +139,6 @@ namespace Attendance_Management_System.Services
                 user.RefreshTokenExpiry = newRefreshExpiry;
                 _userRepository.Update(user);
                 await _userRepository.SaveChangesAsync();
-
-                _logger.LogInformation("[REFRESH] SUCCESS for user: {Username}", user.Username);
 
                 return new LoginResponse
                 {
@@ -179,7 +152,7 @@ namespace Attendance_Management_System.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[REFRESH] CRITICAL ERROR");
+                _logger.LogError(ex, "[REFRESH] Error");
                 throw;
             }
         }
@@ -191,7 +164,6 @@ namespace Attendance_Management_System.Services
                 _logger.LogInformation("[SEED] Checking if admin exists...");
 
                 var adminExists = await _userRepository.AnyAsync(u => u.Role == "Admin");
-
                 if (adminExists)
                 {
                     _logger.LogInformation("[SEED] Admin already exists, skipping seed");
@@ -206,7 +178,9 @@ namespace Attendance_Management_System.Services
                     PasswordHash = _hasher.Hash("admin123"),
                     Role = "Admin",
                     CreatedAt = DateTime.UtcNow,
-                    TeacherId = null
+                    IsEmailVerified = true, // Admin auto-verified
+                    EmailVerificationToken = null,
+                    EmailVerificationTokenExpiry = null
                 };
 
                 await _userRepository.AddAsync(admin);

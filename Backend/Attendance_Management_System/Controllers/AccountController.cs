@@ -27,6 +27,8 @@ namespace Attendance_Management_System.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]          // ✅ added
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)] // ✅ added
         public async Task<IActionResult> UpdateProfilePhoto()
         {
             try
@@ -116,6 +118,9 @@ namespace Attendance_Management_System.Controllers
         /// Get current user's profile info
         /// </summary>
         [HttpGet("profile")]
+        [ProducesResponseType(StatusCodes.Status200OK)]          // ✅ added
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]// ✅ added
+        [ProducesResponseType(StatusCodes.Status404NotFound)]    // ✅ added
         public async Task<IActionResult> GetProfile()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

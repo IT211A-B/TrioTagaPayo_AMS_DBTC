@@ -13,6 +13,9 @@ namespace Attendance_Management_System.Models
         public DateTime? RefreshTokenExpiry { get; set; }
         public int? TeacherId { get; set; }
         public string? ProfilePhotoUrl { get; set; }
+        public bool IsEmailVerified { get; set; } = false;
+        public string? EmailVerificationToken { get; set; }
+        public DateTime? EmailVerificationTokenExpiry { get; set; }
 
     }
 }

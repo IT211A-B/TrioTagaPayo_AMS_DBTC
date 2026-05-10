@@ -6,12 +6,13 @@ using Attendance_Management_System.Interfacess;
 
 namespace Attendance_Management_System.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "Admin,Teacher")]
     [ApiController]
     [Route("api/[controller]")]
     public class CourseController : ControllerBase
     {
         private readonly ICourseService _courseService;
+
         public CourseController(ICourseService courseService) => _courseService = courseService;
 
         /// <summary>Gets all courses with optional pagination.</summary>
@@ -69,9 +70,7 @@ namespace Attendance_Management_System.Controllers
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _courseService.DeleteAsync(id);
-            return deleted
-                ? NoContent()
-                : NotFound(new { message = $"Course with ID {id} not found." });
+            return deleted ? NoContent() : NotFound(new { message = $"Course with ID {id} not found." });
         }
     }
 }

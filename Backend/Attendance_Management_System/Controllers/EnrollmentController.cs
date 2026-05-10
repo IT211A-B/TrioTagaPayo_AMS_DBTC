@@ -22,6 +22,8 @@ namespace Attendance_Management_System.Controllers
         /// </summary>
         [HttpGet("course/{id}")]
         [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetCourseForEnrollment(int id)
         {
             var course = await _context.Courses
@@ -51,6 +53,8 @@ namespace Attendance_Management_System.Controllers
         /// </summary>
         [HttpPost("self-enroll")]
         [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> SelfEnroll([FromBody] SelfEnrollRequest request)
         {
             // Validate request
@@ -160,6 +164,7 @@ namespace Attendance_Management_System.Controllers
         /// </summary>
         [HttpGet("check-enrollment")]
         [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<IActionResult> CheckEnrollment(string studentId, int courseId)
         {
             var student = await _context.Students
