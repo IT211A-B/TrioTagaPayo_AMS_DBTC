@@ -3,16 +3,29 @@ using Microsoft.AspNetCore.Mvc;
 using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Helpers;
 using Attendance_Management_System.Interfacess;
+using System.Security.Claims;
+using QRCoder;
 
 namespace Attendance_Management_System.Controllers
 {
-    [Authorize(Roles = "Admin")]           // ✅ Only Admin can access any action
+    [Authorize(Roles = "Admin")]
     [ApiController]
     [Route("api/[controller]")]
     public class TeacherController : ControllerBase
     {
         private readonly ITeacherService _teacherService;
-        public TeacherController(ITeacherService teacherService) => _teacherService = teacherService;
+        private readonly IConfiguration _configuration;
+        private readonly ICourseService _courseService;
+
+        public TeacherController(
+            ITeacherService teacherService,
+            IConfiguration configuration,
+            ICourseService courseService)
+        {
+            _teacherService = teacherService;
+            _configuration = configuration;
+            _courseService = courseService;
+        }
 
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -80,6 +93,54 @@ namespace Attendance_Management_System.Controllers
             return result == null
                 ? NotFound(new { message = $"Teacher with ID {id} not found." })
                 : Ok(result);
+        }
+
+        /// <summary>
+        /// Generates an enrollment QR code for a specific course.
+        /// This is called by the frontend button in the teacher dashboard.
+        /// </summary>
+        [HttpPost("GenerateCourseQRCode")]
+        [Authorize(Roles = "Admin,Teacher")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateCourseQRCode([FromForm] int courseId)
+        {
+            // Verify the course exists
+            var course = await _courseService.GetByIdAsync(courseId);
+            if (course == null)
+                return Ok(new { success = false, message = "Course not found" });
+
+            var role = User.FindFirst(ClaimTypes.Role)?.Value;
+            if (role == "Teacher")
+            {
+                var teacherIdClaim = User.FindFirst("TeacherId")?.Value;
+                if (string.IsNullOrEmpty(teacherIdClaim))
+                    return Ok(new { success = false, message = "Teacher ID not found in token." });
+
+                var teacherId = int.Parse(teacherIdClaim);
+                if (course.TeacherId != teacherId)
+                    return Ok(new { success = false, message = "You don't own this course." });
+            }
+
+            // Generate the QR code
+            var frontendUrl = _configuration["FrontendUrl"] ?? "https://your-frontend.onrender.com";
+            var enrollmentUrl = $"{frontendUrl}/Student/SelfEnroll?courseId={courseId}";
+            var qrCodeBase64 = GenerateQRCodeBase64(enrollmentUrl);
+
+            return Ok(new
+            {
+                success = true,
+                qrCode = qrCodeBase64,
+                courseName = course.CourseName
+            });
+        }
+
+        private string GenerateQRCodeBase64(string text)
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(text, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var qrCodeBytes = qrCode.GetGraphic(20);
+            return Convert.ToBase64String(qrCodeBytes);
         }
     }
 }
