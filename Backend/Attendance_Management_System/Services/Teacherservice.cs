@@ -2,6 +2,7 @@
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
 using Attendance_Management_System.Repositories.Interfaces;
+using BCrypt.Net;
 
 namespace Attendance_Management_System.Services
 {
@@ -27,7 +28,7 @@ namespace Attendance_Management_System.Services
             var result = new List<TeacherResponseDto>();
             foreach (var t in teachers)
             {
-                var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.Username == t.TeacherNo);
+                var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.TeacherId == t.Id);
                 var dto = ToDto(t);
                 dto.Username = user?.Username ?? "";
                 dto.HasAccount = user != null;
@@ -38,11 +39,11 @@ namespace Attendance_Management_System.Services
 
         public async Task<TeacherResponseDto?> GetByIdAsync(int id)
         {
-            var t = await _teacherRepository.GetByIdWithCoursesAsync(id);
-            if (t == null) return null;
+            var teacher = await _teacherRepository.GetByIdWithCoursesAsync(id);
+            if (teacher == null) return null;
 
-            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.Username == t.TeacherNo);
-            var dto = ToDto(t);
+            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.TeacherId == teacher.Id);
+            var dto = ToDto(teacher);
             dto.Username = user?.Username ?? "";
             dto.HasAccount = user != null;
             return dto;
@@ -56,7 +57,8 @@ namespace Attendance_Management_System.Services
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
                 Email = dto.Email,
-                IsActive = true
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
             };
             await _teacherRepository.AddAsync(teacher);
             await _teacherRepository.SaveChangesAsync();
@@ -65,7 +67,7 @@ namespace Attendance_Management_System.Services
 
         public async Task<TeacherResponseDto?> CreateWithAccountAsync(CreateTeacherWithAccountDto dto)
         {
-            var usernameToUse = dto.TeacherNo;
+            var usernameToUse = dto.Username ?? dto.TeacherNo;
             var exists = await _userRepository.AnyAsync(u => u.Username == usernameToUse);
             if (exists) return null;
 
@@ -75,7 +77,8 @@ namespace Attendance_Management_System.Services
                 FirstName = dto.FirstName,
                 LastName = dto.LastName,
                 Email = dto.Email,
-                IsActive = true
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow
             };
             await _teacherRepository.AddAsync(teacher);
             await _teacherRepository.SaveChangesAsync();
@@ -83,9 +86,11 @@ namespace Attendance_Management_System.Services
             var user = new User
             {
                 Username = usernameToUse,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
+                PasswordHash = _hasher.Hash(dto.Password),
                 Role = "Teacher",
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
+                IsEmailVerified = true,   // ✅ Teachers created by admin are auto‑verified
+                TeacherId = teacher.Id
             };
             await _userRepository.AddAsync(user);
             await _userRepository.SaveChangesAsync();
@@ -98,7 +103,7 @@ namespace Attendance_Management_System.Services
 
         public async Task<TeacherResponseDto?> UpdateAsync(int id, UpdateTeacherDto dto)
         {
-            var teacher = await _teacherRepository.GetByIdWithCoursesAsync(id);
+            var teacher = await _teacherRepository.GetByIdAsync(id);
             if (teacher == null) return null;
 
             teacher.TeacherNo = dto.TeacherNo;
@@ -109,7 +114,7 @@ namespace Attendance_Management_System.Services
             _teacherRepository.Update(teacher);
             await _teacherRepository.SaveChangesAsync();
 
-            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.Username == teacher.TeacherNo);
+            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.TeacherId == teacher.Id);
             var result = ToDto(teacher);
             result.Username = user?.Username ?? "";
             result.HasAccount = user != null;
@@ -118,10 +123,10 @@ namespace Attendance_Management_System.Services
 
         public async Task<TeacherResponseDto?> UpdateAccountAsync(int id, UpdateTeacherAccountDto dto)
         {
-            var teacher = await _teacherRepository.GetByIdWithCoursesAsync(id);
+            var teacher = await _teacherRepository.GetByIdAsync(id);
             if (teacher == null) return null;
 
-            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.Username == teacher.TeacherNo);
+            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.TeacherId == teacher.Id);
             if (user == null) return null;
 
             if (!string.IsNullOrEmpty(dto.NewUsername))
@@ -132,7 +137,7 @@ namespace Attendance_Management_System.Services
             }
 
             if (!string.IsNullOrEmpty(dto.NewPassword))
-                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+                user.PasswordHash = _hasher.Hash(dto.NewPassword);
 
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
@@ -148,7 +153,7 @@ namespace Attendance_Management_System.Services
             var teacher = await _teacherRepository.GetByIdAsync(id);
             if (teacher == null) return false;
 
-            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.Username == teacher.TeacherNo);
+            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.TeacherId == teacher.Id);
             if (user != null)
             {
                 _userRepository.Remove(user);
@@ -162,30 +167,33 @@ namespace Attendance_Management_System.Services
 
         public async Task<TeacherResponseDto?> ToggleStatusAsync(int id)
         {
-            var teacher = await _teacherRepository.GetByIdWithCoursesAsync(id);
+            var teacher = await _teacherRepository.GetByIdAsync(id);
             if (teacher == null) return null;
 
             teacher.IsActive = !teacher.IsActive;
             _teacherRepository.Update(teacher);
             await _teacherRepository.SaveChangesAsync();
 
-            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.Username == teacher.TeacherNo);
+            var user = await _userRepository.FindAsync(u => u.Role == "Teacher" && u.TeacherId == teacher.Id);
             var result = ToDto(teacher);
             result.Username = user?.Username ?? "";
             result.HasAccount = user != null;
             return result;
         }
 
-        private static TeacherResponseDto ToDto(Teacher t) => new()
+        private static TeacherResponseDto ToDto(Teacher t)
         {
-            Id = t.Id,
-            TeacherNo = t.TeacherNo,
-            FirstName = t.FirstName,
-            LastName = t.LastName,
-            Email = t.Email,
-            IsActive = t.IsActive,
-            CourseCount = t.Courses?.Count ?? 0,
-            CreatedAt = t.CreatedAt
-        };
+            return new TeacherResponseDto
+            {
+                Id = t.Id,
+                TeacherNo = t.TeacherNo,
+                FirstName = t.FirstName,
+                LastName = t.LastName,
+                Email = t.Email,
+                IsActive = t.IsActive,
+                CourseCount = t.Courses?.Count ?? 0,
+                CreatedAt = t.CreatedAt
+            };
+        }
     }
 }
