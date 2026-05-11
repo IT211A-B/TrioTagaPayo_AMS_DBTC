@@ -7,7 +7,7 @@ using Attendance_Management_System.Models;
 using BCrypt.Net;
 using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Repositories.Interfaces;
-using Attendance_Management_System.Services; // ✅ Add namespace for SmtpEmailService
+using Attendance_Management_System.Services; // for SendGridEmailService
 
 namespace Attendance_Management_System.Controllers
 {
@@ -19,9 +19,9 @@ namespace Attendance_Management_System.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly IPasswordHasher _hasher;
-        private readonly EmailJSHelper _emailJS;          // Keep for attendance notifications
+        private readonly EmailJSHelper _emailJS;          // Keep for attendance notifications (optional)
         private readonly IConfiguration _configuration;
-        private readonly SmtpEmailService _smtpEmail;    // ✅ NEW for verification emails
+        private readonly SendGridEmailService _sendGridEmail; // ✅ SendGrid
 
         public AuthController(
             IAuthService authService,
@@ -30,7 +30,7 @@ namespace Attendance_Management_System.Controllers
             IPasswordHasher hasher,
             EmailJSHelper emailJS,
             IConfiguration configuration,
-            SmtpEmailService smtpEmail)                  // ✅ Inject SMTP service
+            SendGridEmailService sendGridEmail)          // ✅ Inject SendGrid
         {
             _authService = authService;
             _userRepository = userRepository;
@@ -38,10 +38,18 @@ namespace Attendance_Management_System.Controllers
             _hasher = hasher;
             _emailJS = emailJS;
             _configuration = configuration;
-            _smtpEmail = smtpEmail;
+            _sendGridEmail = sendGridEmail;
         }
 
-        // ========== EXISTING METHODS (unchanged) ==========
+        [AllowAnonymous]
+        [HttpGet("hash-password")]
+        public IActionResult HashPassword(string password)
+        {
+            var hash = _hasher.Hash(password);
+            return Ok(new { password, hash });
+        }
+
+        // ========================= TEST ENDPOINTS =========================
         [AllowAnonymous]
         [HttpGet("test-bcrypt")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -60,6 +68,20 @@ namespace Attendance_Management_System.Controllers
             }
         }
 
+        [AllowAnonymous]
+        [HttpGet("test-sendgrid")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> TestSendGrid()
+        {
+            var result = await _sendGridEmail.SendEmailAsync(
+                "maanojamesneil123@gmail.com", // change to your own test address
+                "Test from SendGrid",
+                "<h1>SendGrid works!</h1><p>If you see this, everything is set up correctly.</p>"
+            );
+            return Ok(new { success = result });
+        }
+
+        // ========================= AUTHENTICATION =========================
         [AllowAnonymous]
         [HttpPost("login")]
         [EnableRateLimiting("login")]
@@ -154,7 +176,7 @@ namespace Attendance_Management_System.Controllers
             return Ok(new { userId, username, role });
         }
 
-        // ========== REGISTER with SMTP email ==========
+        // ========================= REGISTRATION =========================
         [AllowAnonymous]
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -199,8 +221,8 @@ namespace Attendance_Management_System.Controllers
             await _studentRepository.AddAsync(student);
             await _studentRepository.SaveChangesAsync();
 
-            // ✅ Send verification email using SMTP (not EmailJS)
-            var frontendUrl = _configuration["FrontendUrl"] ?? "https://your-frontend.onrender.com";
+            // ✅ Send verification email using SendGrid
+            var frontendUrl = _configuration["FrontendUrl"] ?? "https://localhost:7033";
             var verificationLink = $"{frontendUrl}/verify-email?token={user.EmailVerificationToken}";
             var emailBody = $@"
                 <html>
@@ -217,7 +239,8 @@ namespace Attendance_Management_System.Controllers
                 </body>
                 </html>";
 
-            _ = _smtpEmail.SendEmailAsync(dto.Email, "Verify Your Email - AMS", emailBody);
+            var emailSent = await _sendGridEmail.SendEmailAsync(dto.Email, "Verify Your Email - AMS", emailBody);
+            Console.WriteLine($"[REGISTER] SendGrid email sent to {dto.Email}: {emailSent}");
 
             return Ok(new
             {
@@ -229,6 +252,7 @@ namespace Attendance_Management_System.Controllers
             });
         }
 
+        // ========================= PASSWORD MANAGEMENT =========================
         [Authorize]
         [HttpPost("change-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -258,6 +282,7 @@ namespace Attendance_Management_System.Controllers
             return Ok(new { success = true, message = "Password changed successfully" });
         }
 
+        // ========================= EMAIL VERIFICATION =========================
         [AllowAnonymous]
         [HttpPost("resend-verification")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -276,7 +301,7 @@ namespace Attendance_Management_System.Controllers
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            // Fetch the student's email from the Student table
+            // Get student email
             string email = "";
             if (user.Role == "Student")
             {
@@ -284,20 +309,19 @@ namespace Attendance_Management_System.Controllers
                 if (student != null) email = student.Email;
             }
 
-            var frontendUrl = _configuration["FrontendUrl"] ?? "https://your-frontend.onrender.com";
+            var frontendUrl = _configuration["FrontendUrl"] ?? "https://localhost:7033";
             var verificationLink = $"{frontendUrl}/verify-email?token={user.EmailVerificationToken}";
             var emailBody = $@"
                 <html>
-                <body style='font-family: Arial, sans-serif;'>
+                <body>
                     <h2>Email Verification</h2>
-                    <p>Hello,</p>
-                    <p>Please verify your email by clicking the link below:</p>
-                    <p><a href='{verificationLink}'>Verify Email</a></p>
+                    <p>Please verify your email by clicking <a href='{verificationLink}'>here</a>.</p>
                     <p>This link expires in 24 hours.</p>
                 </body>
                 </html>";
 
-            _ = _smtpEmail.SendEmailAsync(email, "Resend: Verify Your Email", emailBody);
+            var emailSent = await _sendGridEmail.SendEmailAsync(email, "Resend: Verify Your Email", emailBody);
+            Console.WriteLine($"[RESEND] SendGrid email sent to {email}: {emailSent}");
 
             return Ok(new { success = true, message = "Verification email sent." });
         }
@@ -327,6 +351,7 @@ namespace Attendance_Management_System.Controllers
             return Ok(new { success = true, message = "Email verified successfully. You can now log in." });
         }
 
+        // ========================= FORGOT PASSWORD REQUEST =========================
         [AllowAnonymous]
         [HttpPost("forgot-password-request")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -336,13 +361,14 @@ namespace Attendance_Management_System.Controllers
             if (user == null)
                 return Ok(new { success = true, message = "If the account exists, the admin has been notified." });
 
-            // Optional: Send email to admin
+            // (Optional) Send email to admin
             // var adminEmail = _configuration["AdminEmail"] ?? "admin@yourdomain.com";
-            // await _smtpEmail.SendEmailAsync(adminEmail, "Password Reset Request", $"User {user.Username} requested a password reset.");
+            // await _sendGridEmail.SendEmailAsync(adminEmail, "Password Reset Request", $"User {user.Username} requested a password reset.");
 
             return Ok(new { success = true, message = "The admin has been notified. You will receive instructions shortly." });
         }
 
+        // ========================= HELPERS =========================
         private async Task<string> GenerateStudentNumber()
         {
             var students = await _studentRepository.GetAllAsync();
