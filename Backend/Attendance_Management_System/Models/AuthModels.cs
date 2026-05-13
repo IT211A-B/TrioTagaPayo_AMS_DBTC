@@ -8,14 +8,14 @@
 
     public class LoginResponse
     {
-        public string Token { get; set; } = string.Empty;
-        public string Username { get; set; } = string.Empty;
-        public string Role { get; set; } = string.Empty;
+        public string Token { get; set; } = "";
+        public string Username { get; set; } = "";
+        public string Role { get; set; } = "";
         public DateTime Expiration { get; set; }
-
-        // ✅ NEW
-        public string RefreshToken { get; set; } = string.Empty;
+        public string RefreshToken { get; set; } = "";
         public DateTime RefreshTokenExpiry { get; set; }
+        public int? TeacherId { get; set; }
+        public string? FullName { get; set; }
     }
 
     // ✅ NEW — para sa POST /api/Auth/refresh

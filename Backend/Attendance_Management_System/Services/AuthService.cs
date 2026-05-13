@@ -57,37 +57,37 @@ namespace Attendance_Management_System.Services
                     return null;
                 }
 
-                // ✅ Block login if email not verified for Student or Teacher
-                if (!user.IsEmailVerified && (user.Role == "Student" || user.Role == "Teacher"))
-                {
-                    _logger.LogWarning("[LOGIN] Email not verified for user: {Username}", request.Username);
-                    return null; // Frontend should show "Please verify your email" based on this
-                }
+                // ✅ Get teacher details if role matches
+                int? teacherId = null;
+                string? fullName = null;
 
-                // Store TeacherId if user is Teacher
                 if (user.Role == "Teacher")
                 {
                     try
                     {
                         var teacher = await _teacherRepository.FindAsync(t =>
-                            t.TeacherNo == user.Username ||
-                            t.Email == user.Username ||
-                            (t.FirstName + "." + t.LastName).ToLower() == user.Username.ToLower());
-
-                        if (teacher != null && user.TeacherId == null)
+                            t.TeacherNo == user.Username || t.Email == user.Username);
+                        if (teacher != null)
                         {
-                            user.TeacherId = teacher.Id;
-                            _userRepository.Update(user);
-                            await _userRepository.SaveChangesAsync();
-                            _logger.LogInformation("[LOGIN] TeacherId {TeacherId} stored for user {Username}", teacher.Id, user.Username);
+                            teacherId = teacher.Id;
+                            fullName = $"{teacher.FirstName} {teacher.LastName}";
+
+                            // Store TeacherId in User record if not already set
+                            if (user.TeacherId == null)
+                            {
+                                user.TeacherId = teacher.Id;
+                                _userRepository.Update(user);
+                                await _userRepository.SaveChangesAsync();
+                            }
                         }
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "[LOGIN] Error storing TeacherId for {Username}", user.Username);
+                        _logger.LogError(ex, "[LOGIN] Error retrieving teacher details for {Username}", user.Username);
                     }
                 }
 
+                // Generate tokens
                 var token = _tokenGenerator.Generate(user);
                 var expiration = DateTime.UtcNow.AddHours(8);
                 var refreshToken = RefreshTokenHelper.GenerateRefreshToken();
@@ -107,7 +107,9 @@ namespace Attendance_Management_System.Services
                     Role = user.Role,
                     Expiration = expiration,
                     RefreshToken = refreshToken,
-                    RefreshTokenExpiry = refreshExpiry
+                    RefreshTokenExpiry = refreshExpiry,
+                    TeacherId = teacherId,
+                    FullName = fullName
                 };
             }
             catch (Exception ex)
@@ -124,10 +126,35 @@ namespace Attendance_Management_System.Services
                 _logger.LogInformation("[REFRESH] Attempt with token");
 
                 var user = await _userRepository.FindAsync(u => u.RefreshToken == refreshToken);
-                if (user == null || user.RefreshTokenExpiry == null || user.RefreshTokenExpiry < DateTime.UtcNow)
+                if (user == null)
                 {
-                    _logger.LogWarning("[REFRESH] Invalid or expired refresh token");
+                    _logger.LogWarning("[REFRESH] No user found with this refresh token");
                     return null;
+                }
+
+                if (user.RefreshTokenExpiry == null)
+                {
+                    _logger.LogWarning("[REFRESH] Refresh token expiry is null for user: {Username}", user.Username);
+                    return null;
+                }
+
+                if (user.RefreshTokenExpiry < DateTime.UtcNow)
+                {
+                    _logger.LogWarning("[REFRESH] Refresh token expired for user: {Username}", user.Username);
+                    return null;
+                }
+
+                // Get teacher info again (for the new token – optional, but consistent)
+                int? teacherId = null;
+                string? fullName = null;
+                if (user.Role == "Teacher" && user.TeacherId.HasValue)
+                {
+                    var teacher = await _teacherRepository.GetByIdAsync(user.TeacherId.Value);
+                    if (teacher != null)
+                    {
+                        teacherId = teacher.Id;
+                        fullName = $"{teacher.FirstName} {teacher.LastName}";
+                    }
                 }
 
                 var newAccessToken = _tokenGenerator.Generate(user);
@@ -140,6 +167,8 @@ namespace Attendance_Management_System.Services
                 _userRepository.Update(user);
                 await _userRepository.SaveChangesAsync();
 
+                _logger.LogInformation("[REFRESH] SUCCESS for user: {Username}", user.Username);
+
                 return new LoginResponse
                 {
                     Token = newAccessToken,
@@ -147,12 +176,14 @@ namespace Attendance_Management_System.Services
                     Role = user.Role,
                     Expiration = newExpiration,
                     RefreshToken = newRefreshToken,
-                    RefreshTokenExpiry = newRefreshExpiry
+                    RefreshTokenExpiry = newRefreshExpiry,
+                    TeacherId = teacherId,
+                    FullName = fullName
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[REFRESH] Error");
+                _logger.LogError(ex, "[REFRESH] CRITICAL ERROR");
                 throw;
             }
         }
@@ -178,9 +209,7 @@ namespace Attendance_Management_System.Services
                     PasswordHash = _hasher.Hash("admin123"),
                     Role = "Admin",
                     CreatedAt = DateTime.UtcNow,
-                    IsEmailVerified = true, // Admin auto-verified
-                    EmailVerificationToken = null,
-                    EmailVerificationTokenExpiry = null
+                    IsEmailVerified = true
                 };
 
                 await _userRepository.AddAsync(admin);
