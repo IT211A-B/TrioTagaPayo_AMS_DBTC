@@ -18,13 +18,13 @@ namespace Attendance_Management_System.Helpers
                     o.QueueLimit = 0;
                 });
 
-                // Max 100 requests per minute — general API
-                options.AddFixedWindowLimiter("global", o =>
+                // ✅ ADD THIS – QR generation rate limit
+                options.AddFixedWindowLimiter("qrgenerate", o =>
                 {
-                    o.PermitLimit = 100;
+                    o.PermitLimit = 20;   // 20 QR generations per minute
                     o.Window = TimeSpan.FromMinutes(1);
                     o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-                    o.QueueLimit = 5;
+                    o.QueueLimit = 0;
                 });
 
                 // Max 10 QR scans per 30 seconds per IP
@@ -34,6 +34,15 @@ namespace Attendance_Management_System.Helpers
                     o.Window = TimeSpan.FromSeconds(30);
                     o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     o.QueueLimit = 0;
+                });
+
+                // Max 100 requests per minute — general API
+                options.AddFixedWindowLimiter("global", o =>
+                {
+                    o.PermitLimit = 100;
+                    o.Window = TimeSpan.FromMinutes(1);
+                    o.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+                    o.QueueLimit = 5;
                 });
 
                 // Custom JSON rejection — dili HTML ang error
