@@ -1,22 +1,26 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Attendance_Management_System.DBCONTEXT;
-using Attendance_Management_System.DTOs;
+﻿using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
+using Attendance_Management_System.Repositories.Interfaces;
 
 namespace Attendance_Management_System.Services
 {
     public class StudentService : IStudentService
     {
-        private readonly AppDbContext _context;
-        public StudentService(AppDbContext context) => _context = context;
+        private readonly IStudentRepository _studentRepository;
 
-        public async Task<IEnumerable<StudentResponseDto>> GetAllAsync() =>
-            await _context.Students.Select(s => ToDto(s)).ToListAsync();
+        public StudentService(IStudentRepository studentRepository) =>
+            _studentRepository = studentRepository;
+
+        public async Task<IEnumerable<StudentResponseDto>> GetAllAsync()
+        {
+            var students = await _studentRepository.GetAllAsync();
+            return students.Select(ToDto);
+        }
 
         public async Task<StudentResponseDto?> GetByIdAsync(int id)
         {
-            var s = await _context.Students.FindAsync(id);
+            var s = await _studentRepository.GetByIdAsync(id);
             return s == null ? null : ToDto(s);
         }
 
@@ -32,14 +36,14 @@ namespace Attendance_Management_System.Services
                 Section = dto.Section,
                 MobileNo = dto.MobileNo
             };
-            _context.Students.Add(student);
-            await _context.SaveChangesAsync();
+            await _studentRepository.AddAsync(student);
+            await _studentRepository.SaveChangesAsync();
             return ToDto(student);
         }
 
         public async Task<StudentResponseDto?> UpdateAsync(int id, UpdateStudentDto dto)
         {
-            var student = await _context.Students.FindAsync(id);
+            var student = await _studentRepository.GetByIdAsync(id);
             if (student == null) return null;
 
             student.StudentNo = dto.StudentNo;
@@ -49,16 +53,19 @@ namespace Attendance_Management_System.Services
             student.Email = dto.Email;
             student.Section = dto.Section;
             student.MobileNo = dto.MobileNo;
-            await _context.SaveChangesAsync();
+
+            _studentRepository.Update(student);
+            await _studentRepository.SaveChangesAsync();
             return ToDto(student);
         }
 
         public async Task<bool> DeleteAsync(int id)
         {
-            var student = await _context.Students.FindAsync(id);
+            var student = await _studentRepository.GetByIdAsync(id);
             if (student == null) return false;
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
+
+            _studentRepository.Remove(student);
+            await _studentRepository.SaveChangesAsync();
             return true;
         }
 

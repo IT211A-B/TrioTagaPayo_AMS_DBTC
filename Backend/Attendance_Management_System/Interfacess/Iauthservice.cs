@@ -6,5 +6,6 @@ namespace Attendance_Management_System.Interfacess
     {
         Task<LoginResponse?> LoginAsync(LoginRequest request);
         Task SeedAdminAsync();
+        Task<LoginResponse?> RefreshAsync(string refreshToken); // ✅ ADD
     }
 }
