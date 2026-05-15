@@ -1,8 +1,8 @@
-﻿@{
-    Layout = null;
-    ViewData["Title"] = "Login";
-    bool isWakingUp = ViewBag.IsWakingUp == true;
-    string errorMsg = ViewBag.Error as string ?? "";
+﻿﻿@{
+Layout = null;
+ViewData["Title"] = "Login";
+bool isWakingUp = ViewBag.IsWakingUp == true;
+string errorMsg = ViewBag.Error as string ?? "";
 }
 <!DOCTYPE html>
 <html lang="en">
@@ -44,7 +44,7 @@
                 }
                 else
                 {
-                    <div class="error-msg">@errorMsg</div>
+                    <div class="error-msg" id="errorMsg">@errorMsg</div>
                 }
             }
 
@@ -58,7 +58,7 @@
                         <circle cx="12" cy="8" r="4" />
                         <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
                     </svg>
-                    <input type="text" name="username" class="field-inp"
+                    <input type="text" name="username" id="usernameInput" class="field-inp"
                            placeholder="Enter your username"
                            autocomplete="username" required />
                 </div>
@@ -120,7 +120,20 @@
             }
         }
 
-        document.getElementById('loginForm').addEventListener('submit', function () {
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            var username = document.getElementById('usernameInput').value.trim();
+            var password = document.getElementById('passwordInp').value.trim();
+
+            if (!username || !password) {
+                e.preventDefault();
+                var errorDiv = document.getElementById('errorMsg');
+                if (errorDiv) {
+                    errorDiv.textContent = 'Username and password are required';
+                    errorDiv.style.display = 'block';
+                }
+                return;
+            }
+
             var btn = document.getElementById('loginBtn');
             var spinner = document.getElementById('btnSpinner');
             var text = document.getElementById('btnText');

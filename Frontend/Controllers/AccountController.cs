@@ -95,8 +95,6 @@ namespace AMS.Controllers
                         };
                         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
-
-                        Console.WriteLine($"Teacher logged in: ID={teacherId}, Name={teacherDisplayName}");
                     }
                     else if (result.Role == "Student")
                     {
@@ -186,7 +184,6 @@ namespace AMS.Controllers
                     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
                     await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
 
-                    // Load profile photo
                     var profile = await _api.GetUserProfileAsync();
                     if (profile != null && !string.IsNullOrEmpty(profile.ProfilePhotoUrl))
                     {
@@ -224,7 +221,6 @@ namespace AMS.Controllers
             var token = HttpContext.Session.GetString("JwtToken");
             if (string.IsNullOrEmpty(token)) return RedirectToAction("Login");
 
-            // Only update session if backend returns a non-empty URL
             var profile = await _api.GetUserProfileAsync();
             if (profile != null && !string.IsNullOrEmpty(profile.ProfilePhotoUrl))
             {
@@ -233,7 +229,6 @@ namespace AMS.Controllers
                     : $"https://triotagapayo-ams-dbtc.onrender.com{profile.ProfilePhotoUrl}";
                 HttpContext.Session.SetString("ProfilePicture", fullPhotoUrl);
             }
-            // Otherwise, keep whatever is already in session (do not overwrite with null)
 
             var role = HttpContext.Session.GetString("Role");
             var userName = HttpContext.Session.GetString("Username") ?? "User";
@@ -291,7 +286,6 @@ namespace AMS.Controllers
                 if (profilePhoto.Length > 5 * 1024 * 1024)
                     return Json(new { success = false, message = "File size must be less than 5MB" });
 
-                // === 1. Try to upload to external backend ===
                 using var memoryStream = new MemoryStream();
                 await profilePhoto.CopyToAsync(memoryStream);
                 memoryStream.Position = 0;
@@ -308,7 +302,6 @@ namespace AMS.Controllers
                 }
                 else
                 {
-                    // === 2. Fallback: save locally (so photo still works) ===
                     string localUploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "profiles");
                     if (!Directory.Exists(localUploadsFolder))
                         Directory.CreateDirectory(localUploadsFolder);
@@ -320,10 +313,8 @@ namespace AMS.Controllers
                         await profilePhoto.CopyToAsync(fileStream);
                     }
                     finalPhotoUrl = $"/uploads/profiles/{uniqueFileName}";
-                    Console.WriteLine($"External API failed: {error}. Saved locally: {finalPhotoUrl}");
                 }
 
-                // Store in session
                 HttpContext.Session.SetString("ProfilePicture", finalPhotoUrl);
                 return Json(new { success = true, message = "Profile photo updated!", photoUrl = finalPhotoUrl });
             }

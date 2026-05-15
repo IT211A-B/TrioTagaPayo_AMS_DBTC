@@ -2,9 +2,7 @@
 
 var antiForgeryToken = '';
 
-// Close modal when clicking outside
 document.addEventListener('DOMContentLoaded', function () {
-    // Get anti-forgery token
     var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
     if (tokenInput) antiForgeryToken = tokenInput.value;
 
@@ -17,14 +15,12 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Close modal on Escape key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && typeof closeModal === 'function') {
             closeModal('qrModal');
         }
     });
 
-    // Close button
     var closeModalBtn = document.getElementById('closeModalBtn');
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', function () {
@@ -40,13 +36,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-async function generateEnrollmentQR(courseId, courseName) {
-    if (typeof openModal === 'function') {
-        openModal('qrModal');
-    } else {
+// Attendance QR (new) – use this for daily attendance
+async function generateAttendanceQR(courseId, courseName) {
+    if (typeof openModal !== 'function') {
         console.error('openModal not defined');
         return;
     }
+    openModal('qrModal');
 
     var qrContainer = document.getElementById('qrImageContainer');
     if (qrContainer) {
@@ -58,10 +54,68 @@ async function generateEnrollmentQR(courseId, courseName) {
         courseNameElement.textContent = courseName;
     }
 
+    const today = new Date().toISOString().slice(0, 10);
+    const formData = new URLSearchParams();
+    formData.append('__RequestVerificationToken', antiForgeryToken);
+    formData.append('courseId', courseId);
+    formData.append('date', today);
+
     try {
-        // FIXED: Using GET request to Admin endpoint
-        var response = await fetch('/Admin/GenerateCourseQRCode?courseId=' + courseId);
-        var data = await response.json();
+        const response = await fetch('/Teacher/GenerateAttendanceQR', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        });
+        const data = await response.json();
+
+        if (data.success && data.qrCode) {
+            if (qrContainer) {
+                qrContainer.innerHTML = '<img src="data:image/png;base64,' + data.qrCode + '" style="width: 200px; height: 200px; margin: 0 auto; display: block;" />';
+            }
+        } else {
+            if (qrContainer) {
+                qrContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">' + (data.message || 'Failed to generate QR code') + '</p>';
+            }
+            if (typeof Toast !== 'undefined') Toast.error(data.message || 'Failed to generate QR code');
+        }
+    } catch (error) {
+        console.error('Error generating QR:', error);
+        if (qrContainer) {
+            qrContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">Error generating QR code</p>';
+        }
+        if (typeof Toast !== 'undefined') Toast.error('Error generating QR code');
+    }
+}
+
+// Enrollment QR (kept for student self-enrollment)
+async function generateEnrollmentQR(courseId, courseName) {
+    if (typeof openModal !== 'function') {
+        console.error('openModal not defined');
+        return;
+    }
+    openModal('qrModal');
+
+    var qrContainer = document.getElementById('qrImageContainer');
+    if (qrContainer) {
+        qrContainer.innerHTML = '<div class="spinner-ring"></div>';
+    }
+
+    var courseNameElement = document.getElementById('qrCourseName');
+    if (courseNameElement) {
+        courseNameElement.textContent = courseName;
+    }
+
+    const formData = new URLSearchParams();
+    formData.append('__RequestVerificationToken', antiForgeryToken);
+    formData.append('courseId', courseId);
+
+    try {
+        const response = await fetch('/Teacher/GenerateCourseQRCode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        });
+        const data = await response.json();
 
         if (data.success && data.qrCode) {
             if (qrContainer) {

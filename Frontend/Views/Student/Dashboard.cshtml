@@ -6,12 +6,16 @@
     ViewData["ActivePage"] = "Dashboard";
 }
 
+@{
+    var hasCourses = Model.MyCourses.Any();
+    var hasAttendance = Model.RecentAttendance.Any();
+}
+
 <div class="welcome-section">
     <h1>Welcome, @Model.StudentName!</h1>
     <p>Here's your attendance overview - @DateTime.Now.ToString("dddd, MMMM d, yyyy")</p>
 </div>
 
-<!-- Stats Cards -->
 <div class="stats-row">
     <div class="stat-card">
         <div class="stat-icon">📊</div>
@@ -39,7 +43,6 @@
     </div>
 </div>
 
-<!-- Quick Actions -->
 <div class="quick-actions">
     <a href="@Url.Action("Scanner", "Student")" class="action-btn primary">
         <span class="action-icon">📷</span>
@@ -55,13 +58,12 @@
     </a>
 </div>
 
-<!-- My Courses Section -->
 <div class="section-header">
     <span class="section-title">MY COURSES</span>
 </div>
 
 <div class="courses-grid">
-    @if (Model.MyCourses.Any())
+    @if (hasCourses)
     {
         foreach (var course in Model.MyCourses)
         {
@@ -82,7 +84,6 @@
     }
 </div>
 
-<!-- Recent Attendance -->
 <div class="section-header">
     <span class="section-title">RECENT ATTENDANCE</span>
     <a href="@Url.Action("AttendanceHistory", "Student")" class="section-link">VIEW ALL →</a>
@@ -99,17 +100,26 @@
             </tr>
         </thead>
         <tbody>
-            @if (Model.RecentAttendance.Any())
+            @if (hasAttendance)
             {
                 foreach (var a in Model.RecentAttendance)
                 {
-                    <tr>
+                    <tr class="table-row">
                         <td>@a.CourseName</td>
                         <td>@a.Date</td>
                         <td>
-                            <span class="status-badge @(a.Status == "Present" ? "badge-active" : a.Status == "Late" ? "badge-warning" : "badge-inactive")">
-                                @a.Status
-                            </span>
+                            @if (a.Status == "Present")
+                            {
+                                <span class="status-badge badge-active">@a.Status</span>
+                            }
+                            else if (a.Status == "Late")
+                            {
+                                <span class="status-badge badge-warning">@a.Status</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-inactive">@a.Status</span>
+                            }
                         </td>
                         <td>@(string.IsNullOrEmpty(a.Remarks) ? "—" : a.Remarks)</td>
                     </tr>

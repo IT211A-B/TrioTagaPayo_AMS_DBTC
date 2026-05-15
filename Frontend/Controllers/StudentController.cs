@@ -15,13 +15,11 @@ namespace AMS.Controllers
         }
 
         private bool IsLoggedIn() => !string.IsNullOrEmpty(HttpContext.Session.GetString("JwtToken"));
-
         private bool IsStudent()
         {
             var role = HttpContext.Session.GetString("Role");
             return role == "Student" || role == "student";
         }
-
         private IActionResult RequireLogin() => RedirectToAction("StudentLogin", "Account");
 
         // ─────────────────────────────────────────────────────
@@ -45,16 +43,12 @@ namespace AMS.Controllers
 
             if (!string.IsNullOrEmpty(studentIdStr) && int.TryParse(studentIdStr, out int studentId))
             {
-                // Get student's attendance records
                 myAttendance = await _api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/student/{studentId}");
-
-                // Get courses the student is enrolled in (from attendance records)
                 var allCourses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
                 var enrolledCourseIds = myAttendance.Select(a => a.CourseId).Distinct().ToList();
                 myCourses = allCourses.Where(c => enrolledCourseIds.Contains(c.Id)).ToList();
             }
 
-            // Calculate attendance stats
             var presentCount = myAttendance.Count(a => a.Status == "Present");
             var lateCount = myAttendance.Count(a => a.Status == "Late");
             var absentCount = myAttendance.Count(a => a.Status == "Absent");
@@ -101,15 +95,46 @@ namespace AMS.Controllers
         {
             if (!IsLoggedIn()) return RequireLogin();
             if (!IsStudent()) return RedirectToAction("Login", "Account");
-
             ViewData["ActivePage"] = "Scanner";
             ViewData["PageTitle"] = "Scan QR Code";
-
             return View();
         }
 
         // ─────────────────────────────────────────────────────
-        // PROCESS SCANNED QR CODE
+        // RECORD ATTENDANCE (from direct QR scan)
+        // ─────────────────────────────────────────────────────
+        [HttpGet]
+        public async Task<IActionResult> RecordAttendance(int courseId, string date)
+        {
+            if (!IsLoggedIn()) return Unauthorized();
+            if (!IsStudent()) return Unauthorized();
+
+            var studentIdStr = HttpContext.Session.GetString("StudentId");
+            if (string.IsNullOrEmpty(studentIdStr) || !int.TryParse(studentIdStr, out int studentId))
+                return Json(new { success = false, message = "Student not found. Please log in again." });
+
+            if (!DateOnly.TryParse(date, out _))
+                return Json(new { success = false, message = "Invalid date format." });
+
+            var body = new
+            {
+                studentId = studentId,
+                courseId = courseId,
+                date = date,
+                status = "Present",
+                remarks = "Scanned via QR"
+            };
+
+            var result = await _api.PostAsync<object>("/api/Attendance", body);
+
+            if (result.Success)
+                return Json(new { success = true, message = "Attendance recorded successfully!" });
+            else
+                return Json(new { success = false, message = result.Error ?? "Failed to record attendance." });
+        }
+
+        // ─────────────────────────────────────────────────────
+        // PROCESS SCANNED QR CODE (handles both sessionId and direct URL)
         // ─────────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -119,9 +144,21 @@ namespace AMS.Controllers
 
             try
             {
-                // Extract sessionId from QR data (URL or just the token)
-                string sessionId = "";
+                // If the QR contains the RecordAttendance URL, handle directly
+                if (qrData.Contains("/Student/RecordAttendance"))
+                {
+                    var uri = new Uri(qrData);
+                    var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+                    var courseId = query["courseId"];
+                    var date = query["date"];
+                    if (!string.IsNullOrEmpty(courseId) && !string.IsNullOrEmpty(date))
+                    {
+                        return await RecordAttendance(int.Parse(courseId), date);
+                    }
+                }
 
+                // Otherwise, treat as sessionId (original enrollment/attendance session QR)
+                string sessionId = "";
                 if (qrData.Contains("sessionId="))
                 {
                     var match = System.Text.RegularExpressions.Regex.Match(qrData, "sessionId=([^&]+)");
@@ -132,7 +169,6 @@ namespace AMS.Controllers
                     sessionId = qrData;
                 }
 
-                // Call backend API to record attendance
                 var result = await _api.PostAsync<ScanResultApiModel>($"/api/QR/scan?sessionId={sessionId}", null);
 
                 if (result.Success && result.Data != null)
@@ -167,25 +203,16 @@ namespace AMS.Controllers
             ViewData["PageTitle"] = "My Attendance History";
 
             var studentIdStr = HttpContext.Session.GetString("StudentId");
-
             if (string.IsNullOrEmpty(studentIdStr) || !int.TryParse(studentIdStr, out int studentId))
-            {
                 return View(new List<AttendanceEntryViewModel>());
-            }
 
             var attendance = await _api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/student/{studentId}");
             var allCourses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
 
-            // Apply filters
             if (!string.IsNullOrWhiteSpace(courseFilter))
-            {
                 attendance = attendance.Where(a => a.CourseName == courseFilter).ToList();
-            }
-
             if (!string.IsNullOrWhiteSpace(statusFilter))
-            {
                 attendance = attendance.Where(a => a.Status == statusFilter).ToList();
-            }
 
             var viewModel = attendance
                 .OrderByDescending(a => a.Date)
@@ -197,7 +224,6 @@ namespace AMS.Controllers
                     Remarks = a.Remarks
                 }).ToList();
 
-            // Get unique course names for filter dropdown
             var courseNames = allCourses.Select(c => c.CourseName).Distinct().ToList();
             ViewBag.Courses = courseNames;
             ViewBag.SelectedCourse = courseFilter;
@@ -207,7 +233,7 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
-        // MY COURSES
+        // MY COURSES (student's enrolled courses)
         // ─────────────────────────────────────────────────────
         public async Task<IActionResult> MyCourses()
         {
@@ -218,11 +244,8 @@ namespace AMS.Controllers
             ViewData["PageTitle"] = "My Courses";
 
             var studentIdStr = HttpContext.Session.GetString("StudentId");
-
             if (string.IsNullOrEmpty(studentIdStr) || !int.TryParse(studentIdStr, out int studentId))
-            {
                 return View(new List<CourseViewModel>());
-            }
 
             var attendance = await _api.GetAllAsync<AttendanceApiModel>($"/api/Attendance/student/{studentId}");
             var allCourses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
@@ -251,8 +274,9 @@ namespace AMS.Controllers
             if (!IsLoggedIn()) return RedirectToAction("StudentLogin", "Account");
             return RedirectToAction("Dashboard");
         }
+
         // ─────────────────────────────────────────────────────
-        // SELF ENROLLMENT PAGE (from QR code)
+        // SELF ENROLLMENT PAGE (from enrollment QR)
         // ─────────────────────────────────────────────────────
         [HttpGet]
         public IActionResult SelfEnroll(int courseId)
@@ -261,5 +285,4 @@ namespace AMS.Controllers
             return View();
         }
     }
-
 }

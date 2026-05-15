@@ -172,7 +172,7 @@ function initProfileForm() {
 // ✅ FIXED: Anti‑forgery token sent as a form field, not as a header
 function uploadPhotoToServer(file) {
     const formData = new FormData();
-    formData.append('profilePhoto', file);   // matches controller parameter name
+    formData.append('file', file);  
 
     // Add anti‑forgery token as a form field (required by [ValidateAntiForgeryToken])
     const token = document.querySelector('input[name="__RequestVerificationToken"]');

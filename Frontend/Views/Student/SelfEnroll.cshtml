@@ -20,13 +20,16 @@
                 <p>Student Self-Enrollment</p>
             </div>
 
+            <!-- Course Info Display -->
             <div id="courseInfo" class="course-info">
                 <div class="loading">Loading course information...</div>
             </div>
 
+            <!-- Message Area -->
             <div id="messageArea"></div>
 
-            <form id="enrollForm" onsubmit="event.preventDefault(); submitEnrollment();">
+            <!-- Enrollment Form (hidden until course loads) -->
+            <form id="enrollForm" style="display: none;" onsubmit="event.preventDefault(); submitEnrollment();">
                 <div class="form-group">
                     <label>STUDENT ID <span class="required">*</span></label>
                     <input type="text" id="studentId" class="form-input" placeholder="e.g., 2024-00001" required />
