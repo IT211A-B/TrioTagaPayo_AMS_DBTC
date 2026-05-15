@@ -27,8 +27,8 @@ namespace Attendance_Management_System.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]          // ✅ added
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)] // ✅ added
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateProfilePhoto()
         {
             try
@@ -61,7 +61,6 @@ namespace Attendance_Management_System.Controllers
                 // Validate file type
                 var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
                 var extension = Path.GetExtension(file.FileName).ToLower();
-
                 if (!allowedExtensions.Contains(extension))
                 {
                     return BadRequest(new { success = false, message = "Only image files (jpg, jpeg, png, gif, webp) are allowed" });
@@ -73,12 +72,19 @@ namespace Attendance_Management_System.Controllers
                     return BadRequest(new { success = false, message = "File size must be less than 5MB" });
                 }
 
-                // Create uploads directory if not exists
+                // Determine the physical save path
+                // _environment.WebRootPath points to the wwwroot folder (or null if not set)
                 string webRootPath = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
                 string uploadsFolder = Path.Combine(webRootPath, "uploads", "profiles");
+
+                // Log the path (visible in Render logs)
+                Console.WriteLine($"Saving profile photo to: {uploadsFolder}");
+
+                // Ensure directory exists
                 if (!Directory.Exists(uploadsFolder))
                 {
                     Directory.CreateDirectory(uploadsFolder);
+                    Console.WriteLine($"Created directory: {uploadsFolder}");
                 }
 
                 // Delete old profile photo if exists
@@ -88,6 +94,7 @@ namespace Attendance_Management_System.Controllers
                     if (System.IO.File.Exists(oldFilePath))
                     {
                         System.IO.File.Delete(oldFilePath);
+                        Console.WriteLine($"Deleted old photo: {oldFilePath}");
                     }
                 }
 
@@ -100,16 +107,32 @@ namespace Attendance_Management_System.Controllers
                     await file.CopyToAsync(stream);
                 }
 
-                // Update user with new photo URL
+                Console.WriteLine($"File saved successfully: {filePath}");
+
+                // Verify file exists after save
+                if (!System.IO.File.Exists(filePath))
+                {
+                    Console.WriteLine($"ERROR: File not found after save: {filePath}");
+                    return StatusCode(500, new { success = false, message = "File could not be saved" });
+                }
+
+                // Update user with new photo URL (relative path for serving)
                 string photoUrl = $"/uploads/profiles/{uniqueFileName}";
                 user.ProfilePhotoUrl = photoUrl;
                 _userRepository.Update(user);
                 await _userRepository.SaveChangesAsync();
 
-                return Ok(new { success = true, message = "Profile photo updated successfully", photoUrl = photoUrl });
+                return Ok(new
+                {
+                    success = true,
+                    message = "Profile photo updated successfully",
+                    photoUrl = photoUrl
+                });
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Upload error: {ex.Message}");
+                Console.WriteLine($"Stack trace: {ex.StackTrace}");
                 return StatusCode(500, new { success = false, message = $"An error occurred: {ex.Message}" });
             }
         }
@@ -118,9 +141,9 @@ namespace Attendance_Management_System.Controllers
         /// Get current user's profile info
         /// </summary>
         [HttpGet("profile")]
-        [ProducesResponseType(StatusCodes.Status200OK)]          // ✅ added
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]// ✅ added
-        [ProducesResponseType(StatusCodes.Status404NotFound)]    // ✅ added
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetProfile()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
