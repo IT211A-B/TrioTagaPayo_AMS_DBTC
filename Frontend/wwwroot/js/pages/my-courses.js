@@ -2,7 +2,9 @@
 
 var antiForgeryToken = '';
 
+// Close modal when clicking outside
 document.addEventListener('DOMContentLoaded', function () {
+    // Get anti-forgery token
     var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
     if (tokenInput) antiForgeryToken = tokenInput.value;
 
@@ -15,12 +17,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Close modal on Escape key
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape' && typeof closeModal === 'function') {
             closeModal('qrModal');
         }
     });
 
+    // Close button
     var closeModalBtn = document.getElementById('closeModalBtn');
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', function () {
@@ -54,18 +58,10 @@ async function generateEnrollmentQR(courseId, courseName) {
         courseNameElement.textContent = courseName;
     }
 
-    // Use the Teacher endpoint with POST and anti‑forgery token
-    const formData = new URLSearchParams();
-    formData.append('__RequestVerificationToken', antiForgeryToken);
-    formData.append('courseId', courseId);
-
     try {
-        const response = await fetch('/Teacher/GenerateCourseQRCode', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData
-        });
-        const data = await response.json();
+        // FIXED: Using GET request to Admin endpoint
+        var response = await fetch('/Admin/GenerateCourseQRCode?courseId=' + courseId);
+        var data = await response.json();
 
         if (data.success && data.qrCode) {
             if (qrContainer) {
