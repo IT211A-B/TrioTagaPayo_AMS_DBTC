@@ -5,8 +5,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
-// Force HTTP URLs only - NO HTTPS (for development)
-builder.WebHost.UseUrls("http://localhost:5166");
+// No hardcoded UseUrls – let the environment decide the port.
 
 // ── Authentication ─────────────────────────────────────────
 builder.Services.AddAuthentication(options =>
@@ -55,10 +54,10 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // app.UseHsts(); // Disable for dev
+    // app.UseHsts(); // Disable for Render (HTTP only)
 }
 
-// app.UseHttpsRedirection(); // Disable for dev
+// app.UseHttpsRedirection(); // Disable – Render uses HTTP
 
 app.UseStaticFiles();
 app.UseRouting();
@@ -70,4 +69,8 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=account}/{action=login}/{id?}");
 
-app.Run();
+// --- Important: Bind to the port provided by Render (0.0.0.0) ---
+// The PORT environment variable is set automatically by Render.
+// If not set (e.g., local dev), default to 5166.
+var port = Environment.GetEnvironmentVariable("PORT") ?? "5166";
+app.Run($"http://0.0.0.0:{port}");
