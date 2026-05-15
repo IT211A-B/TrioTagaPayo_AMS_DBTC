@@ -1,0 +1,39 @@
+﻿@model List<AMS.ViewModels.StudentViewModel>
+
+@if (Model != null && Model.Any())
+{
+    @foreach (var s in Model)
+    {
+        <tr class="table-row fade-in-row" id="row-@s.DbId"
+            data-id="@s.DbId"
+            data-studentno="@s.StudentNo"
+            data-firstname="@s.FirstName"
+            data-middlename="@s.MiddleName"
+            data-lastname="@s.LastName"
+            data-fullname="@s.FullName"
+            data-email="@s.Email"
+            data-section="@s.Section"
+            data-mobile="@s.MobileNo">
+            <td>
+                <div class="student-cell">
+                    <div class="avatar" style="background:@s.AvatarColor">@s.Initials</div>
+                    <div>
+                        <p class="cell-name">@s.FullName</p>
+                        <p class="cell-sub">@s.Email</p>
+                    </div>
+                </div>
+            </td>
+            <td class="hide-sm"><span class="id-badge">@s.StudentNo</span></td>
+            <td class="hide-sm">@s.Section</td>
+            <td class="hide-md">1st Year</td>
+            <td><span class="status-badge badge-active">Active</span></td>
+            <td>
+                <div class="action-btns">
+                    <button class="btn-sm btn-view" onclick="viewStudent(this)">View</button>
+                    <button class="btn-sm btn-edit" onclick="editStudent(this)">Edit</button>
+                    <button class="btn-sm btn-delete" onclick="confirmDelete(this)">Delete</button>
+                </div>
+            </td>
+        </tr>
+    }
+}

@@ -1,0 +1,131 @@
+﻿@model AMS.ViewModels.TeacherDashboardViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Teacher Dashboard";
+    ViewData["PageTitle"] = "Teacher Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/dashboard.css" />
+    <link rel="stylesheet" href="~/css/components/modals.css" />
+}
+
+<div class="greeting-section">
+    @{
+        // Try to get teacher name from session first, fallback to Model
+        var teacherDisplayName = Context.Session.GetString("TeacherName") ??
+        Context.Session.GetString("Username") ??
+        Model.TeacherName ??
+        "Teacher";
+
+        // Remove TCH- prefix if it's still showing
+        if (teacherDisplayName.StartsWith("TCH-"))
+        {
+            teacherDisplayName = "Teacher";
+        }
+    }
+    <h1>Good Morning, @(Context.Session.GetString("TeacherName") ?? Model.TeacherName)</h1>
+    <p>Here's your teaching overview for today - @DateTime.Now.ToString("dddd, MMMM d, yyyy").ToUpper()</p>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon">◧</div>
+        <p class="stat-label">MY COURSES</p>
+        <p class="stat-value">@Model.MyCoursesCount</p>
+        <p class="stat-hint">Active subjects</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">◍</div>
+        <p class="stat-label">MY STUDENTS</p>
+        <p class="stat-value">@Model.MyStudentsCount</p>
+        <p class="stat-hint">Total enrolled</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">◷</div>
+        <p class="stat-label">TODAY PRESENT</p>
+        <p class="stat-value">@Model.TodayAttendanceRate%</p>
+        <p class="stat-hint">Across all classes</p>
+    </div>
+</div>
+
+<div class="section-header">
+    <span class="section-title">TODAY'S LOG</span>
+    <a href="@Url.Action("MyAttendance", "Teacher")" class="section-link">VIEW ALL →</a>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Course</th>
+                <th>Date</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.RecentAttendance.Any())
+            {
+                foreach (var a in Model.RecentAttendance.Take(5))
+                {
+                    <tr class="table-row">
+                        <td class="student-cell">
+                            <div class="student-cell">
+                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                    @(a.StudentName?.Length > 0 ? a.StudentName[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div>
+                                    <p class="cell-name">@a.StudentName</p>
+                                    <p class="cell-sub">@a.StudentNo</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm">@a.CourseName</td>
+                        <td class="hide-md">@a.Date</td>
+                        <td class="hide-sm">
+                            <span class="status-badge @(a.Status == "Present" ? "badge-active" : a.Status == "Late" ? "badge-warning" : "badge-inactive")">
+                                @a.Status
+                            </span>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr class="empty-row">
+                    <td colspan="4" class="empty-state-small" style="text-align:center; padding:40px;">
+                        No attendance records yet
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- QR CODE MODAL -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Course Enrollment QR</h3>
+            <button class="modal-close" onclick="closeModal('qrModal')">×</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            @Html.AntiForgeryToken()
+            <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
+                <div class="spinner-ring"></div>
+            </div>
+            <p><strong>Course:</strong> <span id="qrCourseName"></span></p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
+            <p style="font-size: 12px; color: #64748b;">Students will need their Student ID and Full Name</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeModal('qrModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/teacher-dashboard.js"></script>
+    <script src="~/js/pages/my-courses.js"></script>
+}

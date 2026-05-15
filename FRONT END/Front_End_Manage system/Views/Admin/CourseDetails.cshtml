@@ -1,0 +1,182 @@
+﻿@model AMS.ViewModels.CourseDetailsViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Course Details";
+    ViewData["PageTitle"] = Model.Course.CourseName;
+    ViewData["ActivePage"] = "Courses";
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/course-details.css" />
+}
+
+<div class="page-header">
+    <div>
+        <h2>@Model.Course.CourseName</h2>
+        <p>@Model.Course.CourseCode | Section: @Model.Course.Section | Schedule: @Model.Course.Schedule | Teacher: @Model.Course.TeacherName</p>
+    </div>
+    <a href="@Url.Action("Courses", "Admin")" class="btn-secondary">← Back to Courses</a>
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon">◍</div>
+        <p class="stat-label">TOTAL STUDENTS</p>
+        <p class="stat-value">@Model.TotalStudents</p>
+        <p class="stat-hint">In this section</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✓</div>
+        <p class="stat-label">ENROLLED</p>
+        <p class="stat-value">@Model.EnrolledStudents</p>
+        <p class="stat-hint">Have attendance records</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">◷</div>
+        <p class="stat-label">ATTENDANCE RECORDS</p>
+        <p class="stat-value">@Model.TotalAttendanceRecords</p>
+        <p class="stat-hint">Total logs</p>
+    </div>
+</div>
+
+<div class="two-columns">
+    <div class="students-card">
+        <div class="section-header">
+            <span class="section-title">STUDENTS IN THIS COURSE</span>
+            <button class="btn-sm btn-primary" id="generateQRBtn">📱 Generate QR</button>
+        </div>
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>ID No.</th>
+                        <th>Attendance Rate</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var student in Model.Students)
+                    {
+                        <tr>
+                            <td class="student-cell">
+                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                    @(student.StudentName.Length > 0 ? student.StudentName[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div>
+                                    <p class="cell-name">@student.StudentName</p>
+                                    <p class="cell-sub">@student.Email</p>
+                                </div>
+                            </td>
+                            <td class="hide-sm"><span class="id-badge">@student.StudentNo</span></td>
+                            <td class="hide-sm">
+                                <div class="attend-mini">
+                                    <div class="attend-bar" style="width: @student.AttendanceRate%"></div>
+                                </div>
+                                <span class="attend-pct">@student.AttendanceRate%</span>
+                            </td>
+                            <td class="hide-sm">
+                                @if (student.IsEnrolled)
+                                {
+                                    <span class="status-badge badge-active">Enrolled</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge badge-inactive">Not Enrolled</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="attendance-card">
+        <div class="section-header">
+            <span class="section-title">ATTENDANCE FOR</span>
+            <input type="date" id="attendanceDate" class="filter-input" value="@ViewBag.SelectedDate" />
+            <button class="btn-sm btn-success" id="markAllPresentBtn">✓ Mark All Present</button>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th class="hide-sm">ID No.</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="attendanceBody">
+                    @foreach (var record in Model.TodayAttendance)
+                    {
+                        <tr data-studentid="@record.StudentId" data-attendanceid="@record.AttendanceId">
+                            <td class="student-cell">
+                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                    @(record.StudentName.Length > 0 ? record.StudentName[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div>
+                                    <p class="cell-name">@record.StudentName</p>
+                                </div>
+                            </td>
+                            <td class="hide-sm"><span class="id-badge">@record.StudentNo</span></td>
+                            <td>
+                                <select class="status-select" data-studentid="@record.StudentId">
+                                    @{
+                                        var isPresent = record.Status == "Present";
+                                        var isAbsent = record.Status == "Absent";
+                                        var isLate = record.Status == "Late";
+                                    }
+                                    <option value="Present" selected="@isPresent">● Present</option>
+                                    <option value="Absent" selected="@isAbsent">● Absent</option>
+                                    <option value="Late" selected="@isLate">● Late</option>
+                                </select>
+                            </td>
+                            <td>
+                                <input type="text" class="remarks-input" data-studentid="@record.StudentId" value="@record.Remarks" placeholder="Remarks" />
+                            </td>
+                            <td>
+                                <button class="btn-sm btn-save" data-studentid="@record.StudentId">Save</button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- QR MODAL -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Course Enrollment QR</h3>
+            <button class="modal-close" id="closeQrModalBtn">×</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            @Html.AntiForgeryToken()
+            <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
+                <div class="spinner-ring"></div>
+            </div>
+            <p><strong>Course:</strong> <span id="qrCourseName">@Model.Course.CourseName</span></p>
+            <p><strong>Course Code:</strong> @Model.Course.CourseCode</p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" id="closeModalBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/course-details.js"></script>
+    <script>
+        window.courseDetailsData = {
+            courseId: @Model.Course.DbId,
+            courseName: '@Html.Raw(Model.Course.CourseName)'
+        };
+    </script>
+}

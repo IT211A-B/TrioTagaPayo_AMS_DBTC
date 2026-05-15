@@ -1,0 +1,90 @@
+﻿@model List<AMS.ViewModels.StudentViewModel>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "My Students";
+    ViewData["PageTitle"] = "My Students";
+    ViewData["ActivePage"] = "MyStudents";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/students.css" />
+}
+
+<div class="page-header">
+    <div>
+        <h2>My Students</h2>
+        <p>Students enrolled in your courses</p>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search student..." />
+    </div>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-pill">
+        <span class="pill-dot dot-blue"></span>
+        Total: <strong>@Model.Count</strong>
+    </div>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th class="hide-sm">ID No.</th>
+                <th class="hide-sm">Course</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody id="studentsBody">
+            @if (Model.Any())
+            {
+                foreach (var s in Model)
+                {
+                    <tr class="table-row">
+                        <td>
+                            <div class="student-cell">
+                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                    @(s.FullName?.Length > 0 ? s.FullName[0].ToString().ToUpper() : "?")
+                                </div>
+                                <div>
+                                    <p class="cell-name">@s.FullName</p>
+                                    <p class="cell-sub">@s.Email</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm"><span class="id-badge">@s.StudentNo</span></td>
+                        <td class="hide-sm">@s.Section</td>
+                        <td class="hide-sm">
+                            <span class="status-badge badge-active">Enrolled</span>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr><td colspan="4"><div class="empty-state"><span class="empty-icon">◍</span><p class="empty-title">No students found</p><p class="empty-message">Students will appear here once enrolled.</p></div></td></tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('searchInput')?.addEventListener('input', function() {
+            var searchTerm = this.value.toLowerCase();
+            var rows = document.querySelectorAll('#studentsBody tr.table-row');
+            rows.forEach(function(row) {
+                var text = row.textContent.toLowerCase();
+                row.style.display = text.includes(searchTerm) ? '' : 'none';
+            });
+        });
+    </script>
+}

@@ -1,0 +1,31 @@
+﻿@{
+    Layout = "~/Views/Shared/_StudentLayout.cshtml";
+    ViewData["Title"] = "Scan QR Code";
+    ViewData["PageTitle"] = "Scan Attendance QR";
+    ViewData["ActivePage"] = "Scanner";
+}
+
+<div class="scanner-container">
+    <div class="scanner-header">
+        <h2>Scan QR Code</h2>
+        <p>Position the QR code in front of your camera</p>
+    </div>
+
+    <div class="scanner-box">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas" style="display: none;"></canvas>
+        <div class="scanner-overlay"></div>
+        <div class="scanner-line"></div>
+    </div>
+
+    <div class="scanner-controls">
+        <button id="startCameraBtn" class="btn-primary">📷 Start Camera</button>
+        <button id="stopCameraBtn" class="btn-secondary" style="display: none;">🛑 Stop Camera</button>
+        <div id="scanResult" class="scan-result"></div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="~/js/pages/student-scanner.js"></script>
+}

@@ -1,0 +1,369 @@
+﻿@model AMS.ViewModels.EnrollmentPageViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Enrollment";
+    ViewData["PageTitle"] = "Enrollment";
+    ViewData["ActivePage"] = "Enrollment";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/enrollment.css" />
+}
+
+<div class="page-header">
+    <div>
+        <h2>Enrollment</h2>
+        <p>Manage student course enrollment records</p>
+    </div>
+    <div class="page-header-actions">
+        <button class="btn-primary" onclick="openEnrollModal()">+ Enroll Student</button>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="Search by student name or ID..." />
+    </div>
+    <select id="courseFilter" class="filter-select">
+        <option value="">All Courses</option>
+        @if (ViewBag.Courses != null)
+        {
+            foreach (var c in ViewBag.Courses)
+            {
+                if (Model.CourseFilter == c)
+                {
+                    <option value="@c" selected>@c</option>
+                }
+                else
+                {
+                    <option value="@c">@c</option>
+                }
+            }
+        }
+    </select>
+    <select id="statusFilter" class="filter-select">
+        <option value="">All Status</option>
+        @if (Model.StatusFilter == "Enrolled")
+        {
+            <option value="Enrolled" selected>Enrolled</option>
+        }
+        else
+        {
+            <option value="Enrolled">Enrolled</option>
+        }
+        @if (Model.StatusFilter == "At Risk")
+        {
+            <option value="At Risk" selected>At Risk</option>
+        }
+        else
+        {
+            <option value="At Risk">At Risk</option>
+        }
+        @if (Model.StatusFilter == "Probation")
+        {
+            <option value="Probation" selected>Probation</option>
+        }
+        else
+        {
+            <option value="Probation">Probation</option>
+        }
+    </select>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-pill">
+        <span class="pill-dot dot-blue"></span>
+        Total Enrollments: <strong>@Model.TotalCount</strong>
+    </div>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th class="hide-sm">ID No.</th>
+                <th class="hide-sm">Course</th>
+                <th>Attendance</th>
+                <th>Status</th>
+                <th class="hide-md">Enrolled Date</th>
+                <th>Actions</th>
+            <tr>
+        </thead>
+        <tbody id="enrollmentBody">
+            @if (Model.Enrollments.Any())
+            {
+                foreach (var e in Model.Enrollments)
+                {
+                    <tr class="table-row" id="enrollment-row-@e.StudentId-@e.CourseId">
+                        <td class="student-cell">
+                            <div class="student-cell">
+                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                    @{
+                                        var initial = "?";
+                                        if (!string.IsNullOrEmpty(e.StudentName))
+                                        {
+                                            initial = e.StudentName[0].ToString().ToUpper();
+                                        }
+                                    }
+                                    @initial
+                                </div>
+                                <div>
+                                    <p class="cell-name">@e.StudentName</p>
+                                    <p class="cell-sub">@e.Email</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm"><span class="id-badge">@e.StudentNo</span></td>
+                        <td class="hide-sm">@e.CourseName - @e.Section</td>
+                        <td class="hide-sm">
+                            <div class="attend-mini">
+                                <div class="attend-bar" style="width: @e.AttendanceRate%"></div>
+                            </div>
+                            <span class="attend-pct">@e.AttendanceRate%</span>
+                        </td>
+                        <td class="hide-sm">
+                            @if (e.Status == "Enrolled")
+                            {
+                                <span class="status-badge badge-active">@e.Status</span>
+                            }
+                            else if (e.Status == "At Risk")
+                            {
+                                <span class="status-badge badge-warning">@e.Status</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-inactive">@e.Status</span>
+                            }
+                        </td>
+                        <td class="hide-md">@e.EnrollmentDate</td>
+                        <td class="hide-sm">
+                            <button class="btn-sm btn-delete" onclick="confirmUnenroll(@e.StudentId, @e.CourseId, '@e.StudentName', '@e.CourseName')">
+                                Unenroll
+                            </button>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <span class="empty-icon">◯</span>
+                            <p class="empty-title">No enrollment records</p>
+                            <p class="empty-message">Click "+ Enroll Student" to enroll students in courses.</p>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- ENROLLMENT MODAL -->
+<div class="modal-overlay" id="enrollModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Enroll Student</h3>
+            <button class="modal-close" onclick="closeModal('enrollModal')">×</button>
+        </div>
+        <div class="modal-body">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label>Select Student</label>
+                <select id="studentSelect" class="form-select" required>
+                    <option value="">-- Select Student --</option>
+                    @if (ViewBag.AllStudents != null)
+                    {
+                        foreach (var s in ViewBag.AllStudents)
+                        {
+                            <option value="@s.Id">@s.Name (Section: @s.Section)</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Select Course</label>
+                <select id="courseSelect" class="form-select" required>
+                    <option value="">-- Select Course --</option>
+                    @if (ViewBag.AllCourses != null)
+                    {
+                        foreach (var c in ViewBag.AllCourses)
+                        {
+                            <option value="@c.Id">@c.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="info-message">
+                <p>⚠️ Student will be enrolled in the selected course.</p>
+                <p>📚 Check that the student's section matches the course section.</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('enrollModal')">Cancel</button>
+            <button class="btn-primary" id="confirmEnrollBtn" onclick="submitEnrollment()">Enroll Student</button>
+        </div>
+    </div>
+</div>
+
+<!-- UNENROLL CONFIRMATION MODAL -->
+<div class="modal-overlay" id="unenrollModal">
+    <div class="modal-card modal-sm">
+        <div class="modal-header">
+            <h3>Unenroll Student</h3>
+            <button class="modal-close" onclick="closeModal('unenrollModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to unenroll <strong id="unenrollStudentName"></strong> from <strong id="unenrollCourseName"></strong>?</p>
+            <p style="font-size:12px; color:var(--muted); margin-top:10px;">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('unenrollModal')">Cancel</button>
+            <button class="btn-danger" id="confirmUnenrollBtn" onclick="submitUnenroll()">Yes, Unenroll</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let pendingUnenroll = { studentId: null, courseId: null };
+
+        function filterEnrollments() {
+            var search = document.getElementById('searchInput')?.value.toLowerCase() || '';
+            var course = document.getElementById('courseFilter')?.value || '';
+            var status = document.getElementById('statusFilter')?.value || '';
+            var rows = document.querySelectorAll('#enrollmentBody tr.table-row');
+
+            for (var i = 0; i < rows.length; i++) {
+                var row = rows[i];
+                var text = row.textContent.toLowerCase();
+                var courseCell = row.querySelector('td:nth-child(3)')?.textContent || '';
+                var statusCell = row.querySelector('td:nth-child(5)')?.textContent || '';
+                var show = text.indexOf(search) !== -1;
+                if (show && course && courseCell.indexOf(course) === -1) show = false;
+                if (show && status && statusCell.indexOf(status) === -1) show = false;
+                row.style.display = show ? '' : 'none';
+            }
+        }
+
+        document.getElementById('searchInput')?.addEventListener('input', filterEnrollments);
+        document.getElementById('courseFilter')?.addEventListener('change', filterEnrollments);
+        document.getElementById('statusFilter')?.addEventListener('change', filterEnrollments);
+
+        function openEnrollModal() {
+            document.getElementById('studentSelect').value = '';
+            document.getElementById('courseSelect').value = '';
+            openModal('enrollModal');
+        }
+
+        function confirmUnenroll(studentId, courseId, studentName, courseName) {
+            pendingUnenroll = { studentId: studentId, courseId: courseId };
+            document.getElementById('unenrollStudentName').textContent = studentName;
+            document.getElementById('unenrollCourseName').textContent = courseName;
+            openModal('unenrollModal');
+        }
+
+        async function submitEnrollment() {
+            var studentId = document.getElementById('studentSelect')?.value;
+            var courseId = document.getElementById('courseSelect')?.value;
+            var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+
+            if (!studentId || !courseId) {
+                if (typeof Toast !== 'undefined') Toast.warning('Please select both a student and a course');
+                return;
+            }
+
+            var btn = document.getElementById('confirmEnrollBtn');
+            btn.disabled = true;
+            btn.textContent = 'Enrolling...';
+
+            var formData = new URLSearchParams();
+            formData.append('__RequestVerificationToken', token);
+            formData.append('studentId', studentId);
+            formData.append('courseId', courseId);
+
+            try {
+                var response = await fetch('/Admin/CreateEnrollment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+                var data = await response.json();
+                if (data.success) {
+                    if (typeof Toast !== 'undefined') Toast.success(data.message);
+                    closeModal('enrollModal');
+                    location.reload();
+                } else {
+                    if (typeof Toast !== 'undefined') Toast.error(data.message);
+                }
+            } catch (error) {
+                if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Enroll Student';
+            }
+        }
+
+        async function submitUnenroll() {
+            var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            var btn = document.getElementById('confirmUnenrollBtn');
+            btn.disabled = true;
+            btn.textContent = 'Unenrolling...';
+
+            var formData = new URLSearchParams();
+            formData.append('__RequestVerificationToken', token);
+            formData.append('studentId', pendingUnenroll.studentId);
+            formData.append('courseId', pendingUnenroll.courseId);
+
+            try {
+                var response = await fetch('/Admin/DeleteEnrollment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+                var data = await response.json();
+                if (data.success) {
+                    if (typeof Toast !== 'undefined') Toast.success(data.message);
+                    closeModal('unenrollModal');
+                    location.reload();
+                } else {
+                    if (typeof Toast !== 'undefined') Toast.error(data.message);
+                }
+            } catch (error) {
+                if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Yes, Unenroll';
+            }
+        }
+
+        function openModal(id) {
+            var modal = document.getElementById(id);
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeModal(id) {
+            var modal = document.getElementById(id);
+            if (modal) modal.classList.remove('active');
+        }
+
+        document.querySelectorAll('.modal-overlay').forEach(function(o) {
+            o.addEventListener('click', function(e) {
+                if (e.target === o) o.classList.remove('active');
+            });
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(function(m) {
+                    m.classList.remove('active');
+                });
+            }
+        });
+    </script>
+}

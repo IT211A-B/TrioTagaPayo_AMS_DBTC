@@ -1,0 +1,121 @@
+﻿@model AMS.ViewModels.ErrorViewModel
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Error — AMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap" rel="stylesheet" />
+    <style>
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #0b1320;
+            color: #e2eaf4;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .err-box {
+            text-align: center;
+            padding: 48px 40px;
+            border: 1px solid rgba(216,27,96,0.25);
+            background: rgba(13,26,42,0.8);
+            max-width: 480px;
+            width: 90%;
+            clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 18px, 100% 100%, 0 100%);
+            position: relative;
+        }
+
+            .err-box::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                right: 0;
+                width: 18px;
+                height: 18px;
+                border-top: 1px solid rgba(216,27,96,0.4);
+                border-right: 1px solid rgba(216,27,96,0.4);
+            }
+
+        .err-code {
+            font-size: 80px;
+            font-weight: 900;
+            color: #d81b60;
+            letter-spacing: -0.04em;
+            line-height: 1;
+            margin-bottom: 16px;
+        }
+
+        .err-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #e2eaf4;
+            margin-bottom: 8px;
+            letter-spacing: 0.04em;
+        }
+
+        .err-msg {
+            font-size: 13px;
+            color: #475569;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+
+        .err-id {
+            font-size: 11px;
+            color: #334155;
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(56,189,248,0.1);
+            padding: 8px 14px;
+            margin-bottom: 28px;
+            text-align: left;
+        }
+
+            .err-id strong {
+                color: #38bdf8;
+            }
+
+        .err-btn {
+            display: inline-block;
+            background: linear-gradient(90deg, #d81b60, #9c1040);
+            color: #fff;
+            padding: 11px 24px;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            text-decoration: none;
+            clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 0 100%);
+            transition: all 0.2s;
+            box-shadow: 0 4px 20px rgba(216,27,96,0.4);
+        }
+
+            .err-btn:hover {
+                box-shadow: 0 6px 28px rgba(216,27,96,0.6);
+                transform: translateY(-1px);
+            }
+    </style>
+</head>
+<body>
+    <div class="err-box">
+        <div class="err-code">500</div>
+        <p class="err-title">An error occurred</p>
+        <p class="err-msg">An unexpected error occurred while processing your request. Please try again or contact support.</p>
+        @if (Model.ShowRequestId)
+        {
+            <div class="err-id">
+                <strong>Request ID:</strong> @Model.RequestId
+            </div>
+        }
+        <a href="/" class="err-btn">Go Home</a>
+    </div>
+</body>
+</html>

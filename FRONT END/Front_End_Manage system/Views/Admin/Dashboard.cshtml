@@ -1,0 +1,264 @@
+﻿@model AMS.ViewModels.DashboardViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Dashboard";
+    ViewData["ActivePage"] = "Dashboard";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/dashboard.css" />
+}
+
+<!-- GREETING -->
+<div class="greeting-section">
+    <h1>Good Morning, @Context.Session.GetString("Username")</h1>
+    <p>Here's your system overview for today - @DateTime.Now.ToString("dddd, MMMM d, yyyy").ToUpper()</p>
+</div>
+
+<!-- 4 STAT CARDS -->
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon">◍</div>
+        <p class="stat-label">TOTAL STUDENTS</p>
+        <p class="stat-value">@Model.TotalStudents</p>
+        <p class="stat-hint">Active enrollees</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">◈</div>
+        <p class="stat-label">TEACHERS</p>
+        <p class="stat-value">@Model.TotalTeachers</p>
+        <p class="stat-hint">Faculty members</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">◧</div>
+        <p class="stat-label">COURSES</p>
+        <p class="stat-value">@Model.TotalCourses</p>
+        <p class="stat-hint">Active subjects</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">◷</div>
+        <p class="stat-label">TODAY ATTENDANCE</p>
+        <p class="stat-value">@Model.AttendanceRate%</p>
+        <p class="stat-hint">Present today</p>
+    </div>
+</div>
+
+<!-- QUICK ACTIONS -->
+<div class="quick-actions">
+    <h3 class="quick-title">Quick Actions</h3>
+    <div class="action-grid">
+        <button class="quick-action-btn" onclick="openAddStudentModal()">
+            <span class="action-icon">➕</span>
+            <span>Add Student</span>
+        </button>
+        <button class="quick-action-btn" onclick="openAddTeacherModal()">
+            <span class="action-icon">👨‍🏫</span>
+            <span>Add Teacher</span>
+        </button>
+        <button class="quick-action-btn" onclick="openAddCourseModal()">
+            <span class="action-icon">📚</span>
+            <span>Add Course</span>
+        </button>
+        <a href="@Url.Action("Enrollment", "Admin")" class="quick-action-btn">
+            <span class="action-icon">📝</span>
+            <span>Manage Enrollment</span>
+        </a>
+    </div>
+</div>
+
+<!-- Include Modals -->
+@await Html.PartialAsync("Partials/_AddStudentModal")
+@await Html.PartialAsync("Partials/_AddTeacherModal")
+@await Html.PartialAsync("Partials/_AddCourseModal")
+
+<script>
+    function openAddStudentModal() {
+        if (typeof openModal === 'function') {
+            openModal('addStudentModal');
+        } else {
+            console.error('openModal function not found');
+        }
+    }
+    function openAddTeacherModal() {
+        if (typeof openModal === 'function') {
+            openModal('addTeacherModal');
+        } else {
+            console.error('openModal function not found');
+        }
+    }
+    function openAddCourseModal() {
+        if (typeof openModal === 'function') {
+            openModal('addCourseModal');
+        } else {
+            console.error('openModal function not found');
+        }
+    }
+</script>
+
+<!-- TWO COLUMN LAYOUT -->
+<div class="two-columns">
+    <!-- LEFT: Recent Attendance List -->
+    <div class="recent-attendance-card">
+        <div class="section-header">
+            <span class="section-title">RECENT ATTENDANCE</span>
+            <a href="@Url.Action("Attendance", "Admin")" class="section-link">VIEW ALL →</a>
+        </div>
+        <div class="attendance-list">
+            @if (Model.RecentAttendance != null && Model.RecentAttendance.Any())
+            {
+                foreach (var a in Model.RecentAttendance.Take(5))
+                {
+                    <div class="attendance-item">
+                        <div class="attendance-avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                            @(a.StudentName?.Length > 0 ? a.StudentName[0].ToString().ToUpper() : "?")
+                        </div>
+                        <div class="attendance-info">
+                            <p class="attendance-name">@a.StudentName</p>
+                            <p class="attendance-course">@a.CourseName</p>
+                        </div>
+                        <div class="attendance-time">
+                            <span class="status-badge @(a.Status == "Present" ? "badge-active" : a.Status == "Late" ? "badge-warning" : "badge-inactive")">
+                                @a.Status
+                            </span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state-small">
+                    <p>No attendance records yet</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- RIGHT: Weekly Attendance Summary (Dynamic) -->
+    <div class="weekly-chart-card">
+        <div class="section-header">
+            <span class="section-title">ATTENDANCE SUMMARY</span>
+        </div>
+
+        @{
+            // Calculate totals safely
+            int totalPresent = 0;
+            int totalAbsent = 0;
+            int totalLate = 0;
+
+            if (Model.WeeklyPresent != null)
+            {
+                foreach (var num in Model.WeeklyPresent) { totalPresent += num; }
+            }
+            if (Model.WeeklyAbsent != null)
+            {
+                foreach (var num in Model.WeeklyAbsent) { totalAbsent += num; }
+            }
+            if (Model.WeeklyLate != null)
+            {
+                foreach (var num in Model.WeeklyLate) { totalLate += num; }
+            }
+
+            int totalAll = totalPresent + totalAbsent + totalLate;
+            int presentPercent = totalAll > 0 ? (int)Math.Round(totalPresent * 100.0 / totalAll) : 0;
+            int absentPercent = totalAll > 0 ? (int)Math.Round(totalAbsent * 100.0 / totalAll) : 0;
+            int latePercent = totalAll > 0 ? (int)Math.Round(totalLate * 100.0 / totalAll) : 0;
+        }
+
+        <div class="summary-stats">
+            <div class="summary-stat present">
+                <span class="stat-dot"></span>
+                <span class="stat-label">Present</span>
+                <span class="stat-percent">@presentPercent%</span>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill present-fill" style="width: @presentPercent%"></div>
+                </div>
+            </div>
+            <div class="summary-stat absent">
+                <span class="stat-dot"></span>
+                <span class="stat-label">Absent</span>
+                <span class="stat-percent">@absentPercent%</span>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill absent-fill" style="width: @absentPercent%"></div>
+                </div>
+            </div>
+            <div class="summary-stat late">
+                <span class="stat-dot"></span>
+                <span class="stat-label">Late</span>
+                <span class="stat-percent">@latePercent%</span>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill late-fill" style="width: @latePercent%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="weekly-summary">
+            <h4>This Week's Trend</h4>
+            <div class="week-bars">
+                @if (Model.WeekDays != null && Model.WeekDays.Any())
+                {
+                    for (int i = 0; i < Model.WeekDays.Count; i++)
+                    {
+                        int presentHeight = 2;
+                        int absentHeight = 2;
+                        int lateHeight = 2;
+
+                        if (Model.WeeklyPresent != null && i < Model.WeeklyPresent.Count && Model.WeeklyPresent[i] > 0)
+                        {
+                            presentHeight = Model.WeeklyPresent[i];
+                        }
+                        if (Model.WeeklyAbsent != null && i < Model.WeeklyAbsent.Count && Model.WeeklyAbsent[i] > 0)
+                        {
+                            absentHeight = Model.WeeklyAbsent[i];
+                        }
+                        if (Model.WeeklyLate != null && i < Model.WeeklyLate.Count && Model.WeeklyLate[i] > 0)
+                        {
+                            lateHeight = Model.WeeklyLate[i];
+                        }
+
+                        <div class="day-bar">
+                            <span>@Model.WeekDays[i]</span>
+                            <div class="bar-stack">
+                                <div class="bar-present" style="height: @(presentHeight)px;"></div>
+                                <div class="bar-absent" style="height: @(absentHeight)px;"></div>
+                                <div class="bar-late" style="height: @(lateHeight)px;"></div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="empty-state-small">No attendance data available</div>
+                }
+            </div>
+        </div>
+        <div class="chart-legend">
+            <span><span class="legend-dot present"></span> Present</span>
+            <span><span class="legend-dot absent"></span> Absent</span>
+            <span><span class="legend-dot late"></span> Late</span>
+        </div>
+    </div>
+</div>
+
+<!-- SYSTEM STATUS -->
+<div class="system-status">
+    <div class="section-header">
+        <span class="section-title">SYSTEM STATUS</span>
+    </div>
+    <div class="status-grid">
+        <div class="status-item">
+            <span class="status-label">📊 Database</span>
+            <span class="status-value online">● Online</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">🔄 API</span>
+            <span class="status-value online">● Connected</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">📧 Email Service</span>
+            <span class="status-value online">● Ready</span>
+        </div>
+        <div class="status-item">
+            <span class="status-label">📱 QR System</span>
+            <span class="status-value online">● Active</span>
+        </div>
+    </div>
+</div>

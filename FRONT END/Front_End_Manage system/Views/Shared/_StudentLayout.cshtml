@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>@ViewData["Title"] - Student Portal</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/student-dashboard.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/pages/student-scanner.css" asp-append-version="true" />
+
+    @await RenderSectionAsync("PageStyles", required: false)
+</head>
+<body>
+
+    @{
+        var studentName = Context.Session.GetString("StudentName") ??
+        Context.Session.GetString("Username") ?? "Student";
+        var studentNo = Context.Session.GetString("StudentNo") ?? "";
+        var initial = studentName.Length > 0 ? studentName[0].ToString().ToUpper() : "S";
+        var activePage = ViewData["ActivePage"]?.ToString() ?? "";
+    }
+
+    <!-- Student Top Navigation Bar -->
+    <nav class="student-nav">
+        <div class="nav-left">
+            <button class="hamburger" id="hamburgerBtn" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="logo">
+                <span class="logo-icon">📚</span>
+                <span class="logo-text">3TagaPayu AMS</span>
+            </div>
+        </div>
+
+        <div class="nav-center" id="navLinks">
+            <a href="@Url.Action("Dashboard", "Student")" class="nav-link @(activePage == "Dashboard" ? "active" : "")">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="@Url.Action("Scanner", "Student")" class="nav-link @(activePage == "Scanner" ? "active" : "")">
+                <span>📷</span> Scan QR
+            </a>
+            <a href="@Url.Action("AttendanceHistory", "Student")" class="nav-link @(activePage == "History" ? "active" : "")">
+                <span>📋</span> My History
+            </a>
+            <a href="@Url.Action("MyCourses", "Student")" class="nav-link @(activePage == "MyCourses" ? "active" : "")">
+                <span>📚</span> My Courses
+            </a>
+        </div>
+
+        <div class="nav-right">
+            <div class="user-info">
+                <div class="user-avatar">@initial</div>
+                <div class="user-details">
+                    <span class="user-name">@studentName</span>
+                    <span class="user-id">@studentNo</span>
+                </div>
+            </div>
+            <form method="post" asp-action="Logout" asp-controller="Account" class="logout-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="logout-btn" title="Logout">
+                    <span>🚪</span>
+                </button>
+            </form>
+        </div>
+    </nav>
+
+    <!-- Mobile Sidebar -->
+    <div class="mobile-sidebar" id="mobileSidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-user">
+                <div class="sidebar-avatar">@initial</div>
+                <div>
+                    <div class="sidebar-name">@studentName</div>
+                    <div class="sidebar-id">@studentNo</div>
+                </div>
+            </div>
+            <button class="close-sidebar" id="closeSidebarBtn">×</button>
+        </div>
+        <div class="sidebar-links">
+            <a href="@Url.Action("Dashboard", "Student")" class="sidebar-link @(activePage == "Dashboard" ? "active" : "")">
+                <span>📊</span> Dashboard
+            </a>
+            <a href="@Url.Action("Scanner", "Student")" class="sidebar-link @(activePage == "Scanner" ? "active" : "")">
+                <span>📷</span> Scan QR
+            </a>
+            <a href="@Url.Action("AttendanceHistory", "Student")" class="sidebar-link @(activePage == "History" ? "active" : "")">
+                <span>📋</span> My History
+            </a>
+            <a href="@Url.Action("MyCourses", "Student")" class="sidebar-link @(activePage == "MyCourses" ? "active" : "")">
+                <span>📚</span> My Courses
+            </a>
+        </div>
+        <div class="sidebar-footer">
+            <form method="post" asp-action="Logout" asp-controller="Account">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="sidebar-logout">
+                    <span>🚪</span> Logout
+                </button>
+            </form>
+        </div>
+    </div>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Main Content -->
+    <main class="page-content">
+        @RenderBody()
+    </main>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="~/js/components/toast.js"></script>
+    <script src="~/js/pages/student-layout.js"></script>
+
+    @if (TempData["Success"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded', function() { Toast.success('@Html.Raw(TempData["Success"])'); });</script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded', function() { Toast.error('@Html.Raw(TempData["Error"])'); });</script>
+    }
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

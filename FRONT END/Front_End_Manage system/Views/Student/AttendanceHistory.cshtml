@@ -1,0 +1,61 @@
+﻿@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const courseFilter = document.getElementById('courseFilter');
+            const statusFilter = document.getElementById('statusFilter');
+            const applyBtn = document.getElementById('applyFilterBtn');
+            const resetBtn = document.getElementById('resetFilterBtn');
+            const tableBody = document.getElementById('attendanceBody');
+            const totalSpan = document.getElementById('totalCount');
+            const presentSpan = document.getElementById('presentCount');
+            const lateSpan = document.getElementById('lateCount');
+            const absentSpan = document.getElementById('absentCount');
+
+            function filterTable() {
+                const selectedCourse = courseFilter ? courseFilter.value : '';
+                const selectedStatus = statusFilter ? statusFilter.value : '';
+
+                const rows = tableBody.querySelectorAll('tr.table-row');
+                let visibleCount = 0;
+                let presentCount = 0;
+                let lateCount = 0;
+                let absentCount = 0;
+
+                rows.forEach(row => {
+                    const course = row.getAttribute('data-course') || '';
+                    const status = row.getAttribute('data-status') || '';
+
+                    let showCourse = !selectedCourse || course === selectedCourse;
+                    let showStatus = !selectedStatus || status === selectedStatus;
+
+                    if (showCourse && showStatus) {
+                        row.style.display = '';
+                        visibleCount++;
+                        if (status === 'Present') presentCount++;
+                        else if (status === 'Late') lateCount++;
+                        else if (status === 'Absent') absentCount++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+
+                if (totalSpan) totalSpan.textContent = visibleCount;
+                if (presentSpan) presentSpan.textContent = presentCount;
+                if (lateSpan) lateSpan.textContent = lateCount;
+                if (absentSpan) absentSpan.textContent = absentCount;
+            }
+
+            function resetFilters() {
+                if (courseFilter) courseFilter.value = '';
+                if (statusFilter) statusFilter.value = '';
+                filterTable();  // FIXED: Now calls filterTable after reset
+            }
+
+            if (applyBtn) applyBtn.addEventListener('click', filterTable);
+            if (resetBtn) resetBtn.addEventListener('click', resetFilters);
+
+            // Initialize on page load
+            filterTable();
+        });
+    </script>
+}

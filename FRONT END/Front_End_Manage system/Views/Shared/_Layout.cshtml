@@ -1,0 +1,161 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — 3TagaPayu AMS</title>
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Base -->
+    <link rel="stylesheet" href="~/css/base/variables.css" />
+    <link rel="stylesheet" href="~/css/base/reset.css" />
+
+    <!-- Layouts -->
+    <link rel="stylesheet" href="~/css/layouts/sidebar.css" />
+    <link rel="stylesheet" href="~/css/layouts/topbar.css" />
+    <link rel="stylesheet" href="~/css/layouts/main.css" />
+
+    <!-- Components -->
+    <link rel="stylesheet" href="~/css/components/buttons.css" />
+    <link rel="stylesheet" href="~/css/components/cards.css" />
+    <link rel="stylesheet" href="~/css/components/forms.css" />
+    <link rel="stylesheet" href="~/css/components/modals.css" />
+    <link rel="stylesheet" href="~/css/components/tables.css" />
+    <link rel="stylesheet" href="~/css/components/badges.css" />
+    <link rel="stylesheet" href="~/css/components/toast.css" />
+
+    <!-- Utilities -->
+    <link rel="stylesheet" href="~/css/utilities/display.css" />
+    <link rel="stylesheet" href="~/css/utilities/responsive.css" />
+
+    @RenderSection("PageStyles", required: false)
+</head>
+<body>
+
+    @{
+        var username = Context.Session.GetString("Username") ?? "Admin";
+        var initial = username.Length > 0 ? username[0].ToString().ToUpper() : "A";
+        var activePage = ViewData["ActivePage"]?.ToString() ?? "";
+    }
+
+    <!-- ═══ MOBILE SIDEBAR (hidden on desktop via CSS) ═══ -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <img src="~/images/logo.png" alt="3TagaPayu" />
+            </div>
+            <div>
+                <div class="brand-name">3TagaPayu</div>
+                <div style="font-size:9px;color:rgba(56,189,248,0.35);letter-spacing:.08em;text-transform:uppercase;">Admin Panel</div>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <span class="nav-section-label">Main Menu</span>
+            <a href="@Url.Action("Dashboard", "Admin")" class="nav-link @(activePage == "Dashboard" ? "active" : "")"><span class="nav-icon">⊞</span><span class="nav-label">Dashboard</span></a>
+            <a href="@Url.Action("Attendance", "Admin")" class="nav-link @(activePage == "Attendance" ? "active" : "")"><span class="nav-icon">◷</span><span class="nav-label">Attendance</span></a>
+            <a href="@Url.Action("Students", "Admin")" class="nav-link @(activePage == "Students" ? "active" : "")"><span class="nav-icon">◍</span><span class="nav-label">Students</span></a>
+            <a href="@Url.Action("Teachers", "Admin")" class="nav-link @(activePage == "Teachers" ? "active" : "")"><span class="nav-icon">◈</span><span class="nav-label">Teachers</span></a>
+            <a href="@Url.Action("Courses", "Admin")" class="nav-link @(activePage == "Courses" ? "active" : "")"><span class="nav-icon">◧</span><span class="nav-label">Courses</span></a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sb-user">
+                <div class="sb-user-av">@initial</div>
+                <div>
+                    <div class="sb-user-name">@username</div>
+                    <div class="sb-user-role">Administrator</div>
+                </div>
+            </div>
+            <form method="post" action="@Url.Action("Logout","Account")" style="margin:0">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="logout-link">
+                    <span class="nav-icon">⇥</span>
+                    <span class="nav-label">Logout</span>
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <!-- Mobile overlay -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- ═══ MAIN WRAPPER ═══ -->
+    <div class="main-wrapper">
+
+        <!-- ── TOP NAVBAR ── -->
+        <header class="topbar">
+
+            <!-- Left: hamburger (mobile only) + logo + brand -->
+            <div class="topbar-left">
+                <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+                    <span></span><span></span><span></span>
+                </button>
+                <img src="~/images/logo.png" class="topbar-logo" alt="logo" />
+                <span class="topbar-brand">3TagaPayu</span>
+            </div>
+
+            <!-- Center: nav tabs (desktop only) -->
+            <nav class="topbar-tabs">
+                <a href="@Url.Action("Dashboard", "Admin")" class="topbar-tab @(activePage == "Dashboard" ? "active" : "")">Dashboard</a>
+                <a href="@Url.Action("Attendance", "Admin")" class="topbar-tab @(activePage == "Attendance" ? "active" : "")">Attendance</a>
+                <a href="@Url.Action("Students", "Admin")" class="topbar-tab @(activePage == "Students" ? "active" : "")">Students</a>
+                <a href="@Url.Action("Teachers", "Admin")" class="topbar-tab @(activePage == "Teachers" ? "active" : "")">Teachers</a>
+                <a href="@Url.Action("Courses", "Admin")" class="topbar-tab @(activePage == "Courses" ? "active" : "")">Courses</a>
+            </nav>
+
+            <!-- Right: avatar pill + logout -->
+            <div class="topbar-right">
+                <div class="topbar-admin">
+                    <div class="admin-avatar">@initial</div>
+                    <span class="admin-name">@username</span>
+                </div>
+                <form method="post" action="@Url.Action("Logout","Account")" style="margin:0">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="topbar-logout" title="Logout">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6"
+                                  stroke="currentColor" stroke-width="1.4"
+                                  stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <!-- Page content -->
+        <main class="page-content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Core JS -->
+    <script src="~/js/core/app.js"></script>
+    <script src="~/js/components/toast.js"></script>
+    <script src="~/js/utils/helpers.js"></script>
+
+    @if (TempData["Success"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>Toast.success('@Html.Raw(TempData["Success"])'));</script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>Toast.error('@Html.Raw(TempData["Error"])'));</script>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>Toast.warning('@Html.Raw(TempData["Warning"])'));</script>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded',()=>Toast.info('@Html.Raw(TempData["Info"])'));</script>
+    }
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

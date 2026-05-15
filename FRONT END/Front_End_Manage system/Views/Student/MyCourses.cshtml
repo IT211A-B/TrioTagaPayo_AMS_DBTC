@@ -1,0 +1,100 @@
+﻿@model List<AMS.ViewModels.CourseViewModel>
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "My Courses";
+    ViewData["PageTitle"] = "My Courses";
+    ViewData["ActivePage"] = "MyCourses";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/components/modals.css" />
+}
+
+<div class="page-header">
+    <div>
+        <h2>My Courses</h2>
+        <p>Courses you are teaching this semester</p>
+    </div>
+</div>
+
+<div class="courses-grid">
+    @if (Model.Any())
+    {
+        foreach (var course in Model)
+        {
+            <div class="course-card">
+                <div class="course-card-header">
+                    <div class="course-code">@course.CourseCode</div>
+                </div>
+                <div class="course-card-body">
+                    <h3 class="course-name">@course.CourseName</h3>
+                    <div class="course-details">
+                        <span class="course-schedule">📅 @course.Schedule</span>
+                        <span class="course-section">📚 @course.Section</span>
+                    </div>
+                </div>
+                <div class="course-card-footer">
+                    <button class="btn-sm btn-view" onclick="location.href='/Teacher/MyStudents?courseId=@course.DbId'">View Students</button>
+                    <button class="btn-sm btn-primary" onclick="generateEnrollmentQR(@course.DbId, '@course.CourseName')">📱 QR Code</button>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <span class="empty-icon">◧</span>
+            <p class="empty-title">No courses assigned</p>
+            <p class="empty-message">You haven't been assigned to any courses yet.</p>
+        </div>
+    }
+</div>
+
+<!-- QR CODE MODAL -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Course Enrollment QR</h3>
+            <button class="modal-close" onclick="closeModal('qrModal')">×</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
+                <div class="spinner-ring"></div>
+            </div>
+            <p><strong>Course:</strong> <span id="qrCourseName"></span></p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
+            <p style="font-size: 12px; color: #64748b;">Students will need their Student ID and Full Name</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeModal('qrModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/teacher-dashboard.js"></script>
+    <script>
+        function openModal(id) {
+            var modal = document.getElementById(id);
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeModal(id) {
+            var modal = document.getElementById(id);
+            if (modal) modal.classList.remove('active');
+        }
+
+        // Close modal when clicking outside
+        document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
+            overlay.addEventListener('click', function(e) {
+                if (e.target === this) closeModal('qrModal');
+            });
+        });
+
+        // Close modal on Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal('qrModal');
+            }
+        });
+    </script>
+}

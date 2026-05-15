@@ -1,0 +1,84 @@
+﻿<div class="modal-overlay" id="addStudentModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Add Student</h3>
+            <button class="modal-close" onclick="closeModal('addStudentModal')">×</button>
+        </div>
+        <div class="modal-body">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label>First Name <span class="req">*</span></label>
+                <input type="text" id="addFirstName" class="form-input" required />
+            </div>
+            <div class="form-group">
+                <label>Middle Name</label>
+                <input type="text" id="addMiddleName" class="form-input" />
+            </div>
+            <div class="form-group">
+                <label>Last Name <span class="req">*</span></label>
+                <input type="text" id="addLastName" class="form-input" required />
+            </div>
+            <div class="form-group">
+                <label>Email <span class="req">*</span></label>
+                <input type="email" id="addEmail" class="form-input" required />
+            </div>
+            <div class="form-group">
+                <label>Section <span class="req">*</span></label>
+                <input type="text" id="addSection" class="form-input" required />
+            </div>
+            <div class="form-group">
+                <label>Mobile No</label>
+                <input type="text" id="addMobileNo" class="form-input" />
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('addStudentModal')">Cancel</button>
+            <button class="btn-primary" onclick="submitAddStudent()">Add Student</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function submitAddStudent() {
+        const firstName = document.getElementById('addFirstName').value.trim();
+        const lastName = document.getElementById('addLastName').value.trim();
+        const email = document.getElementById('addEmail').value.trim();
+        const section = document.getElementById('addSection').value.trim();
+        const middleName = document.getElementById('addMiddleName').value.trim();
+        const mobileNo = document.getElementById('addMobileNo').value.trim();
+
+        if (!firstName || !lastName || !email || !section) {
+            if (typeof Toast !== 'undefined') Toast.warning('Please fill in all required fields.');
+            return;
+        }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const formData = new URLSearchParams();
+        formData.append('__RequestVerificationToken', token);
+        formData.append('firstName', firstName);
+        formData.append('middleName', middleName);
+        formData.append('lastName', lastName);
+        formData.append('email', email);
+        formData.append('section', section);
+        formData.append('mobileNo', mobileNo);
+
+        try {
+            const response = await fetch('/Admin/AddStudent', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            const data = await response.json();
+            if (data.success) {
+                if (typeof Toast !== 'undefined') Toast.success(data.message);
+                if (typeof closeModal === 'function') closeModal('addStudentModal');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                if (typeof Toast !== 'undefined') Toast.error(data.message);
+            }
+        } catch (error) {
+            console.error('Error adding student:', error);
+            if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
+        }
+    }
+</script>

@@ -1,0 +1,203 @@
+﻿@model AMS.ViewModels.TeachersPageViewModel
+@{
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
+    ViewData["Title"] = "Teachers";
+    ViewData["PageTitle"] = "Teachers";
+    ViewData["ActivePage"] = "Teachers";
+}
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/teachers.css" />
+}
+
+<div class="page-header">
+    <div>
+        <h2>Teachers</h2>
+        <p>Manage all registered faculty members</p>
+    </div>
+    <div class="page-header-actions">
+        <button class="btn-primary" onclick="openAddModal()">+ Add Teacher</button>
+    </div>
+</div>
+
+<div class="summary-bar">
+    <div class="summary-pill">
+        <span class="pill-dot dot-blue"></span>
+        Total: <strong>@Model.TotalCount</strong>
+    </div>
+    <div class="summary-pill">
+        <span class="pill-dot dot-green"></span>
+        Active: <strong>@Model.ActiveCount</strong>
+    </div>
+    <div class="summary-pill" style="border-color:rgba(239,68,68,0.2)">
+        <span class="pill-dot dot-red"></span>
+        Inactive: <strong>@Model.InactiveCount</strong>
+    </div>
+</div>
+
+<div class="filter-bar">
+    <div class="search-wrapper">
+        <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="10" cy="10" r="7" />
+            <path d="M21 21L15 15" />
+        </svg>
+        <input type="text" id="searchInput" class="search-input"
+               placeholder="Search by name or teacher no..."
+               value="@Model.Search" oninput="handleSearch()" />
+    </div>
+    <select id="statusFilter" class="filter-select" onchange="handleSearch()">
+        <option value="">All Status</option>
+        <option value="Active" selected="@(Model.StatusFilter == "Active")">Active</option>
+        <option value="Inactive" selected="@(Model.StatusFilter == "Inactive")">Inactive</option>
+    </select>
+</div>
+
+<div class="table-wrapper">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>Teacher</th>
+                <th class="hide-sm">Teacher No</th>
+                <th class="hide-sm">Courses</th>
+                <th class="hide-md">Account</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="teachersBody">
+            @if (Model.Teachers.Any())
+            {
+                @foreach (var t in Model.Teachers)
+                {
+                    <tr class="table-row" id="row-@t.DbId">
+                        <td>
+                            <div class="student-cell">
+                                <div class="avatar" style="background:@t.AvatarColor">@t.Initials</div>
+                                <div>
+                                    <p class="cell-name">@t.FullName</p>
+                                    <p class="cell-sub">@t.Email</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="hide-sm"><span class="id-badge">@t.TeacherNo</span></td>
+                        <td class="hide-sm">@t.CourseCount course(s)</td>
+                        <td class="hide-md">
+                            @if (t.HasAccount)
+                            {
+                                <span class="status-badge badge-active">@t.Username</span>
+                            }
+                            else
+                            {
+                                <span class="status-badge badge-inactive">No account</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="status-badge @(t.IsActive ? "badge-active" : "badge-inactive")">
+                                ● @t.Status
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-sm btn-view"
+                                        onclick="viewTeacher(@t.DbId,'@Html.Raw(t.FullName)','@t.TeacherNo','@t.Email','@t.CourseCount','@t.Username','@t.IsActive.ToString().ToLower()')">
+                                    View
+                                </button>
+                                <button class="btn-sm btn-edit"
+                                        onclick="editTeacher(@t.DbId,'@t.TeacherNo','@Html.Raw(t.FirstName)','@Html.Raw(t.LastName)','@t.Email')">
+                                    Edit
+                                </button>
+                                <button class="btn-sm btn-delete"
+                                        onclick="confirmDelete(@t.DbId,'@Html.Raw(t.FullName)')">
+                                    Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="6">
+                        <div class="empty-state">
+                            <span class="empty-icon">◈</span>
+                            <p class="empty-title">No teachers found</p>
+                            <p class="empty-message">Click "+ Add Teacher" to get started.</p>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Add / Edit Modal -->
+<div class="modal-overlay" id="teacherModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3 id="modalTitle">Add Teacher</h3>
+            <button class="modal-close" onclick="closeModal('teacherModal')">×</button>
+        </div>
+        <div class="modal-body">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="dbId" />
+            <input type="hidden" id="teacherNo" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label>First Name <span class="req">*</span></label>
+                    <input type="text" id="firstName" class="form-input" placeholder="e.g. James" required />
+                </div>
+                <div class="form-group">
+                    <label>Last Name <span class="req">*</span></label>
+                    <input type="text" id="lastName" class="form-input" placeholder="e.g. Maano" required />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Email <span class="req">*</span></label>
+                <input type="email" id="email" class="form-input" placeholder="teacher@school.edu" required />
+            </div>
+            <div class="info-message">
+                <p>⚠️ Username will be auto-generated as: firstname.lastname</p>
+                <p>🔑 Default password: <strong>teacher123</strong></p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('teacherModal')">Cancel</button>
+            <button class="btn-primary" id="saveBtn" onclick="submitTeacher()">Save Teacher</button>
+        </div>
+    </div>
+</div>
+
+<!-- View Modal -->
+<div class="modal-overlay" id="viewModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Teacher Profile</h3>
+            <button class="modal-close" onclick="closeModal('viewModal')">×</button>
+        </div>
+        <div class="modal-body" id="viewBody"></div>
+        <div class="modal-footer">
+            <button class="btn-primary" onclick="closeModal('viewModal')">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal-card modal-sm">
+        <div class="modal-header">
+            <h3>Delete Teacher</h3>
+            <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
+        </div>
+        <div class="modal-body">
+            <p>Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
+            <button class="btn-danger" id="confirmDeleteBtn" onclick="submitDelete()">Yes, Delete</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/teachers.js"></script>
+}

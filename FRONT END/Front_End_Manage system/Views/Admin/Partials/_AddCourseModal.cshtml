@@ -1,0 +1,124 @@
+﻿<div class="modal-overlay" id="addCourseModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Add Course</h3>
+            <button class="modal-close" onclick="closeModal('addCourseModal')">×</button>
+        </div>
+        <div class="modal-body">
+            @Html.AntiForgeryToken()
+            <div class="form-group">
+                <label>Course Code <span class="req">*</span></label>
+                <input type="text" id="addCourseCode" class="form-input" required />
+            </div>
+            <div class="form-group">
+                <label>Course Name <span class="req">*</span></label>
+                <input type="text" id="addCourseName" class="form-input" required />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Units <span class="req">*</span></label>
+                    <input type="number" id="addUnits" class="form-input" value="3" min="1" max="10" required />
+                </div>
+                <div class="form-group">
+                    <label>Section <span class="req">*</span></label>
+                    <input type="text" id="addCourseSection" class="form-input" required />
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Schedule <span class="req">*</span></label>
+                <input type="text" id="addSchedule" class="form-input" required />
+            </div>
+            <div class="form-group">
+                <label>Teacher</label>
+                <select id="addTeacherId" class="form-select">
+                    <option value="">— Select Teacher —</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-secondary" onclick="closeModal('addCourseModal')">Cancel</button>
+            <button class="btn-primary" onclick="submitAddCourse()">Add Course</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function submitAddCourse() {
+        const courseCode = document.getElementById('addCourseCode').value.trim();
+        const courseName = document.getElementById('addCourseName').value.trim();
+        const units = document.getElementById('addUnits').value;
+        const section = document.getElementById('addCourseSection').value.trim();
+        const schedule = document.getElementById('addSchedule').value.trim();
+        const teacherId = document.getElementById('addTeacherId').value;
+
+        if (!courseCode || !courseName || !section || !schedule) {
+            if (typeof Toast !== 'undefined') Toast.warning('Please fill in all required fields.');
+            return;
+        }
+
+        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        const formData = new URLSearchParams();
+        formData.append('__RequestVerificationToken', token);
+        formData.append('courseCode', courseCode);
+        formData.append('courseName', courseName);
+        formData.append('units', units);
+        formData.append('section', section);
+        formData.append('schedule', schedule);
+        formData.append('teacherId', teacherId);
+
+        try {
+            const response = await fetch('/Admin/AddCourse', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData
+            });
+            const data = await response.json();
+            if (data.success) {
+                if (typeof Toast !== 'undefined') Toast.success(data.message);
+                if (typeof closeModal === 'function') closeModal('addCourseModal');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                if (typeof Toast !== 'undefined') Toast.error(data.message);
+            }
+        } catch (error) {
+            console.error('Error adding course:', error);
+            if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
+        }
+    }
+
+    // Load teachers for dropdown
+    async function loadTeachersForModal() {
+        try {
+            const token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+            const response = await fetch('/Admin/TeachersPartial', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const html = await response.text();
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = html;
+            const options = [];
+
+            // Extract teacher data from table rows
+            const rows = tempDiv.querySelectorAll('#teachersBody tr');
+            rows.forEach(row => {
+                const nameCell = row.querySelector('.cell-name');
+                const id = row.getAttribute('data-id') || row.id?.replace('row-', '');
+                const name = nameCell ? nameCell.textContent : '';
+                if (name && id) {
+                    options.push(`<option value="${id}">${name}</option>`);
+                }
+            });
+
+            const teacherSelect = document.getElementById('addTeacherId');
+            if (teacherSelect) {
+                teacherSelect.innerHTML = '<option value="">— Select Teacher —</option>' + options.join('');
+            }
+        } catch (error) {
+            console.error('Failed to load teachers:', error);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadTeachersForModal);
+</script>

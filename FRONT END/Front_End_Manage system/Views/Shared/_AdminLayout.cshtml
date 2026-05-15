@@ -1,0 +1,198 @@
+﻿@* Views/Shared/_AdminLayout.cshtml *@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>@ViewData["Title"] — 3TagaPayu AMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css?v=@DateTime.Now.Ticks" asp-append-version="true" />
+    @await RenderSectionAsync("PageStyles", required: false)
+</head>
+<body>
+
+    @{
+        var username = Context.Session.GetString("Username") ?? "Admin";
+        var displayName = Context.Session.GetString("TeacherName") ?? Context.Session.GetString("StudentName") ?? username;
+        var userRole = Context.Session.GetString("Role") ?? "Admin";
+        var isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        var isTeacher = userRole.Equals("Teacher", StringComparison.OrdinalIgnoreCase);
+        var isStudent = userRole.Equals("Student", StringComparison.OrdinalIgnoreCase);
+        var initial = displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "U";
+        var activePage = ViewData["ActivePage"]?.ToString() ?? "";
+    }
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <div class="brand-logo">
+                <img src="~/images/logo.png" alt="3TagaPayu" />
+            </div>
+            <div class="brand-name">3TagaPayu</div>
+        </div>
+
+        <nav class="sidebar-nav">
+            @if (isAdmin)
+            {
+                <span class="nav-section-label">Main Menu</span>
+                <a href="@Url.Action("Dashboard", "Admin")" class="nav-link @(activePage == "Dashboard" ? "active" : "")">
+                    <span class="nav-icon">⊞</span> Dashboard
+                </a>
+                <a href="@Url.Action("Attendance", "Admin")" class="nav-link @(activePage == "Attendance" ? "active" : "")">
+                    <span class="nav-icon">◷</span> Attendance
+                </a>
+                <a href="@Url.Action("Students", "Admin")" class="nav-link @(activePage == "Students" ? "active" : "")">
+                    <span class="nav-icon">◍</span> Students
+                </a>
+                <a href="@Url.Action("Teachers", "Admin")" class="nav-link @(activePage == "Teachers" ? "active" : "")">
+                    <span class="nav-icon">◈</span> Teachers
+                </a>
+                <a href="@Url.Action("Courses", "Admin")" class="nav-link @(activePage == "Courses" ? "active" : "")">
+                    <span class="nav-icon">◧</span> Courses
+                </a>
+            }
+            else if (isTeacher)
+            {
+                <span class="nav-section-label">Portal</span>
+                <a href="@Url.Action("Dashboard", "Teacher")" class="nav-link @(activePage == "Dashboard" ? "active" : "")">
+                    <span class="nav-icon">⊞</span> Dashboard
+                </a>
+                <a href="@Url.Action("MyCourses", "Teacher")" class="nav-link @(activePage == "MyCourses" ? "active" : "")">
+                    <span class="nav-icon">◧</span> My Courses
+                </a>
+                <a href="@Url.Action("MyAttendance", "Teacher")" class="nav-link @(activePage == "MyAttendance" ? "active" : "")">
+                    <span class="nav-icon">◷</span> Attendance
+                </a>
+                <a href="@Url.Action("MyStudents", "Teacher")" class="nav-link @(activePage == "MyStudents" ? "active" : "")">
+                    <span class="nav-icon">◍</span> My Students
+                </a>
+            }
+            else if (isStudent)
+            {
+                <span class="nav-section-label">Student Portal</span>
+                <a href="@Url.Action("Dashboard", "Student")" class="nav-link @(activePage == "Dashboard" ? "active" : "")">
+                    <span class="nav-icon">⊞</span> Dashboard
+                </a>
+                <a href="@Url.Action("Scanner", "Student")" class="nav-link @(activePage == "Scanner" ? "active" : "")">
+                    <span class="nav-icon">📷</span> Scan QR
+                </a>
+                <a href="@Url.Action("AttendanceHistory", "Student")" class="nav-link @(activePage == "History" ? "active" : "")">
+                    <span class="nav-icon">📋</span> My History
+                </a>
+                <a href="@Url.Action("MyCourses", "Student")" class="nav-link @(activePage == "MyCourses" ? "active" : "")">
+                    <span class="nav-icon">📚</span> My Courses
+                </a>
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="sb-user">
+                <div class="sb-user-av">@initial</div>
+                <div>
+                    <div class="sb-user-name">@displayName</div>
+                    <div class="sb-user-role">@(isAdmin ? "Administrator" : isTeacher ? "Teacher" : "Student")</div>
+                </div>
+            </div>
+            <form method="post" action="@Url.Action("Logout", "Account")">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="logout-link">
+                    <span class="nav-icon">⇥</span> Logout
+                </button>
+            </form>
+        </div>
+    </aside>
+
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+
+    <div class="main-wrapper">
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+                    <span></span><span></span><span></span>
+                </button>
+                <img src="~/images/logo.png" class="topbar-logo" alt="AMS" />
+                <span class="topbar-brand">3TagaPayu AMS</span>
+            </div>
+
+            <nav class="topbar-tabs">
+                @if (isAdmin)
+                {
+                    <a href="@Url.Action("Dashboard", "Admin")" class="topbar-tab @(activePage == "Dashboard" ? "active" : "")">Dashboard</a>
+                    <a href="@Url.Action("Attendance", "Admin")" class="topbar-tab @(activePage == "Attendance" ? "active" : "")">Attendance</a>
+                    <a href="@Url.Action("Students", "Admin")" class="topbar-tab @(activePage == "Students" ? "active" : "")">Students</a>
+                    <a href="@Url.Action("Teachers", "Admin")" class="topbar-tab @(activePage == "Teachers" ? "active" : "")">Teachers</a>
+                    <a href="@Url.Action("Courses", "Admin")" class="topbar-tab @(activePage == "Courses" ? "active" : "")">Courses</a>
+                }
+                else if (isTeacher)
+                {
+                    <a href="@Url.Action("Dashboard", "Teacher")" class="topbar-tab @(activePage == "Dashboard" ? "active" : "")">Dashboard</a>
+                    <a href="@Url.Action("MyCourses", "Teacher")" class="topbar-tab @(activePage == "MyCourses" ? "active" : "")">My Courses</a>
+                    <a href="@Url.Action("MyAttendance", "Teacher")" class="topbar-tab @(activePage == "MyAttendance" ? "active" : "")">Attendance</a>
+                    <a href="@Url.Action("MyStudents", "Teacher")" class="topbar-tab @(activePage == "MyStudents" ? "active" : "")">My Students</a>
+                }
+                else if (isStudent)
+                {
+                    <a href="@Url.Action("Dashboard", "Student")" class="topbar-tab @(activePage == "Dashboard" ? "active" : "")">Dashboard</a>
+                    <a href="@Url.Action("Scanner", "Student")" class="topbar-tab @(activePage == "Scanner" ? "active" : "")">Scan QR</a>
+                    <a href="@Url.Action("AttendanceHistory", "Student")" class="topbar-tab @(activePage == "History" ? "active" : "")">History</a>
+                    <a href="@Url.Action("MyCourses", "Student")" class="topbar-tab @(activePage == "MyCourses" ? "active" : "")">My Courses</a>
+                }
+            </nav>
+
+            <div class="topbar-right">
+                <div class="topbar-admin" onclick="location.href='@Url.Action("Profile", "Account")'">
+                    @{
+                        var profilePic = Context.Session.GetString("ProfilePicture");
+                        var displayNameTop = Context.Session.GetString("TeacherName") ??
+                        Context.Session.GetString("StudentName") ??
+                        Context.Session.GetString("Username") ?? "Admin";
+                        var initialTop = displayNameTop.Length > 0 ? displayNameTop[0].ToString().ToUpper() : "A";
+                    }
+                    @if (!string.IsNullOrEmpty(profilePic))
+                    {
+                        <img src="@profilePic" class="admin-avatar-img" alt="Profile" />
+                    }
+                    else
+                    {
+                        <div class="admin-avatar">@initialTop</div>
+                    }
+                    <span class="admin-name">@displayNameTop</span>
+                </div>
+                <form method="post" action="@Url.Action("Logout", "Account")">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="topbar-logout" title="Logout">
+                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+                            <path d="M6 14H3a1 1 0 01-1-1V3a1 1 0 011-1h3M11 11l3-3-3-3M14 8H6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </header>
+
+        <main class="page-content">
+            @RenderBody()
+        </main>
+    </div>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts with versioning -->
+    <script src="~/js/utils/skeleton.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/utils/helpers.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/utils/session-debug.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/components/toast.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/core/app.js?v=@DateTime.Now.Ticks"></script>
+
+    @if (TempData["Success"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded', function() { Toast.success('@Html.Raw(TempData["Success"])'); });</script>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <script>document.addEventListener('DOMContentLoaded', function() { Toast.error('@Html.Raw(TempData["Error"])'); });</script>
+    }
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

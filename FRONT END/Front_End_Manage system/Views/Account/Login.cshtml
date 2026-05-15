@@ -1,0 +1,149 @@
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Login";
+    bool isWakingUp = ViewBag.IsWakingUp == true;
+    string errorMsg = ViewBag.Error as string ?? "";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login — AMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" />
+</head>
+<body class="login-body">
+
+    <div class="login-panel">
+        <div class="login-card">
+
+            <div class="login-logo-wrap">
+                <div class="l-logo">
+                    <img src="~/images/logo.png" alt="3TagaPayu" />
+                </div>
+            </div>
+
+            <h1 class="login-title">3TagaPayu AMS</h1>
+            <p class="login-sub">Attendance Management System</p>
+
+            @if (!string.IsNullOrEmpty(errorMsg))
+            {
+                if (isWakingUp)
+                {
+                    <div class="error-msg warning" id="wakeMsg">
+                        <div class="wake-header">
+                            <span>⏳</span>
+                            <strong>Server Waking Up</strong>
+                        </div>
+                        <div>@errorMsg</div>
+                        <div class="wake-retry">
+                            Auto-retrying in <span id="countdown">30</span>s...
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="error-msg">@errorMsg</div>
+                }
+            }
+
+            <form method="post" asp-action="Login" asp-controller="Account" id="loginForm">
+                @Html.AntiForgeryToken()
+
+                <label class="field-lbl">Username</label>
+                <div class="inp-wrap">
+                    <svg class="inp-icon" width="14" height="14" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="1.8">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+                    </svg>
+                    <input type="text" name="username" class="field-inp"
+                           placeholder="Enter your username"
+                           autocomplete="username" required />
+                </div>
+
+                <label class="field-lbl">Password</label>
+                <div class="inp-wrap">
+                    <svg class="inp-icon" width="14" height="14" viewBox="0 0 24 24"
+                         fill="none" stroke="currentColor" stroke-width="1.8">
+                        <rect x="3" y="11" width="18" height="11" rx="1" />
+                        <path d="M7 11V7a5 5 0 0110 0v4" />
+                    </svg>
+                    <input type="password" name="password" id="passwordInp" class="field-inp"
+                           placeholder="Enter your password"
+                           autocomplete="current-password" required />
+                    <button type="button" class="pass-toggle" onclick="togglePass()" tabindex="-1">
+                        <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24"
+                             fill="none" stroke="currentColor" stroke-width="1.8">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                            <circle cx="12" cy="12" r="3" />
+                        </svg>
+                    </button>
+                </div>
+
+                <button type="submit" class="login-btn" id="loginBtn">
+                    <div class="btn-spinner" id="btnSpinner"></div>
+                    <span id="btnText">LOGIN</span>
+                </button>
+            </form>
+
+            <div class="divider">
+                <div class="divider-line"></div>
+                <span class="divider-txt">3TagaPayu &middot; AMS</span>
+                <div class="divider-line"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="l-art-panel">
+        <img src="~/images/background.png" class="l-art-img" alt="Background"
+             onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #0a0010 0%, #1a0030 40%, #2d0050 100%)';" />
+        <div class="l-art-overlay"></div>
+        <div class="l-scanlines"></div>
+        <div class="l-accent-v"></div>
+        <div class="l-accent-h"></div>
+        <div class="l-accent-corner"></div>
+    </div>
+
+    <script>
+        function togglePass() {
+            var inp = document.getElementById('passwordInp');
+            var icon = document.getElementById('eyeIcon');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+            } else {
+                inp.type = 'password';
+                icon.innerHTML = '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+            }
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function () {
+            var btn = document.getElementById('loginBtn');
+            var spinner = document.getElementById('btnSpinner');
+            var text = document.getElementById('btnText');
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            text.textContent = 'CONNECTING...';
+        });
+
+        var isWakingUp = @Json.Serialize(isWakingUp);
+        if (isWakingUp) {
+            (function () {
+                var secs = 30;
+                var cd = document.getElementById('countdown');
+                var timer = setInterval(function () {
+                    secs--;
+                    if (cd) cd.textContent = secs;
+                    if (secs <= 0) {
+                        clearInterval(timer);
+                        document.getElementById('loginForm').submit();
+                    }
+                }, 1000);
+            })();
+        }
+    </script>
+</body>
+</html>
