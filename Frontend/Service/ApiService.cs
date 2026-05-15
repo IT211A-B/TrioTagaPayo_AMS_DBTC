@@ -171,7 +171,11 @@ namespace AMS.Services
 
         public async Task<LoginApiResponse?> LoginAsync(string username, string password)
         {
-            var res = await _http.PostAsync("/api/Auth/login", ToJson(new { username, password }));
+            var request = new HttpRequestMessage(HttpMethod.Post, "/Account/Login");
+            request.Content = ToJson(new { username, password });
+            request.Headers.Add("X-Requested-With", "XMLHttpRequest");
+
+            var res = await _http.SendAsync(request);
 
             if (!res.IsSuccessStatusCode)
             {
