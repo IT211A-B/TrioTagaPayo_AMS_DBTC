@@ -1,29 +1,31 @@
 ﻿// self-enroll.js - Student Self-Registration via QR Code
-// Creates account AND enrolls student in one step
 
 const courseId = new URLSearchParams(window.location.search).get('courseId');
 let isSubmitting = false;
 
-// Load course info when page loads
 document.addEventListener('DOMContentLoaded', function () {
     if (!courseId) {
         showMessage('Invalid course link. Please scan a valid QR code.', 'error');
         return;
     }
-
     loadCourseInfo();
-    setupEventListeners();
 });
 
 async function loadCourseInfo() {
     const courseInfo = document.getElementById('courseInfo');
+    const enrollForm = document.getElementById('enrollForm');
+
     if (!courseInfo) return;
 
     courseInfo.innerHTML = '<div class="loading">Loading course information...</div>';
 
     try {
-        const response = await fetch('/api/Enrollment/course/' + courseId);
-        if (!response.ok) throw new Error('Course not found');
+        const response = await fetch(`/api/Enrollment/course/${courseId}`);
+
+        if (!response.ok) {
+            throw new Error('Course not found');
+        }
+
         const data = await response.json();
 
         if (courseInfo && data) {
@@ -35,44 +37,18 @@ async function loadCourseInfo() {
                     <p class="course-teacher">Teacher: ${escapeHtml(data.teacherName || 'N/A')}</p>
                 </div>
             `;
+
+            // Show the enrollment form
+            if (enrollForm) {
+                enrollForm.style.display = 'block';
+            }
         }
     } catch (error) {
         console.error('Error loading course:', error);
         if (courseInfo) {
-            courseInfo.innerHTML = '<p class="course-ready">Course ready for enrollment</p>';
+            courseInfo.innerHTML = '<p class="error">Failed to load course information. Please try again.</p>';
         }
-    }
-}
-
-function setupEventListeners() {
-    const studentIdInput = document.getElementById('studentId');
-    const fullNameInput = document.getElementById('fullName');
-    const passwordInput = document.getElementById('password');
-    const confirmPasswordInput = document.getElementById('confirmPassword');
-    const enrollBtn = document.getElementById('enrollBtn');
-
-    if (studentIdInput) {
-        studentIdInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') submitEnrollment();
-        });
-    }
-
-    if (fullNameInput) {
-        fullNameInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') submitEnrollment();
-        });
-    }
-
-    if (passwordInput) {
-        passwordInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') submitEnrollment();
-        });
-    }
-
-    if (confirmPasswordInput) {
-        confirmPasswordInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') submitEnrollment();
-        });
+        showMessage('Could not load course details. Please check your connection.', 'error');
     }
 }
 
@@ -85,7 +61,6 @@ async function submitEnrollment() {
     const confirmPassword = document.getElementById('confirmPassword').value;
     const btn = document.getElementById('enrollBtn');
 
-    // Validation
     if (!studentId || !fullName || !password || !confirmPassword) {
         showMessage('Please fill in all fields', 'error');
         return;
@@ -180,7 +155,6 @@ function showMessage(msg, type) {
         type === 'error' ? 'message error' :
             'message warning';
     messageArea.innerHTML = '<div class="' + className + '">' + escapeHtml(msg) + '</div>';
-
     setTimeout(function () {
         if (messageArea.firstChild) messageArea.firstChild.remove();
     }, 5000);
@@ -194,4 +168,4 @@ function escapeHtml(str) {
         if (m === '>') return '&gt;';
         return m;
     });
-}
+}g
