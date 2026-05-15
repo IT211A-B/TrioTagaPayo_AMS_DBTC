@@ -5,8 +5,6 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllersWithViews();
 
-// No hardcoded UseUrls – let the environment decide the port.
-
 // ── Authentication ─────────────────────────────────────────
 builder.Services.AddAuthentication(options =>
 {
@@ -20,7 +18,7 @@ builder.Services.AddAuthentication(options =>
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/AccessDenied";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // Allow HTTP
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None;
     options.Cookie.Name = "AMS.Auth";
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
     options.SlidingExpiration = true;
@@ -54,10 +52,10 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Home/Error");
-    // app.UseHsts(); // Disable for Render (HTTP only)
+    // app.UseHsts(); // Disable for Render (HTTP)
 }
 
-// app.UseHttpsRedirection(); // Disable – Render uses HTTP
+// app.UseHttpsRedirection(); // Disable for Render
 
 app.UseStaticFiles();
 app.UseRouting();
@@ -69,8 +67,4 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=account}/{action=login}/{id?}");
 
-// --- Important: Bind to the port provided by Render (0.0.0.0) ---
-// The PORT environment variable is set automatically by Render.
-// If not set (e.g., local dev), default to 5166.
-var port = Environment.GetEnvironmentVariable("PORT") ?? "5166";
-app.Run($"http://0.0.0.0:{port}");
+app.Run();
