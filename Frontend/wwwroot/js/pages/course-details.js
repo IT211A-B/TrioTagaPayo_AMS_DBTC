@@ -1,4 +1,6 @@
-﻿var pendingChanges = {};
+﻿// course-details.js - Uses global openModal/closeModal from app.js
+
+var pendingChanges = {};
 var antiForgeryToken = '';
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -37,31 +39,30 @@ function setupEventListeners(courseId) {
         });
     }
 
+    // Modal close handlers
     var closeModalBtn = document.getElementById('closeModalBtn');
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', function () {
-            closeModal('qrModal');
+            if (typeof closeModal === 'function') closeModal('qrModal');
         });
     }
 
     var closeQrModalBtn = document.getElementById('closeQrModalBtn');
     if (closeQrModalBtn) {
         closeQrModalBtn.addEventListener('click', function () {
-            closeModal('qrModal');
+            if (typeof closeModal === 'function') closeModal('qrModal');
         });
     }
 
     var modalOverlay = document.getElementById('qrModal');
     if (modalOverlay) {
         modalOverlay.addEventListener('click', function (e) {
-            if (e.target === this) closeModal('qrModal');
+            if (e.target === this && typeof closeModal === 'function') closeModal('qrModal');
         });
     }
 
     document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') {
-            closeModal('qrModal');
-        }
+        if (e.key === 'Escape' && typeof closeModal === 'function') closeModal('qrModal');
     });
 }
 
@@ -160,9 +161,7 @@ async function saveAttendance(studentId) {
         if (data.success) {
             if (typeof Toast !== 'undefined') Toast.success('Attendance saved');
             delete pendingChanges[studentId];
-            setTimeout(function () {
-                loadAttendance(courseId, date);
-            }, 500);
+            setTimeout(function () { loadAttendance(courseId, date); }, 500);
         } else {
             if (typeof Toast !== 'undefined') Toast.error(data.message || 'Failed to save');
         }
@@ -206,7 +205,12 @@ async function markAllPresent(courseId) {
 }
 
 async function generateEnrollmentQR(courseId) {
-    openModal('qrModal');
+    if (typeof openModal === 'function') {
+        openModal('qrModal');
+    } else {
+        console.error('openModal not defined');
+        return;
+    }
 
     var qrContainer = document.getElementById('qrImageContainer');
     if (qrContainer) {
@@ -214,24 +218,21 @@ async function generateEnrollmentQR(courseId) {
     }
 
     try {
-        var formData = new URLSearchParams();
-        formData.append('__RequestVerificationToken', antiForgeryToken);
-        formData.append('courseId', courseId);
-
-        var response = await fetch('/Teacher/GenerateCourseQRCode', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData
-        });
+        // FIXED: Using GET request to Admin endpoint with relative URL
+        var response = await fetch('/Admin/GenerateCourseQRCode?courseId=' + courseId);
         var data = await response.json();
 
         if (data.success && data.qrCode) {
             if (qrContainer) {
                 qrContainer.innerHTML = '<img src="data:image/png;base64,' + data.qrCode + '" style="width: 200px; height: 200px; margin: 0 auto; display: block;" />';
             }
+            var courseNameElement = document.getElementById('qrCourseName');
+            if (courseNameElement && data.courseName) {
+                courseNameElement.textContent = data.courseName;
+            }
         } else {
             if (qrContainer) {
-                qrContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">Failed to generate QR code</p>';
+                qrContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">' + (data.message || 'Failed to generate QR code') + '</p>';
             }
             if (typeof Toast !== 'undefined') Toast.error(data.message || 'Failed to generate QR code');
         }
@@ -242,14 +243,4 @@ async function generateEnrollmentQR(courseId) {
         }
         if (typeof Toast !== 'undefined') Toast.error('Error generating QR code');
     }
-}
-
-function openModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) modal.classList.add('active');
-}
-
-function closeModal(id) {
-    var modal = document.getElementById(id);
-    if (modal) modal.classList.remove('active');
 }

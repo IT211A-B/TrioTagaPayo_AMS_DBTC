@@ -1,34 +1,36 @@
-﻿async function generateEnrollmentQR(courseId, courseName) {
+﻿// teacher-dashboard.js
+
+async function generateEnrollmentQR(courseId, courseName) {
     var qrContainer = document.getElementById('qrImageContainer');
     var courseNameSpan = document.getElementById('qrCourseName');
 
     if (courseNameSpan) courseNameSpan.textContent = courseName;
     if (qrContainer) qrContainer.innerHTML = '<div class="spinner-ring"></div>';
 
-    openModal('qrModal');
-
-    var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
-    var formData = new URLSearchParams();
-    formData.append('courseId', courseId);
-    if (token) formData.append('__RequestVerificationToken', token);
+    // Open modal
+    if (typeof openModal === 'function') {
+        openModal('qrModal');
+    } else {
+        console.error('openModal function not found');
+        return;
+    }
 
     try {
-        var response = await fetch('/Teacher/GenerateCourseQRCode', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: formData
-        });
+        // FIXED: Use GET request to Admin endpoint (relative URL)
+        var response = await fetch('/Admin/GenerateCourseQRCode?courseId=' + courseId);
         var data = await response.json();
 
-        // Log the full response to console
         console.log('QR Response:', data);
 
         if (data.success && data.qrCode) {
             if (qrContainer) {
-                qrContainer.innerHTML = '<img src="data:image/png;base64,' + data.qrCode + '" style="width: 180px; height: 180px; margin: 0 auto; display: block;" />';
+                var qrCodeValue = data.qrCode;
+                if (typeof qrCodeValue === 'object') {
+                    qrCodeValue = qrCodeValue.qrCode || JSON.stringify(qrCodeValue);
+                }
+                qrContainer.innerHTML = '<img src="data:image/png;base64,' + qrCodeValue + '" style="width: 180px; height: 180px; margin: 0 auto; display: block;" />';
             }
         } else {
-            // Show the actual error message
             var errorMsg = data.message || 'Failed to generate QR code';
             if (qrContainer) {
                 qrContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">Error: ' + errorMsg + '</p>';

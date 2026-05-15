@@ -1,5 +1,32 @@
 ﻿namespace AMS.ViewModels
 {
+    // ── Profile ViewModel  ─────────────────────────────
+
+    public class ProfileViewModel
+    {
+        public string FullName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty;
+        public string? ProfilePhotoUrl { get; set; }
+        public string CurrentPassword { get; set; } = string.Empty;
+        public string NewPassword { get; set; } = string.Empty;
+        public string ConfirmPassword { get; set; } = string.Empty;
+
+        // For displaying initials if no photo
+        public string Initials => string.IsNullOrEmpty(FullName) ? "A" : FullName.Substring(0, 1).ToUpper();
+
+        // Avatar color based on name
+        public string AvatarColor
+        {
+            get
+            {
+                var colors = new[] { "#c2185b", "#7c3aed", "#0891b2", "#dc2626", "#d97706" };
+                var index = Math.Abs(FullName?.GetHashCode() ?? 0) % colors.Length;
+                return colors[index];
+            }
+        }
+    }
+
     // ── Shared ───────────────────────────────────────────────
 
     public class PaginationViewModel
@@ -34,6 +61,12 @@
         public int TotalCourses { get; set; }
         public int AttendanceRate { get; set; }
         public List<AttendanceEntryViewModel> RecentAttendance { get; set; } = new();
+
+        // DYNAMIC CHART PROPERTIES
+        public List<int> WeeklyPresent { get; set; } = new();
+        public List<int> WeeklyAbsent { get; set; } = new();
+        public List<int> WeeklyLate { get; set; } = new();
+        public List<string> WeekDays { get; set; } = new();
     }
 
     public class AttendanceEntryViewModel
@@ -191,7 +224,6 @@
     }
 
     // ── Course Details ViewModels ──────────────────────────────
-    // THESE ARE THE NEW CLASSES - ADDED ONCE ONLY
 
     public class StudentCourseViewModel
     {
@@ -225,6 +257,7 @@
         public int EnrolledStudents { get; set; }
         public int TotalAttendanceRecords { get; set; }
     }
+
     // ── Student Dashboard ViewModel ──────────────────────────────
     public class StudentDashboardViewModel
     {

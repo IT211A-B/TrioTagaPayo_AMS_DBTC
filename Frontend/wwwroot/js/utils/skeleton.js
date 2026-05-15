@@ -1,22 +1,31 @@
 ﻿// skeleton.js - Handle skeleton loading states
 
 document.addEventListener('DOMContentLoaded', function () {
-    // Hide skeleton after data loads
-    setTimeout(function () {
-        var skeletonRows = document.querySelectorAll('.skeleton-row');
-        if (skeletonRows.length > 0) {
-            var realRows = document.querySelectorAll('#studentsBody tr.table-row:not(.skeleton-row), #teachersBody tr.table-row:not(.skeleton-row)');
-            if (realRows.length > 0) {
-                skeletonRows.forEach(function (row) { if (row && row.remove) row.remove(); });
-            }
-        }
-
-        var skeletonCards = document.getElementById('skeletonCards');
-        if (skeletonCards) {
-            var realCards = document.querySelectorAll('#coursesGrid .course-card');
-            if (realCards.length > 0) {
-                skeletonCards.style.display = 'none';
-            }
-        }
-    }, 500);
+    showSkeletons();
+    setTimeout(hideSkeletons, 800);
 });
+
+function showSkeletons() {
+    // Add skeleton class to containers
+    const containers = [
+        { selector: '.courses-grid', skeletonClass: 'skeleton-courses' },
+        { selector: '.stats-row', skeletonClass: 'skeleton-stats' },
+        { selector: '.table-wrapper', skeletonClass: 'skeleton-table' },
+        { selector: '.attendance-list', skeletonClass: 'skeleton-list' }
+    ];
+
+    containers.forEach(container => {
+        const element = document.querySelector(container.selector);
+        if (element && element.children.length === 0) {
+            element.classList.add(container.skeletonClass);
+        }
+    });
+}
+
+function hideSkeletons() {
+    const skeletonClasses = ['skeleton-courses', 'skeleton-stats', 'skeleton-table', 'skeleton-list'];
+    skeletonClasses.forEach(cls => {
+        const elements = document.querySelectorAll('.' + cls);
+        elements.forEach(el => el.classList.remove(cls));
+    });
+}

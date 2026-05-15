@@ -214,3 +214,10 @@
         background: rgba(239,68,68,0.15);
         color: #fca5a5;
     }
+.admin-avatar-img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}

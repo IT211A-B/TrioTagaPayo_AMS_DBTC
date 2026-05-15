@@ -1,72 +1,6 @@
 ﻿/* pages/attendance.css */
 
-/* Two Column Layout */
-.attendance-two-columns {
-    display: grid;
-    grid-template-columns: 320px 1fr;
-    gap: 24px;
-}
-
-/* QR Scanner Card */
-.qr-scanner-card {
-    background: linear-gradient(135deg, rgba(13, 26, 42, 0.9), rgba(11, 21, 34, 0.95));
-    border: 1px solid rgba(56, 189, 248, 0.1);
-    padding: 20px;
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
-    position: sticky;
-    top: 80px;
-    height: fit-content;
-}
-
-.qr-title {
-    font-family: 'Outfit', sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    color: #475569;
-    text-transform: uppercase;
-    margin-bottom: 16px;
-}
-
-.qr-scanner-box {
-    background: #000;
-    border: 2px dashed rgba(56, 189, 248, 0.3);
-    border-radius: 8px;
-    aspect-ratio: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 16px;
-}
-
-.scanner-placeholder {
-    text-align: center;
-    color: #64748b;
-}
-
-    .scanner-placeholder svg {
-        color: #38bdf8;
-        margin-bottom: 12px;
-    }
-
-    .scanner-placeholder p {
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 4px;
-    }
-
-    .scanner-placeholder span {
-        font-size: 11px;
-        opacity: 0.7;
-    }
-
-.qr-controls {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-/* Attendance Table Card */
+/* Main container (table card) */
 .attendance-table-card {
     background: rgba(13, 26, 42, 0.5);
     border: 1px solid rgba(56, 189, 248, 0.1);
@@ -106,7 +40,8 @@
     clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
 }
 
-.filter-select, .filter-input {
+.filter-select,
+.filter-input {
     padding: 9px 12px;
     background: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(56, 189, 248, 0.1);
@@ -175,56 +110,66 @@
     color: #64748b;
 }
 
-/* Responsive */
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.03) 25%, rgba(255, 255, 255, 0.08) 50%, rgba(255, 255, 255, 0.03) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-avatar {
+    width: 36px;
+    height: 36px;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+
+.skeleton-text {
+    height: 14px;
+    margin-bottom: 6px;
+}
+
+.skeleton-text-sm {
+    height: 11px;
+    width: 80%;
+}
+
+.skeleton-badge {
+    width: 80px;
+    height: 22px;
+    display: inline-block;
+}
+
+.skeleton-row {
+    pointer-events: none;
+}
+
+/* Responsive – no two-columns anymore, just adjust filter bar */
 @media (max-width: 900px) {
-    .attendance-two-columns {
-        grid-template-columns: 1fr;
+    .filter-bar {
+        flex-direction: column;
     }
 
-    .qr-scanner-card {
-        position: relative;
-        top: 0;
-    }
-    /* Skeleton Loading */
-    .skeleton {
-        background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.03) 75%);
-        background-size: 200% 100%;
-        animation: skeleton-loading 1.5s infinite;
+    .search-wrapper {
+        min-width: auto;
     }
 
-    @keyframes skeleton-loading {
-        0% {
-            background-position: 200% 0;
-        }
-
-        100% {
-            background-position: -200% 0;
-        }
+    .filter-select,
+    .filter-input,
+    .btn-secondary {
+        width: 100%;
     }
 
-    .skeleton-avatar {
-        width: 36px;
-        height: 36px;
-        clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
-    }
-
-    .skeleton-text {
-        height: 14px;
-        margin-bottom: 6px;
-    }
-
-    .skeleton-text-sm {
-        height: 11px;
-        width: 80%;
-    }
-
-    .skeleton-badge {
-        width: 80px;
-        height: 22px;
-        display: inline-block;
-    }
-
-    .skeleton-row {
-        pointer-events: none;
+    .summary-bar {
+        justify-content: center;
     }
 }

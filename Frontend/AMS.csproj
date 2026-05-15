@@ -7,4 +7,8 @@
 	<ItemGroup>
 	  <Folder Include="wwwroot\images\" />
 	</ItemGroup>
+	<ItemGroup>
+	  <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.9" />
+	  <PackageReference Include="QRCoder" Version="1.8.0" />
+	</ItemGroup>
 </Project>

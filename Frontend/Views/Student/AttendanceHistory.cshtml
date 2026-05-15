@@ -1,123 +1,4 @@
-﻿@model List<AMS.ViewModels.AttendanceEntryViewModel>
-@{
-    Layout = "~/Views/Shared/_StudentLayout.cshtml";
-    ViewData["Title"] = "Attendance History";
-    ViewData["PageTitle"] = "My Attendance History";
-    ViewData["ActivePage"] = "History";
-}
-
-<div class="page-header">
-    <div>
-        <h2>Attendance History</h2>
-        <p>View all your attendance records</p>
-    </div>
-</div>
-
-<!-- Filter Bar -->
-<div class="filter-bar">
-    <div class="filter-group">
-        <label>Course</label>
-        <select id="courseFilter" class="filter-select">
-            <option value="">All Courses</option>
-            @if (ViewBag.Courses != null)
-            {
-                foreach (var course in ViewBag.Courses)
-                {
-                    if (ViewBag.SelectedCourse == course)
-                    {
-                        <option value="@course" selected>@course</option>
-                    }
-                    else
-                    {
-                        <option value="@course">@course</option>
-                    }
-                }
-            }
-        </select>
-    </div>
-
-    <div class="filter-group">
-        <label>Status</label>
-        <select id="statusFilter" class="filter-select">
-            <option value="">All Status</option>
-            <option value="Present" selected="@(ViewBag.SelectedStatus == "Present")">Present</option>
-            <option value="Late" selected="@(ViewBag.SelectedStatus == "Late")">Late</option>
-            <option value="Absent" selected="@(ViewBag.SelectedStatus == "Absent")">Absent</option>
-        </select>
-    </div>
-
-    <div class="filter-group">
-        <label>&nbsp;</label>
-        <button id="applyFilterBtn" class="btn-secondary">Apply Filter</button>
-        <button id="resetFilterBtn" class="btn-text">Reset</button>
-    </div>
-</div>
-
-<!-- Summary Stats -->
-<div class="summary-stats">
-    <div class="stat-pill">
-        <span class="pill-label">Total Records:</span>
-        <span class="pill-value" id="totalCount">@Model.Count</span>
-    </div>
-    <div class="stat-pill present">
-        <span class="pill-label">Present:</span>
-        <span class="pill-value" id="presentCount">@Model.Count(a => a.Status == "Present")</span>
-    </div>
-    <div class="stat-pill late">
-        <span class="pill-label">Late:</span>
-        <span class="pill-value" id="lateCount">@Model.Count(a => a.Status == "Late")</span>
-    </div>
-    <div class="stat-pill absent">
-        <span class="pill-label">Absent:</span>
-        <span class="pill-value" id="absentCount">@Model.Count(a => a.Status == "Absent")</span>
-    </div>
-</div>
-
-<!-- Attendance Table -->
-<div class="table-wrapper">
-    <table class="data-table" id="attendanceTable">
-        <thead>
-            <tr>
-                <th>Course</th>
-                <th>Date</th>
-                <th>Status</th>
-                <th>Remarks</th>
-            </tr>
-        </thead>
-        <tbody id="attendanceBody">
-            @if (Model.Any())
-            {
-                foreach (var record in Model)
-                {
-                    <tr class="table-row" data-course="@record.CourseName" data-status="@record.Status">
-                        <td>@record.CourseName</td>
-                        <td>@record.Date</td>
-                        <td>
-                            <span class="status-badge @(record.Status == "Present" ? "badge-active" : record.Status == "Late" ? "badge-warning" : "badge-inactive")">
-                                @record.Status
-                            </span>
-                        </td>
-                        <td>@(string.IsNullOrEmpty(record.Remarks) ? "—" : record.Remarks)</td>
-                    </tr>
-                }
-            }
-            else
-            {
-                <tr class="empty-row">
-                    <td colspan="4">
-                        <div class="empty-state">
-                            <span class="empty-icon">📋</span>
-                            <p class="empty-title">No attendance records yet</p>
-                            <p class="empty-message">Scan a QR code from your teacher to record your attendance.</p>
-                        </div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-@section Scripts {
+﻿@section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const courseFilter = document.getElementById('courseFilter');
@@ -150,7 +31,6 @@
                     if (showCourse && showStatus) {
                         row.style.display = '';
                         visibleCount++;
-
                         if (status === 'Present') presentCount++;
                         else if (status === 'Late') lateCount++;
                         else if (status === 'Absent') absentCount++;
@@ -168,11 +48,14 @@
             function resetFilters() {
                 if (courseFilter) courseFilter.value = '';
                 if (statusFilter) statusFilter.value = '';
-                filterTable();
+                filterTable();  // FIXED: Now calls filterTable after reset
             }
 
             if (applyBtn) applyBtn.addEventListener('click', filterTable);
             if (resetBtn) resetBtn.addEventListener('click', resetFilters);
+
+            // Initialize on page load
+            filterTable();
         });
     </script>
 }

@@ -11,7 +11,20 @@
 }
 
 <div class="greeting-section">
-    <h1>Good Morning, @Model.TeacherName</h1>
+    @{
+        // Try to get teacher name from session first, fallback to Model
+        var teacherDisplayName = Context.Session.GetString("TeacherName") ??
+        Context.Session.GetString("Username") ??
+        Model.TeacherName ??
+        "Teacher";
+
+        // Remove TCH- prefix if it's still showing
+        if (teacherDisplayName.StartsWith("TCH-"))
+        {
+            teacherDisplayName = "Teacher";
+        }
+    }
+    <h1>Good Morning, @(Context.Session.GetString("TeacherName") ?? Model.TeacherName)</h1>
     <p>Here's your teaching overview for today - @DateTime.Now.ToString("dddd, MMMM d, yyyy").ToUpper()</p>
 </div>
 
@@ -31,49 +44,9 @@
     <div class="stat-card">
         <div class="stat-icon">◷</div>
         <p class="stat-label">TODAY PRESENT</p>
-        <p class="stat-value">@Model.TodayAttendanceRate</p>
+        <p class="stat-value">@Model.TodayAttendanceRate%</p>
         <p class="stat-hint">Across all classes</p>
     </div>
-</div>
-
-<div class="section-header">
-    <span class="section-title">MY COURSES</span>
-</div>
-
-<div class="courses-grid" style="grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); margin-bottom: 32px;">
-    @if (Model.MyCourses.Any())
-    {
-        foreach (var course in Model.MyCourses)
-        {
-            <div class="course-card">
-                <div class="course-card-header">
-                    <div class="course-code">@course.CourseCode</div>
-                </div>
-                <div class="course-card-body">
-                    <h3 class="course-name">@course.CourseName</h3>
-                    <div class="course-details">
-                        <span class="course-schedule">📅 @course.Schedule</span>
-                        <span class="course-section">📚 @course.Section</span>
-                    </div>
-                </div>
-                <div class="course-card-footer">
-                    <span class="student-count">👥 Students</span>
-                    <div class="action-btns">
-                        <button class="btn-sm btn-view" onclick="location.href='/Teacher/MyStudents?courseId=@course.DbId'">View Students</button>
-                        <button class="btn-sm btn-primary" onclick="generateEnrollmentQR(@course.DbId, '@course.CourseName')">📱 QR Code</button>
-                    </div>
-                </div>
-            </div>
-        }
-    }
-    else
-    {
-        <div class="empty-state">
-            <span class="empty-icon">◧</span>
-            <p class="empty-title">No courses assigned</p>
-            <p class="empty-message">You haven't been assigned to any courses yet.</p>
-        </div>
-    }
 </div>
 
 <div class="section-header">
@@ -138,12 +111,13 @@
             <button class="modal-close" onclick="closeModal('qrModal')">×</button>
         </div>
         <div class="modal-body" style="text-align: center;">
+            @Html.AntiForgeryToken()
             <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
                 <div class="spinner-ring"></div>
             </div>
             <p><strong>Course:</strong> <span id="qrCourseName"></span></p>
-            <p style="font-size: 12px; color: var(--muted);">Students scan this QR to enroll in this course</p>
-            <p style="font-size: 12px; color: var(--muted);">Students will need their Student ID and Full Name</p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
+            <p style="font-size: 12px; color: #64748b;">Students will need their Student ID and Full Name</p>
         </div>
         <div class="modal-footer">
             <button class="btn-primary" onclick="closeModal('qrModal')">Close</button>
@@ -153,4 +127,5 @@
 
 @section Scripts {
     <script src="~/js/pages/teacher-dashboard.js"></script>
+    <script src="~/js/pages/my-courses.js"></script>
 }

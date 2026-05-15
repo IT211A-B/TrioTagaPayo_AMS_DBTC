@@ -149,6 +149,7 @@
     </div>
 </div>
 
+<!-- QR MODAL -->
 <div class="modal-overlay" id="qrModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -156,10 +157,11 @@
             <button class="modal-close" id="closeQrModalBtn">×</button>
         </div>
         <div class="modal-body" style="text-align: center;">
+            @Html.AntiForgeryToken()
             <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
                 <div class="spinner-ring"></div>
             </div>
-            <p><strong>Course:</strong> @Model.Course.CourseName</p>
+            <p><strong>Course:</strong> <span id="qrCourseName">@Model.Course.CourseName</span></p>
             <p><strong>Course Code:</strong> @Model.Course.CourseCode</p>
             <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
         </div>

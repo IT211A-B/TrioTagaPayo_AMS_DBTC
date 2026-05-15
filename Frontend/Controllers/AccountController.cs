@@ -1,238 +1,336 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using AMS.Services;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
 using AMS.Models;
-using System.Text.Json;
+using AMS.Services;
+using AMS.ViewModels;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc;
 
 namespace AMS.Controllers
 {
     public class AccountController : Controller
     {
         private readonly ApiService _api;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public AccountController(ApiService api)
+        public AccountController(ApiService api, IWebHostEnvironment webHostEnvironment)
         {
             _api = api;
+            _webHostEnvironment = webHostEnvironment;
         }
 
-        // ── GET /Account/Login (Admin/Teacher) ─────────────────
+        [AllowAnonymous]
         [HttpGet]
         public IActionResult Login()
         {
-            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("JwtToken")))
-                return RedirectToAction("Dashboard", "Admin");
-
+            var token = HttpContext.Session.GetString("JwtToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                var role = HttpContext.Session.GetString("Role");
+                if (role == "Admin") return RedirectToAction("Dashboard", "Admin");
+                if (role == "Teacher") return RedirectToAction("Dashboard", "Teacher");
+                if (role == "Student") return RedirectToAction("Dashboard", "Student");
+            }
+            ViewBag.IsWakingUp = false;
+            ViewBag.Error = "";
             return View();
         }
 
-        // ── POST /Account/Login (Admin/Teacher) ────────────────
+        [AllowAnonymous]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(string username, string password)
         {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
-                ViewBag.Error = "Username/Email and password are required.";
-                return View();
-            }
-
-            try
-            {
-                // Check if username contains @ (it's an email)
-                string loginUsername = username;
-                if (username.Contains("@"))
-                {
-                    // Try to find teacher by email and get their actual username
-                    var teacherList = await _api.GetAllAsync<TeacherApiModel>("/api/Teacher");
-                    var teacherByEmail = teacherList.FirstOrDefault(t =>
-                        t.Email?.Equals(username, StringComparison.OrdinalIgnoreCase) == true);
-
-                    if (teacherByEmail != null)
-                    {
-                        loginUsername = teacherByEmail.Username ?? teacherByEmail.Email;
-                    }
-                    else
-                    {
-                        // Check if student by email
-                        var studentList = await _api.GetAllAsync<StudentApiModel>("/api/Student");
-                        var studentByEmail = studentList.FirstOrDefault(s =>
-                            s.Email?.Equals(username, StringComparison.OrdinalIgnoreCase) == true);
-
-                        if (studentByEmail != null)
-                        {
-                            loginUsername = studentByEmail.StudentNo;
-                        }
-                    }
-                }
-
-                var result = await _api.LoginAsync(loginUsername, password);
-
-                if (result == null)
-                {
-                    ViewBag.Error = "Invalid username/email or password.";
-                    return View();
-                }
-
-                string userRole = result.Role ?? "Admin";
-
-                HttpContext.Session.SetString("Role", userRole);
-                HttpContext.Session.SetString("Username", result.Username);
-
-                if (userRole.Equals("Teacher", StringComparison.OrdinalIgnoreCase))
-                {
-                    var teacherList = await _api.GetAllAsync<TeacherApiModel>("/api/Teacher");
-
-                    var foundTeacher = teacherList.FirstOrDefault(t =>
-                        t.Username?.Equals(loginUsername, StringComparison.OrdinalIgnoreCase) == true ||
-                        t.Email?.Equals(username, StringComparison.OrdinalIgnoreCase) == true);
-
-                    if (foundTeacher != null)
-                    {
-                        HttpContext.Session.SetString("TeacherId", foundTeacher.Id.ToString());
-                        HttpContext.Session.SetString("TeacherName", $"{foundTeacher.FirstName} {foundTeacher.LastName}");
-                        HttpContext.Session.SetString("TeacherEmail", foundTeacher.Email);
-                    }
-                }
-
-                // Store student info if role is Student
-                if (userRole.Equals("Student", StringComparison.OrdinalIgnoreCase))
-                {
-                    var studentList = await _api.GetAllAsync<StudentApiModel>("/api/Student");
-                    var foundStudent = studentList.FirstOrDefault(s =>
-                        s.StudentNo == loginUsername || s.Email == username);
-                    if (foundStudent != null)
-                    {
-                        HttpContext.Session.SetString("StudentId", foundStudent.Id.ToString());
-                        HttpContext.Session.SetString("StudentNo", foundStudent.StudentNo);
-                        HttpContext.Session.SetString("StudentName", $"{foundStudent.FirstName} {foundStudent.LastName}");
-                    }
-                }
-
-                // Redirect based on user role
-                if (userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase))
-                {
-                    return RedirectToAction("Dashboard", "Admin");
-                }
-                else if (userRole.Equals("Teacher", StringComparison.OrdinalIgnoreCase))
-                {
-                    return RedirectToAction("Dashboard", "Teacher");
-                }
-                else if (userRole.Equals("Student", StringComparison.OrdinalIgnoreCase))
-                {
-                    return RedirectToAction("Dashboard", "Student");
-                }
-                else
-                {
-                    return RedirectToAction("Dashboard", "Admin");
-                }
-            }
-            catch (TaskCanceledException)
-            {
-                ViewBag.Error = "Server is waking up from sleep. Please wait 30 seconds and try again.";
-                ViewBag.IsWakingUp = true;
-                return View();
-            }
-            catch (HttpRequestException)
-            {
-                ViewBag.Error = "Cannot connect to the server. Please check your connection and try again.";
-                return View();
-            }
-            catch (Exception)
-            {
-                ViewBag.Error = "An unexpected error occurred. Please try again.";
-                return View();
-            }
-        }
-
-        // ── GET /Account/StudentLogin (Student only) ───────────
-        [HttpGet]
-        public IActionResult StudentLogin()
-        {
-            if (!string.IsNullOrEmpty(HttpContext.Session.GetString("JwtToken")))
-            {
-                var role = HttpContext.Session.GetString("Role");
-                if (role == "Student") return RedirectToAction("Dashboard", "Student");
-                return RedirectToAction("Dashboard", "Admin");
-            }
-            return View();
-        }
-
-        // ── POST /Account/StudentLogin (Student only) ──────────
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StudentLogin(string username, string password)
-        {
-            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
-            {
-                ViewBag.Error = "Student ID and password are required.";
+                ViewBag.Error = "Username and password are required";
                 return View();
             }
 
             try
             {
                 var result = await _api.LoginAsync(username, password);
-
-                if (result == null)
+                if (result != null && !string.IsNullOrEmpty(result.Token))
                 {
-                    ViewBag.Error = "Invalid Student ID or password.";
-                    return View();
+                    await HttpContext.SignOutAsync();
+                    HttpContext.Session.SetString("JwtToken", result.Token);
+                    HttpContext.Session.SetString("Role", result.Role);
+                    if (!string.IsNullOrEmpty(result.RefreshToken))
+                        HttpContext.Session.SetString("RefreshToken", result.RefreshToken);
+
+                    if (result.Role == "Admin")
+                    {
+                        var displayName = result.FullName ?? result.Username;
+                        HttpContext.Session.SetString("Username", displayName);
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, displayName),
+                            new Claim(ClaimTypes.Role, "Admin")
+                        };
+                        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+                    }
+                    else if (result.Role == "Teacher")
+                    {
+                        int teacherId = result.TeacherId ?? 0;
+                        string teacherDisplayName = result.FullName ?? result.Username;
+                        string teacherNo = result.TeacherNo ?? result.Username;
+
+                        HttpContext.Session.SetString("Username", teacherDisplayName);
+                        HttpContext.Session.SetString("TeacherName", teacherDisplayName);
+                        HttpContext.Session.SetString("TeacherId", teacherId.ToString());
+                        HttpContext.Session.SetString("TeacherNo", teacherNo);
+
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, teacherDisplayName),
+                            new Claim(ClaimTypes.Role, "Teacher")
+                        };
+                        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+                        Console.WriteLine($"Teacher logged in: ID={teacherId}, Name={teacherDisplayName}");
+                    }
+                    else if (result.Role == "Student")
+                    {
+                        var studentName = result.FullName ?? result.Username;
+                        HttpContext.Session.SetString("Username", studentName);
+                        HttpContext.Session.SetString("StudentName", studentName);
+                        HttpContext.Session.SetString("StudentId", result.StudentId?.ToString() ?? "");
+                        HttpContext.Session.SetString("StudentNo", result.StudentNo ?? "");
+                        var claims = new List<Claim>
+                        {
+                            new Claim(ClaimTypes.Name, studentName),
+                            new Claim(ClaimTypes.Role, "Student")
+                        };
+                        var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+                    }
+
+                    // Load profile photo from backend after login
+                    var profile = await _api.GetUserProfileAsync();
+                    if (profile != null && !string.IsNullOrEmpty(profile.ProfilePhotoUrl))
+                    {
+                        var fullPhotoUrl = profile.ProfilePhotoUrl.StartsWith("http")
+                            ? profile.ProfilePhotoUrl
+                            : $"https://triotagapayo-ams-dbtc.onrender.com{profile.ProfilePhotoUrl}";
+                        HttpContext.Session.SetString("ProfilePicture", fullPhotoUrl);
+                    }
+
+                    if (result.Role == "Admin") return RedirectToAction("Dashboard", "Admin");
+                    if (result.Role == "Teacher") return RedirectToAction("Dashboard", "Teacher");
+                    if (result.Role == "Student") return RedirectToAction("Dashboard", "Student");
                 }
 
-                // Verify this is a student account
-                if (!result.Role.Equals("Student", StringComparison.OrdinalIgnoreCase))
-                {
-                    ViewBag.Error = "This account is not a student account. Please use the teacher/admin login.";
-                    return View();
-                }
-
-                HttpContext.Session.SetString("JwtToken", result.Token);
-                HttpContext.Session.SetString("Role", result.Role);
-                HttpContext.Session.SetString("Username", result.Username);
-
-                // Get student details
-                var students = await _api.GetAllAsync<StudentApiModel>("/api/Student");
-                var student = students.FirstOrDefault(s => s.StudentNo == username || s.Email == username);
-
-                if (student != null)
-                {
-                    HttpContext.Session.SetString("StudentId", student.Id.ToString());
-                    HttpContext.Session.SetString("StudentNo", student.StudentNo);
-                    HttpContext.Session.SetString("StudentName", $"{student.FirstName} {student.LastName}");
-                }
-
-                return RedirectToAction("Dashboard", "Student");
-            }
-            catch (TaskCanceledException)
-            {
-                ViewBag.Error = "Server is waking up. Please wait and try again.";
+                ViewBag.Error = "Invalid username or password";
                 return View();
             }
-            catch (HttpRequestException)
+            catch (Exception ex)
             {
-                ViewBag.Error = "Cannot connect to the server. Please check your connection.";
-                return View();
-            }
-            catch (Exception)
-            {
-                ViewBag.Error = "Login failed. Please try again.";
+                if (ex.Message.Contains("Connection refused") || ex.Message.Contains("timed out") || ex.Message.Contains("502"))
+                {
+                    ViewBag.IsWakingUp = true;
+                    ViewBag.Error = "Server is waking up from cold start. Please wait...";
+                }
+                else
+                {
+                    ViewBag.Error = $"Login failed: {ex.Message}";
+                }
                 return View();
             }
         }
 
-        // ── POST /Account/Logout ──────────────────────────────
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult StudentLogin() => View();
+
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> StudentLogin(string username, string password)
+        {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
+            {
+                ViewBag.Error = "Student ID and password are required";
+                return View();
+            }
+
+            try
+            {
+                var result = await _api.LoginAsync(username, password);
+                if (result != null && result.Role == "Student")
+                {
+                    await HttpContext.SignOutAsync();
+                    HttpContext.Session.SetString("JwtToken", result.Token);
+                    HttpContext.Session.SetString("Role", result.Role);
+                    var studentName = result.FullName ?? result.Username;
+                    HttpContext.Session.SetString("Username", studentName);
+                    HttpContext.Session.SetString("StudentName", studentName);
+                    HttpContext.Session.SetString("StudentId", result.StudentId?.ToString() ?? "");
+                    HttpContext.Session.SetString("StudentNo", result.StudentNo ?? "");
+                    if (!string.IsNullOrEmpty(result.RefreshToken))
+                        HttpContext.Session.SetString("RefreshToken", result.RefreshToken);
+
+                    var claims = new List<Claim>
+                    {
+                        new Claim(ClaimTypes.Name, studentName),
+                        new Claim(ClaimTypes.Role, "Student")
+                    };
+                    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                    await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
+
+                    // Load profile photo
+                    var profile = await _api.GetUserProfileAsync();
+                    if (profile != null && !string.IsNullOrEmpty(profile.ProfilePhotoUrl))
+                    {
+                        var fullPhotoUrl = profile.ProfilePhotoUrl.StartsWith("http")
+                            ? profile.ProfilePhotoUrl
+                            : $"https://triotagapayo-ams-dbtc.onrender.com{profile.ProfilePhotoUrl}";
+                        HttpContext.Session.SetString("ProfilePicture", fullPhotoUrl);
+                    }
+
+                    return RedirectToAction("Dashboard", "Student");
+                }
+                ViewBag.Error = "Invalid student credentials";
+                return View();
+            }
+            catch (Exception ex)
+            {
+                ViewBag.Error = $"Login failed: {ex.Message}";
+                return View();
+            }
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Logout()
         {
             await _api.LogoutAsync();
-            return RedirectToAction("Login", "Account");
+            await HttpContext.SignOutAsync();
+            HttpContext.Session.Clear();
+            return RedirectToAction("Login");
         }
 
-        // ── GET /Account/Logout — direct link support ─────────
         [HttpGet]
-        public async Task<IActionResult> LogoutGet()
+        public async Task<IActionResult> Profile()
         {
-            await _api.LogoutAsync();
-            return RedirectToAction("Login", "Account");
+            var token = HttpContext.Session.GetString("JwtToken");
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login");
+
+            // Only update session if backend returns a non-empty URL
+            var profile = await _api.GetUserProfileAsync();
+            if (profile != null && !string.IsNullOrEmpty(profile.ProfilePhotoUrl))
+            {
+                var fullPhotoUrl = profile.ProfilePhotoUrl.StartsWith("http")
+                    ? profile.ProfilePhotoUrl
+                    : $"https://triotagapayo-ams-dbtc.onrender.com{profile.ProfilePhotoUrl}";
+                HttpContext.Session.SetString("ProfilePicture", fullPhotoUrl);
+            }
+            // Otherwise, keep whatever is already in session (do not overwrite with null)
+
+            var role = HttpContext.Session.GetString("Role");
+            var userName = HttpContext.Session.GetString("Username") ?? "User";
+            var profilePhotoUrl = HttpContext.Session.GetString("ProfilePicture");
+            var model = new ProfileViewModel
+            {
+                FullName = userName,
+                Email = "",
+                Role = role ?? "Admin",
+                ProfilePhotoUrl = profilePhotoUrl
+            };
+            return View(model);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfile([FromForm] string fullName, [FromForm] string email,
+            [FromForm] string currentPassword, [FromForm] string newPassword, [FromForm] string confirmPassword)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(newPassword) && newPassword != confirmPassword)
+                    return Json(new { success = false, message = "New passwords do not match" });
+                if (!string.IsNullOrEmpty(newPassword) && newPassword.Length < 6)
+                    return Json(new { success = false, message = "Password must be at least 6 characters" });
+
+                var result = await _api.PutAsync("/api/User/profile", new { fullName, email, currentPassword, newPassword });
+                if (result.Success)
+                {
+                    if (!string.IsNullOrEmpty(fullName))
+                        HttpContext.Session.SetString("Username", fullName);
+                    return Json(new { success = true, message = "Profile updated successfully!" });
+                }
+                return Json(new { success = false, message = result.Error });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateProfilePhoto(IFormFile profilePhoto)
+        {
+            try
+            {
+                if (profilePhoto == null || profilePhoto.Length == 0)
+                    return Json(new { success = false, message = "No file selected" });
+
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+                var extension = Path.GetExtension(profilePhoto.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(extension))
+                    return Json(new { success = false, message = "Only JPG, PNG, GIF, or WEBP images are allowed" });
+                if (profilePhoto.Length > 5 * 1024 * 1024)
+                    return Json(new { success = false, message = "File size must be less than 5MB" });
+
+                // === 1. Try to upload to external backend ===
+                using var memoryStream = new MemoryStream();
+                await profilePhoto.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+
+                var (success, photoUrl, error) = await _api.UpdateProfilePhotoAsync(memoryStream, profilePhoto.FileName);
+
+                string finalPhotoUrl = null;
+
+                if (success && !string.IsNullOrEmpty(photoUrl))
+                {
+                    finalPhotoUrl = photoUrl.StartsWith("http")
+                        ? photoUrl
+                        : $"https://triotagapayo-ams-dbtc.onrender.com{photoUrl}";
+                }
+                else
+                {
+                    // === 2. Fallback: save locally (so photo still works) ===
+                    string localUploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "profiles");
+                    if (!Directory.Exists(localUploadsFolder))
+                        Directory.CreateDirectory(localUploadsFolder);
+
+                    string uniqueFileName = $"{Guid.NewGuid()}{extension}";
+                    string localFilePath = Path.Combine(localUploadsFolder, uniqueFileName);
+                    using (var fileStream = new FileStream(localFilePath, FileMode.Create))
+                    {
+                        await profilePhoto.CopyToAsync(fileStream);
+                    }
+                    finalPhotoUrl = $"/uploads/profiles/{uniqueFileName}";
+                    Console.WriteLine($"External API failed: {error}. Saved locally: {finalPhotoUrl}");
+                }
+
+                // Store in session
+                HttpContext.Session.SetString("ProfilePicture", finalPhotoUrl);
+                return Json(new { success = true, message = "Profile photo updated!", photoUrl = finalPhotoUrl });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
     }
 }

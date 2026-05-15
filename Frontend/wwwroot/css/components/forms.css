@@ -67,3 +67,20 @@
     gap: 14px;
     margin-bottom: 14px;
 }
+
+.info-message {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 3px solid #38bdf8;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 12px;
+}
+
+    .info-message p {
+        margin: 4px 0;
+        color: #94a3b8;
+    }
+
+    .info-message strong {
+        color: #38bdf8;
+    }

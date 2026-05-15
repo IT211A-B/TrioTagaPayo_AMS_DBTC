@@ -108,5 +108,12 @@ namespace AMS.Models
         public int TotalCount { get; set; }
         public int TotalPages { get; set; }
     }
+    // ── User Profile DTO (matches GET /api/Account/profile) ─────
+    public class UserProfileDto
+    {
+        public string? ProfilePhotoUrl { get; set; }
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+    }
 
 }

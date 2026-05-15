@@ -4,19 +4,23 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] — AMS</title>
+    <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
+    <title>@ViewData["Title"] — 3TagaPayu AMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/site.css?v=@DateTime.Now.Ticks" asp-append-version="true" />
     @await RenderSectionAsync("PageStyles", required: false)
 </head>
 <body>
 
     @{
         var username = Context.Session.GetString("Username") ?? "Admin";
-        var initial = username.Length > 0 ? username[0].ToString().ToUpper() : "A";
-        var activePage = ViewData["ActivePage"]?.ToString() ?? "";
+        var displayName = Context.Session.GetString("TeacherName") ?? Context.Session.GetString("StudentName") ?? username;
         var userRole = Context.Session.GetString("Role") ?? "Admin";
         var isAdmin = userRole.Equals("Admin", StringComparison.OrdinalIgnoreCase);
+        var isTeacher = userRole.Equals("Teacher", StringComparison.OrdinalIgnoreCase);
+        var isStudent = userRole.Equals("Student", StringComparison.OrdinalIgnoreCase);
+        var initial = displayName.Length > 0 ? displayName[0].ToString().ToUpper() : "U";
+        var activePage = ViewData["ActivePage"]?.ToString() ?? "";
     }
 
     <!-- SIDEBAR -->
@@ -47,11 +51,8 @@
                 <a href="@Url.Action("Courses", "Admin")" class="nav-link @(activePage == "Courses" ? "active" : "")">
                     <span class="nav-icon">◧</span> Courses
                 </a>
-                <a href="@Url.Action("Enrollment", "Admin")" class="nav-link @(activePage == "Enrollment" ? "active" : "")">
-                    <span class="nav-icon">◯</span> Enrollment
-                </a>
             }
-            else
+            else if (isTeacher)
             {
                 <span class="nav-section-label">Portal</span>
                 <a href="@Url.Action("Dashboard", "Teacher")" class="nav-link @(activePage == "Dashboard" ? "active" : "")">
@@ -67,14 +68,30 @@
                     <span class="nav-icon">◍</span> My Students
                 </a>
             }
+            else if (isStudent)
+            {
+                <span class="nav-section-label">Student Portal</span>
+                <a href="@Url.Action("Dashboard", "Student")" class="nav-link @(activePage == "Dashboard" ? "active" : "")">
+                    <span class="nav-icon">⊞</span> Dashboard
+                </a>
+                <a href="@Url.Action("Scanner", "Student")" class="nav-link @(activePage == "Scanner" ? "active" : "")">
+                    <span class="nav-icon">📷</span> Scan QR
+                </a>
+                <a href="@Url.Action("AttendanceHistory", "Student")" class="nav-link @(activePage == "History" ? "active" : "")">
+                    <span class="nav-icon">📋</span> My History
+                </a>
+                <a href="@Url.Action("MyCourses", "Student")" class="nav-link @(activePage == "MyCourses" ? "active" : "")">
+                    <span class="nav-icon">📚</span> My Courses
+                </a>
+            }
         </nav>
 
         <div class="sidebar-footer">
             <div class="sb-user">
                 <div class="sb-user-av">@initial</div>
                 <div>
-                    <div class="sb-user-name">@username</div>
-                    <div class="sb-user-role">@(isAdmin ? "Administrator" : "Teacher")</div>
+                    <div class="sb-user-name">@displayName</div>
+                    <div class="sb-user-role">@(isAdmin ? "Administrator" : isTeacher ? "Teacher" : "Student")</div>
                 </div>
             </div>
             <form method="post" action="@Url.Action("Logout", "Account")">
@@ -106,20 +123,41 @@
                     <a href="@Url.Action("Students", "Admin")" class="topbar-tab @(activePage == "Students" ? "active" : "")">Students</a>
                     <a href="@Url.Action("Teachers", "Admin")" class="topbar-tab @(activePage == "Teachers" ? "active" : "")">Teachers</a>
                     <a href="@Url.Action("Courses", "Admin")" class="topbar-tab @(activePage == "Courses" ? "active" : "")">Courses</a>
-                    <a href="@Url.Action("Enrollment", "Admin")" class="topbar-tab @(activePage == "Enrollment" ? "active" : "")">Enrollment</a>
                 }
-                else
+                else if (isTeacher)
                 {
                     <a href="@Url.Action("Dashboard", "Teacher")" class="topbar-tab @(activePage == "Dashboard" ? "active" : "")">Dashboard</a>
+                    <a href="@Url.Action("MyCourses", "Teacher")" class="topbar-tab @(activePage == "MyCourses" ? "active" : "")">My Courses</a>
                     <a href="@Url.Action("MyAttendance", "Teacher")" class="topbar-tab @(activePage == "MyAttendance" ? "active" : "")">Attendance</a>
                     <a href="@Url.Action("MyStudents", "Teacher")" class="topbar-tab @(activePage == "MyStudents" ? "active" : "")">My Students</a>
+                }
+                else if (isStudent)
+                {
+                    <a href="@Url.Action("Dashboard", "Student")" class="topbar-tab @(activePage == "Dashboard" ? "active" : "")">Dashboard</a>
+                    <a href="@Url.Action("Scanner", "Student")" class="topbar-tab @(activePage == "Scanner" ? "active" : "")">Scan QR</a>
+                    <a href="@Url.Action("AttendanceHistory", "Student")" class="topbar-tab @(activePage == "History" ? "active" : "")">History</a>
+                    <a href="@Url.Action("MyCourses", "Student")" class="topbar-tab @(activePage == "MyCourses" ? "active" : "")">My Courses</a>
                 }
             </nav>
 
             <div class="topbar-right">
-                <div class="topbar-admin">
-                    <div class="admin-avatar">@initial</div>
-                    <span class="admin-name">@username</span>
+                <div class="topbar-admin" onclick="location.href='@Url.Action("Profile", "Account")'">
+                    @{
+                        var profilePic = Context.Session.GetString("ProfilePicture");
+                        var displayNameTop = Context.Session.GetString("TeacherName") ??
+                        Context.Session.GetString("StudentName") ??
+                        Context.Session.GetString("Username") ?? "Admin";
+                        var initialTop = displayNameTop.Length > 0 ? displayNameTop[0].ToString().ToUpper() : "A";
+                    }
+                    @if (!string.IsNullOrEmpty(profilePic))
+                    {
+                        <img src="@profilePic" class="admin-avatar-img" alt="Profile" />
+                    }
+                    else
+                    {
+                        <div class="admin-avatar">@initialTop</div>
+                    }
+                    <span class="admin-name">@displayNameTop</span>
                 </div>
                 <form method="post" action="@Url.Action("Logout", "Account")">
                     @Html.AntiForgeryToken()
@@ -139,12 +177,12 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Scripts -->
-    <script src="~/js/utils/skeleton.js"></script>
-    <script src="~/js/utils/helpers.js"></script>
-    <script src="~/js/utils/session-debug.js"></script>
-    <script src="~/js/components/toast.js"></script>
-    <script src="~/js/core/app.js"></script>
+    <!-- Scripts with versioning -->
+    <script src="~/js/utils/skeleton.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/utils/helpers.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/utils/session-debug.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/components/toast.js?v=@DateTime.Now.Ticks"></script>
+    <script src="~/js/core/app.js?v=@DateTime.Now.Ticks"></script>
 
     @if (TempData["Success"] != null)
     {

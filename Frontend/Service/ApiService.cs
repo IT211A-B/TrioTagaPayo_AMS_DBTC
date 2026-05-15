@@ -34,8 +34,6 @@ namespace AMS.Services
             new(JsonSerializer.Serialize(obj), Encoding.UTF8, "application/json");
 
         // ── Auto-refresh on 401 ───────────────────────────────
-        // Called by every HTTP method after receiving a 401.
-        // Returns true if a new token was obtained and attached.
         private async Task<bool> Handle401Async()
         {
             var refreshed = await TryRefreshTokenAsync();
@@ -74,7 +72,6 @@ namespace AMS.Services
 
             var json = await res.Content.ReadAsStringAsync();
 
-            // Try paginated wrapper first: { data: [], page, totalCount, ... }
             try
             {
                 using var doc = JsonDocument.Parse(json);
@@ -84,7 +81,7 @@ namespace AMS.Services
                     return list ?? new List<T>();
                 }
             }
-            catch { /* not paginated — fall through */ }
+            catch { }
 
             return JsonSerializer.Deserialize<List<T>>(json, Opts) ?? new List<T>();
         }
@@ -153,8 +150,6 @@ namespace AMS.Services
         }
 
         // ── LOGIN ─────────────────────────────────────────────
-        // FIX: Now stores Username and Role in session.
-        // The layout (_AdminLayout) reads Session["Username"] for the topbar.
         public async Task<LoginApiResponse?> LoginAsync(string username, string password)
         {
             var res = await _http.PostAsync("/api/auth/login",
@@ -168,8 +163,8 @@ namespace AMS.Services
             if (result != null)
             {
                 _ctx.HttpContext?.Session.SetString("JwtToken", result.Token);
-                _ctx.HttpContext?.Session.SetString("Username", result.Username); // FIX: layout needs this
-                _ctx.HttpContext?.Session.SetString("Role", result.Role);         // FIX: role-based UI needs this
+                _ctx.HttpContext?.Session.SetString("Username", result.Username);
+                _ctx.HttpContext?.Session.SetString("Role", result.Role);
 
                 if (!string.IsNullOrEmpty(result.RefreshToken))
                     _ctx.HttpContext?.Session.SetString("RefreshToken", result.RefreshToken);
@@ -179,7 +174,6 @@ namespace AMS.Services
         }
 
         // ── LOGOUT ───────────────────────────────────────────
-        // Clears session AND tells backend to clear its cookies.
         public async Task LogoutAsync()
         {
             try
@@ -188,7 +182,7 @@ namespace AMS.Services
                 await _http.PostAsync("/api/auth/logout",
                     new StringContent("", Encoding.UTF8, "application/json"));
             }
-            catch { /* backend call is best-effort */ }
+            catch { }
             finally
             {
                 _ctx.HttpContext?.Session.Clear();
@@ -196,8 +190,6 @@ namespace AMS.Services
         }
 
         // ── REFRESH TOKEN ─────────────────────────────────────
-        // Sends stored refresh token to /api/Auth/refresh.
-        // Updates session with new JWT on success.
         public async Task<bool> TryRefreshTokenAsync()
         {
             var refreshToken = _ctx.HttpContext?.Session.GetString("RefreshToken");
@@ -218,9 +210,50 @@ namespace AMS.Services
             _ctx.HttpContext?.Session.SetString("RefreshToken", result.RefreshToken);
             return true;
         }
+
+        // ── GET USER PROFILE (includes profilePhotoUrl) ────────
+        public async Task<UserProfileDto?> GetUserProfileAsync()
+        {
+            AttachToken();
+            var res = await _http.GetAsync("/api/Account/profile");
+            if (!res.IsSuccessStatusCode) return null;
+            var json = await res.Content.ReadAsStringAsync();
+            return JsonSerializer.Deserialize<UserProfileDto>(json, Opts);
+        }
+
+        // ── UPLOAD PROFILE PHOTO (correct endpoint) ────────────
+        public async Task<(bool Success, string? PhotoUrl, string Error)> UpdateProfilePhotoAsync(Stream fileStream, string fileName)
+        {
+            try
+            {
+                AttachToken();
+                using var content = new MultipartFormDataContent();
+                var streamContent = new StreamContent(fileStream);
+                streamContent.Headers.Add("Content-Type", "image/jpeg");
+                content.Add(streamContent, "file", fileName);
+
+                var response = await _http.PostAsync("/api/Account/update-profile-photo", content);
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (!response.IsSuccessStatusCode)
+                    return (false, null, json);
+
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("photoUrl", out var urlProp))
+                {
+                    var photoUrl = urlProp.GetString();
+                    return (true, photoUrl, "");
+                }
+                return (false, null, "No photoUrl in response");
+            }
+            catch (Exception ex)
+            {
+                return (false, null, ex.Message);
+            }
+        }
     }
 
-    // ── Login response model — matches backend LoginResponse ─
+    // ── Login response model ─────────────────────────────────
     public class LoginApiResponse
     {
         public string Token { get; set; } = "";
@@ -229,5 +262,20 @@ namespace AMS.Services
         public DateTime Expiration { get; set; }
         public string RefreshToken { get; set; } = "";
         public DateTime RefreshTokenExpiry { get; set; }
+
+        public int? StudentId { get; set; }
+        public string? StudentNo { get; set; }
+        public string? FullName { get; set; }
+        public int? TeacherId { get; set; }
+        public string? TeacherName { get; set; }
+        public string? TeacherNo { get; set; }
     }
-}
+
+    // ── User profile DTO (from GET /api/Account/profile) ─────
+    public class UserProfileDto
+    {
+        public string? ProfilePhotoUrl { get; set; }
+        public string? FullName { get; set; }
+        public string? Email { get; set; }
+    }
+}   

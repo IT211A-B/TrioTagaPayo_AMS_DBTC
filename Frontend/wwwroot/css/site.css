@@ -26,6 +26,7 @@
 @import 'pages/courses.css';
 @import 'pages/students.css';
 @import 'pages/teachers.css';
+@import 'pages/profile.css'; /* MAKE SURE THIS IS INCLUDED */
 
 /* Utilities */
 @import 'utilities/display.css';

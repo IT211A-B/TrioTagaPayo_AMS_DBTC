@@ -20,56 +20,63 @@ function initSidebar() {
         if (overlay) overlay.classList.remove('visible');
     };
 
-    // Close sidebar when clicking a link on mobile
     document.querySelectorAll('.sidebar .nav-link').forEach(link => {
-        link.addEventListener('click', function (e) {
+        link.addEventListener('click', function () {
             if (window.innerWidth <= 900) {
-                setTimeout(function () {
-                    window.closeSidebar();
-                }, 100);
+                setTimeout(window.closeSidebar, 100);
             }
         });
     });
 }
 
+// SINGLE SOURCE OF TRUTH FOR MODAL FUNCTIONS
+window.openModal = function (id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.add('active');
+        console.log('Modal opened:', id);
+    } else {
+        console.error('Modal not found:', id);
+    }
+};
+
+window.closeModal = function (id) {
+    const modal = document.getElementById(id);
+    if (modal) {
+        modal.classList.remove('active');
+        console.log('Modal closed:', id);
+    }
+};
+
 function initModals() {
     document.querySelectorAll('.modal-overlay').forEach(overlay => {
         overlay.addEventListener('click', function (e) {
-            if (e.target === this) this.classList.remove('active');
+            if (e.target === this) {
+                const id = this.id;
+                if (id && window.closeModal) window.closeModal(id);
+            }
         });
     });
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+            document.querySelectorAll('.modal-overlay.active').forEach(modal => {
+                if (window.closeModal) window.closeModal(modal.id);
+            });
         }
     });
 }
 
-window.openModal = function (id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.add('active');
-};
-
-window.closeModal = function (id) {
-    const modal = document.getElementById(id);
-    if (modal) modal.classList.remove('active');
-};
-
-// Session debug - helps identify logout issues
+// Session debug
 function initSessionDebug() {
-    // Check session every 30 seconds
     setInterval(function () {
         fetch('/Admin/GetCurrentUserInfo', {
-            headers: {
-                'RequestVerificationToken': getAntiForgeryToken()
-            }
+            headers: { 'RequestVerificationToken': getAntiForgeryToken() }
         })
             .then(res => res.json())
             .then(data => {
                 if (!data.isLoggedIn) {
                     console.warn('⚠️ Session lost at:', new Date().toLocaleTimeString());
-                    // Don't auto-redirect, just log
                 } else {
                     console.log('✅ Session active - Role:', data.role);
                 }
@@ -78,7 +85,6 @@ function initSessionDebug() {
     }, 30000);
 }
 
-// Helper to get anti-forgery token
 function getAntiForgeryToken() {
     const token = document.querySelector('input[name="__RequestVerificationToken"]');
     return token ? token.value : '';

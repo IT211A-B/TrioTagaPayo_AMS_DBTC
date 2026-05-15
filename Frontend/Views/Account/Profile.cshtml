@@ -1,0 +1,102 @@
+﻿@model AMS.ViewModels.ProfileViewModel
+@{
+    ViewData["Title"] = "Profile Settings";
+    Layout = "_Layout";
+    var role = Context.Session.GetString("Role");
+    var displayName = role == "Teacher"
+        ? Context.Session.GetString("TeacherName")
+        : Context.Session.GetString("Username");
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/profile.css" />
+}
+
+<div class="profile-container">
+    <div class="profile-card">
+        <div class="profile-header">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <div id="profilePhotoWrapper" class="profile-photo-clickable">
+                    @if (!string.IsNullOrEmpty(Model.ProfilePhotoUrl))
+                    {
+                        <!-- NOTE: Backend must return absolute URL or relative to base -->
+                        <img id="profilePhotoImg"
+                             src="@Model.ProfilePhotoUrl"
+                             alt="Profile Photo"
+                             class="profile-avatar-clickable"
+                             onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'120\' height=\'120\' viewBox=\'0 0 120 120\'%3E%3Crect width=\'120\' height=\'120\' fill=\'%23d81b60\'/%3E%3Ctext x=\'50%25\' y=\'50%25\' dominant-baseline=\'middle\' text-anchor=\'middle\' fill=\'white\' font-size=\'48\' font-family=\'Arial\'%3E@(displayName?.FirstOrDefault() ?? 'U')%3C/text%3E%3C/svg%3E'">
+                    }
+                    else
+                    {
+                        <div class="avatar-initial-large">
+                            <span>@(displayName?.FirstOrDefault().ToString().ToUpper() ?? "U")</span>
+                        </div>
+                    }
+                    <div class="photo-camera-badge">📷</div>
+                </div>
+                <p class="photo-click-hint">Click the photo to view or change</p>
+            </div>
+            <h2>@displayName</h2>
+            <div class="profile-role">@Model.Role</div>
+        </div>
+
+        <div class="profile-body">
+            <form id="profileForm" method="post">
+                @Html.AntiForgeryToken()
+                <div class="form-group">
+                    <label>FULL NAME</label>
+                    <input type="text" id="fullName" name="fullName" class="form-input" value="@displayName">
+                </div>
+                <div class="form-group">
+                    <label>EMAIL</label>
+                    <input type="email" id="email" name="email" class="form-input" value="@Model.Email">
+                </div>
+                <div class="form-group">
+                    <label>CURRENT PASSWORD</label>
+                    <input type="password" id="currentPassword" name="currentPassword" class="form-input" placeholder="Enter current password">
+                </div>
+                <div class="form-group">
+                    <label>NEW PASSWORD</label>
+                    <input type="password" id="newPassword" name="newPassword" class="form-input" placeholder="Enter new password">
+                </div>
+                <div class="form-group">
+                    <label>CONFIRM PASSWORD</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-input" placeholder="Confirm new password">
+                </div>
+                <div class="info-banner">
+                    <span>ℹ️</span>
+                    <span>Admin accounts are managed separately. Only name and password can be changed.</span>
+                </div>
+                <div class="form-actions">
+                    <a href="/Dashboard" class="btn-secondary">Cancel</a>
+                    <button type="submit" id="saveBtn" class="btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Hidden file input – field name must match controller parameter "profilePhoto" -->
+<input type="file" id="photoFileInput" accept="image/jpeg,image/png,image/gif,image/webp" style="display: none;">
+
+<div id="photoModal" class="photo-option-modal">
+    <div class="photo-modal-content">
+        <span id="closeModal" class="modal-close-btn">&times;</span>
+        <img id="modalPhotoPreview" class="modal-photo-preview" src="" alt="Profile Photo">
+        <h3 class="modal-title">Profile Photo</h3>
+        <div class="modal-buttons">
+            <button id="viewFullBtn" class="modal-btn modal-btn-view">👁️ View Full Size</button>
+            <button id="changePhotoBtn" class="modal-btn modal-btn-change">📷 Change Photo</button>
+            <button id="cancelPhotoBtn" class="modal-btn modal-btn-cancel">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<div id="fullImageViewer" class="full-image-viewer">
+    <span id="closeFullView" class="full-viewer-close">&times;</span>
+    <img id="fullSizeImage" class="full-size-image" src="" alt="Full Size">
+</div>
+
+@section Scripts {
+    <script src="~/js/pages/profile.js"></script>
+}

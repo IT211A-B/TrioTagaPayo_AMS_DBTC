@@ -6,6 +6,10 @@
     ViewData["ActivePage"] = "MyCourses";
 }
 
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/my-courses.css" />
+}
+
 <div class="page-header">
     <div>
         <h2>My Courses</h2>
@@ -46,6 +50,28 @@
     }
 </div>
 
+<!-- QR CODE MODAL -->
+<div class="modal-overlay" id="qrModal">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3>Course Enrollment QR</h3>
+            <button class="modal-close" id="closeQrModalBtn">×</button>
+        </div>
+        <div class="modal-body" style="text-align: center;">
+            <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
+                <div class="spinner-ring"></div>
+            </div>
+            <p><strong>Course:</strong> <span id="qrCourseName"></span></p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
+            <p style="font-size: 12px; color: #64748b;">Students will need their Student ID and Full Name</p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn-primary" id="closeModalBtn">Close</button>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
     <script src="~/js/pages/teacher-dashboard.js"></script>
-}   
+    <script src="~/js/pages/my-courses.js"></script>
+}
