@@ -26,6 +26,12 @@ namespace AMS.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
+        private bool IsApiCall()
+        {
+            return Request.Headers["X-Requested-With"] == "XMLHttpRequest" ||
+                   Request.ContentType?.Contains("application/json") == true;
+        }
+
         [AllowAnonymous]
         [HttpGet]
         public IActionResult Login()
@@ -50,6 +56,10 @@ namespace AMS.Controllers
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
+                if (IsApiCall())
+                {
+                    return Json(new { success = false, message = "Username and password are required" });
+                }
                 ViewBag.Error = "Username and password are required";
                 return View();
             }
@@ -112,7 +122,6 @@ namespace AMS.Controllers
                         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity));
                     }
 
-                    // Load profile photo from backend after login
                     var profile = await _api.GetUserProfileAsync();
                     if (profile != null && !string.IsNullOrEmpty(profile.ProfilePhotoUrl))
                     {
@@ -122,9 +131,31 @@ namespace AMS.Controllers
                         HttpContext.Session.SetString("ProfilePicture", fullPhotoUrl);
                     }
 
+                    if (IsApiCall())
+                    {
+                        string redirectUrl = "/";
+                        if (result.Role == "Admin") redirectUrl = "/Admin/Dashboard";
+                        else if (result.Role == "Teacher") redirectUrl = "/Teacher/Dashboard";
+                        else if (result.Role == "Student") redirectUrl = "/Student/Dashboard";
+
+                        return Json(new
+                        {
+                            success = true,
+                            token = result.Token,
+                            role = result.Role,
+                            username = result.Username,
+                            redirectUrl = redirectUrl
+                        });
+                    }
+
                     if (result.Role == "Admin") return RedirectToAction("Dashboard", "Admin");
                     if (result.Role == "Teacher") return RedirectToAction("Dashboard", "Teacher");
                     if (result.Role == "Student") return RedirectToAction("Dashboard", "Student");
+                }
+
+                if (IsApiCall())
+                {
+                    return Json(new { success = false, message = "Invalid username or password" });
                 }
 
                 ViewBag.Error = "Invalid username or password";
@@ -132,14 +163,26 @@ namespace AMS.Controllers
             }
             catch (Exception ex)
             {
-                if (ex.Message.Contains("Connection refused") || ex.Message.Contains("timed out") || ex.Message.Contains("502"))
+                string errorMsg = ex.Message;
+                bool isWakingUp = errorMsg.Contains("Connection refused") || errorMsg.Contains("timed out") || errorMsg.Contains("502");
+
+                if (IsApiCall())
+                {
+                    if (isWakingUp)
+                    {
+                        return Json(new { success = false, message = "Server is waking up from cold start. Please wait...", isWakingUp = true });
+                    }
+                    return Json(new { success = false, message = $"Login failed: {errorMsg}" });
+                }
+
+                if (isWakingUp)
                 {
                     ViewBag.IsWakingUp = true;
                     ViewBag.Error = "Server is waking up from cold start. Please wait...";
                 }
                 else
                 {
-                    ViewBag.Error = $"Login failed: {ex.Message}";
+                    ViewBag.Error = $"Login failed: {errorMsg}";
                 }
                 return View();
             }
@@ -156,6 +199,10 @@ namespace AMS.Controllers
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
+                if (IsApiCall())
+                {
+                    return Json(new { success = false, message = "Student ID and password are required" });
+                }
                 ViewBag.Error = "Student ID and password are required";
                 return View();
             }
@@ -193,13 +240,35 @@ namespace AMS.Controllers
                         HttpContext.Session.SetString("ProfilePicture", fullPhotoUrl);
                     }
 
+                    if (IsApiCall())
+                    {
+                        return Json(new
+                        {
+                            success = true,
+                            token = result.Token,
+                            role = result.Role,
+                            username = result.Username,
+                            redirectUrl = "/Student/Dashboard"
+                        });
+                    }
+
                     return RedirectToAction("Dashboard", "Student");
                 }
+
+                if (IsApiCall())
+                {
+                    return Json(new { success = false, message = "Invalid student credentials" });
+                }
+
                 ViewBag.Error = "Invalid student credentials";
                 return View();
             }
             catch (Exception ex)
             {
+                if (IsApiCall())
+                {
+                    return Json(new { success = false, message = $"Login failed: {ex.Message}" });
+                }
                 ViewBag.Error = $"Login failed: {ex.Message}";
                 return View();
             }
