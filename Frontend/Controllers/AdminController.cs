@@ -314,7 +314,7 @@ public class AdminController : Controller
     }
 
     // =============================================
-    // QR CODE GENERATION (ENROLLMENT)
+    // QR CODE GENERATION - FIXED with relative URL
     // =============================================
 
     [HttpGet]
@@ -333,13 +333,16 @@ public class AdminController : Controller
 
         try
         {
+            // FIXED: Use relative URL instead of hardcoded localhost
             var enrollmentUrl = $"/Student/SelfEnroll?courseId={courseId}";
+
             using (var qrGenerator = new QRCodeGenerator())
             using (var qrCodeData = qrGenerator.CreateQrCode(enrollmentUrl, QRCodeGenerator.ECCLevel.Q))
             using (var qrCode = new PngByteQRCode(qrCodeData))
             {
                 var qrCodeBytes = qrCode.GetGraphic(20);
                 var qrCodeBase64 = Convert.ToBase64String(qrCodeBytes);
+
                 return Json(new { success = true, qrCode = qrCodeBase64, courseName = course.CourseName });
             }
         }
@@ -348,11 +351,6 @@ public class AdminController : Controller
             return Json(new { success = false, message = $"QR generation failed: {ex.Message}" });
         }
     }
-
-    // =============================================
-    // QR CODE GENERATION (ATTENDANCE)
-    // =============================================
-
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GenerateAttendanceQR(int courseId, string date)
