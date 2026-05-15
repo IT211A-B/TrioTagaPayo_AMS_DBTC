@@ -314,7 +314,7 @@ public class AdminController : Controller
     }
 
     // =============================================
-    // QR CODE GENERATION - FIXED with relative URL
+    // QR CODE GENERATION (ENROLLMENT)
     // =============================================
 
     [HttpGet]
@@ -333,18 +333,51 @@ public class AdminController : Controller
 
         try
         {
-            // FIXED: Use relative URL instead of hardcoded localhost
             var enrollmentUrl = $"/Student/SelfEnroll?courseId={courseId}";
-
             using (var qrGenerator = new QRCodeGenerator())
             using (var qrCodeData = qrGenerator.CreateQrCode(enrollmentUrl, QRCodeGenerator.ECCLevel.Q))
             using (var qrCode = new PngByteQRCode(qrCodeData))
             {
                 var qrCodeBytes = qrCode.GetGraphic(20);
                 var qrCodeBase64 = Convert.ToBase64String(qrCodeBytes);
-
                 return Json(new { success = true, qrCode = qrCodeBase64, courseName = course.CourseName });
             }
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"QR generation failed: {ex.Message}" });
+        }
+    }
+
+    // =============================================
+    // QR CODE GENERATION (ATTENDANCE)
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> GenerateAttendanceQR(int courseId, string date)
+    {
+        var adminCheck = RequireAdmin();
+        if (adminCheck != null) return adminCheck;
+
+        var courses = await _api.GetAllAsync<CourseApiModel>("/api/Course");
+        var course = courses.FirstOrDefault(c => c.Id == courseId);
+        if (course == null) return Json(new { success = false, message = "Course not found" });
+
+        if (string.IsNullOrEmpty(date))
+            date = DateTime.Today.ToString("yyyy-MM-dd");
+
+        var baseUrl = $"{Request.Scheme}://{Request.Host}";
+        var attendanceUrl = $"{baseUrl}/Student/RecordAttendance?courseId={courseId}&date={date}";
+
+        try
+        {
+            using var qrGenerator = new QRCodeGenerator();
+            using var qrCodeData = qrGenerator.CreateQrCode(attendanceUrl, QRCodeGenerator.ECCLevel.Q);
+            using var qrCode = new PngByteQRCode(qrCodeData);
+            var qrCodeBytes = qrCode.GetGraphic(20);
+            var qrCodeBase64 = Convert.ToBase64String(qrCodeBytes);
+            return Json(new { success = true, qrCode = qrCodeBase64, courseName = course.CourseName, date = date });
         }
         catch (Exception ex)
         {
