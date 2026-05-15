@@ -146,7 +146,7 @@ builder.Services.AddCors(options =>
                 "http://localhost:3000",            // React
                 "http://localhost:5173",            // Vite
                 "http://localhost:4200",            // Angular
-                "https://your-frontend.onrender.com" // Replace with your actual frontend URL
+                "https://triotagapayo-ams-dbtc-vzpc.onrender.com" // Replace with your actual frontend URL
             )
             .AllowAnyHeader()
             .AllowAnyMethod()
