@@ -171,7 +171,7 @@ namespace AMS.Services
 
         public async Task<LoginApiResponse?> LoginAsync(string username, string password)
         {
-            var request = new HttpRequestMessage(HttpMethod.Post, "/Account/Login");
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/Auth/login");
             request.Content = ToJson(new { username, password });
             request.Headers.Add("X-Requested-With", "XMLHttpRequest");
 
