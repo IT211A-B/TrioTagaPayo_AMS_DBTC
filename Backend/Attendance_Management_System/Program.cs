@@ -246,6 +246,7 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseCors("ProductionCors");
+app.UseStaticFiles();
 app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
