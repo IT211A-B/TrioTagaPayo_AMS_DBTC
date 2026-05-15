@@ -1,0 +1,33 @@
+﻿/* AMS — site.css (Main Import File) */
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+
+/* Base */
+@import 'base/reset.css';
+@import 'base/variables.css';
+
+/* Layouts */
+@import 'layouts/sidebar.css';
+@import 'layouts/topbar.css';
+@import 'layouts/main.css';
+
+/* Components */
+@import 'components/buttons.css';
+@import 'components/badges.css';
+@import 'components/cards.css';
+@import 'components/forms.css';
+@import 'components/tables.css';
+@import 'components/modals.css';
+@import 'components/toast.css';
+
+/* Pages */
+@import 'pages/dashboard.css';
+@import 'pages/attendance.css';
+@import 'pages/login.css';
+@import 'pages/courses.css';
+@import 'pages/students.css';
+@import 'pages/teachers.css';
+@import 'pages/profile.css'; /* MAKE SURE THIS IS INCLUDED */
+
+/* Utilities */
+@import 'utilities/display.css';
+@import 'utilities/responsive.css';

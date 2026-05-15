@@ -1,0 +1,86 @@
+﻿/* ═══════════════════════════════════════════
+   AMS — components/forms.css
+   ═══════════════════════════════════════════ */
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 14px;
+}
+
+    .form-group label,
+    .form-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: rgba(148,163,184,0.8);
+    }
+
+.req {
+    color: var(--pink);
+}
+
+.form-input,
+.form-select {
+    width: 100%;
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border2);
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    border-radius: 0;
+}
+
+    .form-input::placeholder {
+        color: #334155;
+    }
+
+    .form-input:focus,
+    .form-select:focus {
+        border-color: rgba(216,27,96,0.5);
+        box-shadow: 0 0 0 2px rgba(216,27,96,0.12);
+        background: rgba(216,27,96,0.04);
+    }
+
+.form-select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M2 4l4 4 4-4' stroke='%23475569' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    padding-right: 32px;
+}
+
+    .form-select option {
+        background: var(--dark3);
+        color: var(--text);
+    }
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.info-message {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 3px solid #38bdf8;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-size: 12px;
+}
+
+    .info-message p {
+        margin: 4px 0;
+        color: #94a3b8;
+    }
+
+    .info-message strong {
+        color: #38bdf8;
+    }

@@ -1,0 +1,193 @@
+﻿/* ═══════════════════════════════════════════
+   AMS — components/cards.css
+   ═══════════════════════════════════════════ */
+
+/* Stat Cards */
+.stat-card {
+    background: linear-gradient(135deg, rgba(13,26,42,0.9), rgba(11,21,34,0.95));
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    cursor: default;
+    transition: all 0.2s;
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 12px, 100% 100%, 0 100%);
+}
+
+    .stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 12px;
+        height: 12px;
+        border-top: 1px solid rgba(56,189,248,0.3);
+        border-right: 1px solid rgba(56,189,248,0.3);
+    }
+
+    .stat-card::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: linear-gradient(90deg, var(--stat-color, var(--teal)), transparent);
+    }
+
+    .stat-card:hover {
+        border-color: rgba(56,189,248,0.25);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 0 20px rgba(56,189,248,0.05);
+    }
+
+    .stat-card:nth-child(1)::after {
+        background: linear-gradient(90deg, var(--teal), transparent);
+    }
+
+    .stat-card:nth-child(2)::after {
+        background: linear-gradient(90deg, var(--green), transparent);
+    }
+
+    .stat-card:nth-child(3)::after {
+        background: linear-gradient(90deg, var(--pink), transparent);
+    }
+
+    .stat-card:nth-child(4)::after {
+        background: linear-gradient(90deg, var(--amber), transparent);
+    }
+
+    .stat-card:nth-child(1) .stat-icon {
+        color: var(--teal);
+        border-color: rgba(56,189,248,0.2);
+    }
+
+    .stat-card:nth-child(2) .stat-icon {
+        color: var(--green);
+        border-color: rgba(34,197,94,0.2);
+        background: rgba(34,197,94,0.08);
+    }
+
+    .stat-card:nth-child(3) .stat-icon {
+        color: var(--pink-light);
+        border-color: rgba(216,27,96,0.2);
+        background: rgba(216,27,96,0.08);
+    }
+
+    .stat-card:nth-child(4) .stat-icon {
+        color: var(--amber);
+        border-color: rgba(245,158,11,0.2);
+        background: rgba(245,158,11,0.08);
+    }
+
+    .stat-card:nth-child(1) .stat-value {
+        color: var(--teal);
+    }
+
+    .stat-card:nth-child(2) .stat-value {
+        color: var(--green);
+    }
+
+    .stat-card:nth-child(3) .stat-value {
+        color: var(--pink-light);
+    }
+
+    .stat-card:nth-child(4) .stat-value {
+        color: var(--amber);
+    }
+
+.stat-icon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 14px;
+    background: rgba(56,189,248,0.08);
+    border: 1px solid rgba(56,189,248,0.15);
+    font-size: 18px;
+    clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 0 100%);
+}
+
+.stat-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: 6px;
+}
+
+.stat-value {
+    font-family: 'Outfit', sans-serif;
+    font-size: 32px;
+    font-weight: 900;
+    color: var(--text);
+    letter-spacing: -0.04em;
+    line-height: 1;
+}
+
+.stat-hint {
+    font-size: 11px;
+    color: #334155;
+    margin-top: 6px;
+    letter-spacing: 0.02em;
+}
+
+/* Stat Pills */
+.stat-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'Outfit', sans-serif;
+    padding: 2px 8px;
+    margin-top: 8px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.pill-green {
+    background: var(--green-dim);
+    color: #4ade80;
+}
+
+.pill-amber {
+    background: var(--amber-dim);
+    color: #fcd34d;
+}
+
+.pill-red {
+    background: var(--red-dim);
+    color: #f87171;
+}
+
+.pill-blue {
+    background: var(--teal-dim);
+    color: var(--teal);
+}
+
+/* Stats Row Layout */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 28px;
+}
+
+@media (max-width: 1024px) {
+    .stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-row {
+        grid-template-columns: 1fr;
+    }
+
+    .stat-value {
+        font-size: 28px;
+    }
+}

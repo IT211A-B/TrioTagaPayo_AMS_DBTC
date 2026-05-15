@@ -1,0 +1,197 @@
+﻿/* ═══════════════════════════════════════════
+   AMS — components/modals.css
+   ═══════════════════════════════════════════ */
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4,2,10,0.80);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s, visibility 0.25s;
+}
+
+    .modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+    }
+
+/* Modal Card */
+.modal-card {
+    background: linear-gradient(135deg, var(--dark3), var(--dark2));
+    border: 1px solid rgba(216,27,96,0.18);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.04) inset, var(--shadow-lg);
+    transform: translateY(16px) scale(0.97);
+    transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
+    clip-path: polygon(0 0, calc(100% - 16px) 0, 100% 16px, 100% 100%, 0 100%);
+}
+
+.modal-overlay.active .modal-card {
+    transform: translateY(0) scale(1);
+}
+
+.modal-sm {
+    max-width: 420px;
+}
+
+.modal-lg {
+    max-width: 640px;
+}
+
+/* Modal Header */
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 0;
+}
+
+    .modal-header h3 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 15px;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+.modal-close {
+    width: 28px;
+    height: 28px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--border2);
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    font-size: 18px;
+    line-height: 1;
+    font-family: 'Outfit', sans-serif;
+}
+
+    .modal-close:hover {
+        background: rgba(216,27,96,0.1);
+        color: var(--pink);
+        border-color: rgba(216,27,96,0.3);
+    }
+
+/* Modal Body & Footer */
+.modal-body {
+    padding: 20px 24px 24px;
+}
+
+.modal-sub {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border2);
+}
+
+/* Profile View in Modal */
+.profile-view {
+    text-align: center;
+}
+
+.profile-avatar {
+    width: 72px;
+    height: 72px;
+    background: linear-gradient(135deg, var(--pink), var(--pink-dark));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    font-weight: 700;
+    color: #fff;
+    margin: 0 auto 14px;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+    letter-spacing: 0.05em;
+}
+
+.profile-name {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--text);
+    margin-bottom: 4px;
+    letter-spacing: 0.02em;
+}
+
+.profile-id {
+    font-size: 12px;
+    color: var(--teal);
+    margin-bottom: 20px;
+    letter-spacing: 0.06em;
+    font-family: 'Outfit', sans-serif;
+}
+
+.profile-details {
+    text-align: left;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--border2);
+    padding: 14px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border2);
+    gap: 12px;
+}
+
+    .detail-row:last-child {
+        border-bottom: none;
+    }
+
+.detail-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    flex-shrink: 0;
+}
+
+.detail-row span:last-child {
+    font-size: 13px;
+    color: var(--text2);
+    text-align: right;
+}
+
+/* Delete Icon */
+.delete-icon {
+    width: 52px;
+    height: 52px;
+    background: rgba(239,68,68,0.10);
+    border: 1px solid rgba(239,68,68,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    font-size: 22px;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 8px, 100% 100%, 0 100%);
+}

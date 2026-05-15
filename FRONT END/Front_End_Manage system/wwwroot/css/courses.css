@@ -1,0 +1,15 @@
+﻿/* courses.css — Wireframe v9 redesign */
+
+/* course-code-badge already in site.css; this adds any page-specific overrides */
+.course-code-badge {
+    font-family: 'Outfit', sans-serif;
+    letter-spacing: 0.08em;
+}
+
+/* Course profile view avatar shows code text */
+.profile-avatar[style*="border-radius:10px"] {
+    font-size: 11px !important;
+    letter-spacing: 0.05em;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 900;
+}
