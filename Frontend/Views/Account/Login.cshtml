@@ -11,7 +11,7 @@ string errorMsg = ViewBag.Error as string ?? "";
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login — AMS</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="/css/site.css" />
 </head>
 <body class="login-body">
 
@@ -20,7 +20,7 @@ string errorMsg = ViewBag.Error as string ?? "";
 
             <div class="login-logo-wrap">
                 <div class="l-logo">
-                    <img src="~/images/logo.png" alt="3TagaPayu" />
+                    <img src="/images/logo.png" alt="3TagaPayu" />
                 </div>
             </div>
 
@@ -29,23 +29,7 @@ string errorMsg = ViewBag.Error as string ?? "";
 
             @if (!string.IsNullOrEmpty(errorMsg))
             {
-                if (isWakingUp)
-                {
-                    <div class="error-msg warning" id="wakeMsg">
-                        <div class="wake-header">
-                            <span>⏳</span>
-                            <strong>Server Waking Up</strong>
-                        </div>
-                        <div>@errorMsg</div>
-                        <div class="wake-retry">
-                            Auto-retrying in <span id="countdown">30</span>s...
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div class="error-msg" id="errorMsg">@errorMsg</div>
-                }
+                <div class="error-msg" id="errorMsg">@errorMsg</div>
             }
 
             <form method="post" asp-action="Login" asp-controller="Account" id="loginForm">
@@ -83,7 +67,7 @@ string errorMsg = ViewBag.Error as string ?? "";
                 </div>
 
                 <button type="submit" class="login-btn" id="loginBtn">
-                    <div class="btn-spinner" id="btnSpinner"></div>
+                    <div class="btn-spinner" id="btnSpinner" style="display:none;"></div>
                     <span id="btnText">LOGIN</span>
                 </button>
             </form>
@@ -94,12 +78,15 @@ string errorMsg = ViewBag.Error as string ?? "";
                 <div class="divider-line"></div>
             </div>
 
+            <div style="text-align: center; margin-top: 20px; font-size: 12px; color: #475569;">
+                <a href="@Url.Action("StudentLogin", "Account")" style="color: #38bdf8;">Student Login →</a>
+            </div>
+
         </div>
     </div>
 
     <div class="l-art-panel">
-        <img src="~/images/background.png" class="l-art-img" alt="Background"
-             onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #0a0010 0%, #1a0030 40%, #2d0050 100%)';" />
+        <img src="/images/background.png" class="l-art-img" alt="Background" onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #0a0010 0%, #1a0030 40%, #2d0050 100%)';" />
         <div class="l-art-overlay"></div>
         <div class="l-scanlines"></div>
         <div class="l-accent-v"></div>
@@ -138,7 +125,7 @@ string errorMsg = ViewBag.Error as string ?? "";
             var spinner = document.getElementById('btnSpinner');
             var text = document.getElementById('btnText');
             btn.disabled = true;
-            spinner.style.display = 'block';
+            spinner.style.display = 'inline-block';
             text.textContent = 'CONNECTING...';
         });
 
