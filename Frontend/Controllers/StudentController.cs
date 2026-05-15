@@ -2,6 +2,7 @@
 using AMS.Services;
 using AMS.Models;
 using AMS.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace AMS.Controllers
 {
@@ -15,11 +16,13 @@ namespace AMS.Controllers
         }
 
         private bool IsLoggedIn() => !string.IsNullOrEmpty(HttpContext.Session.GetString("JwtToken"));
+
         private bool IsStudent()
         {
             var role = HttpContext.Session.GetString("Role");
             return role == "Student" || role == "student";
         }
+
         private IActionResult RequireLogin() => RedirectToAction("StudentLogin", "Account");
 
         // ─────────────────────────────────────────────────────
@@ -101,40 +104,109 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
-        // RECORD ATTENDANCE (from direct QR scan)
+        // RECORD ATTENDANCE (GUEST MODE - AUTO-CREATE STUDENT)
         // ─────────────────────────────────────────────────────
+        [AllowAnonymous]
         [HttpGet]
-        public async Task<IActionResult> RecordAttendance(int courseId, string date)
+        public IActionResult RecordAttendance(int courseId, string date)
         {
-            if (!IsLoggedIn()) return Unauthorized();
-            if (!IsStudent()) return Unauthorized();
+            ViewBag.CourseId = courseId;
+            ViewBag.Date = date;
 
-            var studentIdStr = HttpContext.Session.GetString("StudentId");
-            if (string.IsNullOrEmpty(studentIdStr) || !int.TryParse(studentIdStr, out int studentId))
-                return Json(new { success = false, message = "Student not found. Please log in again." });
-
-            if (!DateOnly.TryParse(date, out _))
-                return Json(new { success = false, message = "Invalid date format." });
-
-            var body = new
+            return View(new RecordAttendanceViewModel
             {
-                studentId = studentId,
-                courseId = courseId,
-                date = date,
-                status = "Present",
-                remarks = "Scanned via QR"
-            };
+                CourseId = courseId,
+                Date = date,
+                RequiresLogin = !IsLoggedIn()
+            });
+        }
 
-            var result = await _api.PostAsync<object>("/api/Attendance", body);
+        [AllowAnonymous]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> RecordAttendance([FromForm] RecordAttendanceRequest request)
+        {
+            try
+            {
+                int? studentId = null;
+                string studentFullName = request.StudentName ?? "";
 
-            if (result.Success)
-                return Json(new { success = true, message = "Attendance recorded successfully!" });
-            else
-                return Json(new { success = false, message = result.Error ?? "Failed to record attendance." });
+                // Step 1: Try to find existing student by StudentNo
+                var allStudents = await _api.GetAllAsync<StudentApiModel>("/api/Student");
+                StudentApiModel? existingStudent = null;
+
+                if (allStudents != null)
+                {
+                    existingStudent = allStudents.FirstOrDefault(s => s.StudentNo == request.StudentId);
+                }
+
+                if (existingStudent != null)
+                {
+                    studentId = existingStudent.Id;
+                    studentFullName = $"{existingStudent.FirstName} {existingStudent.LastName}";
+                }
+                else
+                {
+                    // Step 2: Auto-create student account
+                    string firstName = "Guest";
+                    string lastName = "Student";
+
+                    if (!string.IsNullOrEmpty(request.StudentName))
+                    {
+                        var nameParts = request.StudentName.Trim().Split(' ');
+                        firstName = nameParts[0];
+                        lastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "Student";
+                    }
+
+                    var newStudent = new
+                    {
+                        studentNo = request.StudentId ?? "",
+                        firstName = firstName,
+                        lastName = lastName,
+                        middleName = "",
+                        email = string.IsNullOrEmpty(request.StudentId) ? "guest@student.ams.edu" : $"{request.StudentId}@student.ams.edu",
+                        section = "Guest",
+                        mobileNo = ""
+                    };
+
+                    var createResult = await _api.PostAsync<StudentApiModel>("/api/Student", newStudent);
+                    if (createResult.Success && createResult.Data != null)
+                    {
+                        studentId = createResult.Data.Id;
+                    }
+                    else
+                    {
+                        return Json(new { success = false, message = "Failed to create student record" });
+                    }
+                }
+
+                // Step 3: Record attendance
+                var attendanceData = new
+                {
+                    studentId = studentId,
+                    courseId = request.CourseId,
+                    date = request.Date,
+                    status = "Present",
+                    remarks = "Scanned via QR"
+                };
+
+                var apiResult = await _api.PostAsync<object>("/api/Attendance", attendanceData);
+
+                if (apiResult.Success)
+                {
+                    return Json(new { success = true, message = $"Attendance recorded for {studentFullName}!" });
+                }
+
+                return Json(new { success = false, message = apiResult.Error ?? "Failed to record attendance" });
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
         }
 
         // ─────────────────────────────────────────────────────
-        // PROCESS SCANNED QR CODE (handles both sessionId and direct URL)
+        // PROCESS SCANNED QR CODE
         // ─────────────────────────────────────────────────────
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -151,13 +223,32 @@ namespace AMS.Controllers
                     var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
                     var courseId = query["courseId"];
                     var date = query["date"];
+
                     if (!string.IsNullOrEmpty(courseId) && !string.IsNullOrEmpty(date))
                     {
-                        return await RecordAttendance(int.Parse(courseId), date);
+                        var studentIdStr = HttpContext.Session.GetString("StudentId");
+                        if (!string.IsNullOrEmpty(studentIdStr) && int.TryParse(studentIdStr, out int loggedInStudentId))
+                        {
+                            var attendanceData = new
+                            {
+                                studentId = loggedInStudentId,
+                                courseId = int.Parse(courseId),
+                                date = date,
+                                status = "Present",
+                                remarks = "Scanned via QR (Logged In)"
+                            };
+                            var result = await _api.PostAsync<object>("/api/Attendance", attendanceData);
+                            if (result.Success)
+                            {
+                                return Json(new { success = true, message = "Attendance recorded successfully!" });
+                            }
+                            return Json(new { success = false, message = result.Error ?? "Failed to record attendance" });
+                        }
+                        return Json(new { success = false, message = "Student not found. Please log in again." });
                     }
                 }
 
-                // Otherwise, treat as sessionId (original enrollment/attendance session QR)
+                // Otherwise, treat as sessionId
                 string sessionId = "";
                 if (qrData.Contains("sessionId="))
                 {
@@ -169,20 +260,20 @@ namespace AMS.Controllers
                     sessionId = qrData;
                 }
 
-                var result = await _api.PostAsync<ScanResultApiModel>($"/api/QR/scan?sessionId={sessionId}", null);
+                var scanResult = await _api.PostAsync<ScanResultApiModel>($"/api/QR/scan?sessionId={sessionId}", null);
 
-                if (result.Success && result.Data != null)
+                if (scanResult.Success && scanResult.Data != null)
                 {
                     return Json(new
                     {
                         success = true,
-                        message = $"Attendance recorded! Status: {result.Data.Status}",
-                        status = result.Data.Status
+                        message = $"Attendance recorded! Status: {scanResult.Data.Status}",
+                        status = scanResult.Data.Status
                     });
                 }
                 else
                 {
-                    return Json(new { success = false, message = result.Error ?? "Failed to record attendance" });
+                    return Json(new { success = false, message = scanResult.Error ?? "Failed to record attendance" });
                 }
             }
             catch (Exception ex)
@@ -233,7 +324,7 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
-        // MY COURSES (student's enrolled courses)
+        // MY COURSES
         // ─────────────────────────────────────────────────────
         public async Task<IActionResult> MyCourses()
         {
@@ -276,14 +367,8 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
-        // SELF ENROLLMENT PAGE (from enrollment QR)
+        // VIEW MODELS
         // ─────────────────────────────────────────────────────
-        [HttpGet]
-        public IActionResult SelfEnroll(int courseId)
-        {
-            ViewBag.CourseId = courseId;
-            return View();
-        }
         public class RecordAttendanceViewModel
         {
             public int CourseId { get; set; }
