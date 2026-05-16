@@ -283,7 +283,7 @@ namespace Attendance_Management_System.Controllers
                 if (student != null) email = student.Email;
             }
 
-            var frontendUrl = _configuration["FrontendUrl"] ?? "https://localhost:7033";
+            var frontendUrl = _configuration["FrontendUrl"] ?? "https://triotagapayo-ams-dbtc-vzpc.onrender.com/";
             var verificationLink = $"{frontendUrl}/verify-email?token={user.EmailVerificationToken}";
             var emailBody = $@"
                 <html>
