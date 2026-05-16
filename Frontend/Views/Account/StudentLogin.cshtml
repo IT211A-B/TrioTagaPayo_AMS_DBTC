@@ -1,6 +1,8 @@
 ﻿@{
     Layout = null;
     ViewData["Title"] = "Student Login";
+}
+@{
     string errorMsg = ViewBag.Error as string ?? "";
 }
 
@@ -29,7 +31,7 @@
             @if (!string.IsNullOrEmpty(errorMsg))
             {
                 <div class="error-msg">
-                    @("⚠️ " + errorMsg)
+                    <span>⚠️ </span>@errorMsg
                 </div>
             }
 

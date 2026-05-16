@@ -6,20 +6,18 @@
     ViewData["ActivePage"] = "Courses";
 }
 
-@section PageStyles {
-    <link rel="stylesheet" href="~/css/pages/courses.css" />
-}
-
-@{ 
+@{
     var courseCode = Model.CourseCode ?? "";
     var courseName = Model.CourseName ?? "";
     var units = Model.Units;
-    var section = Model.Section ?? "";
+    var courseSection = Model.Section ?? "";
     var schedule = Model.Schedule ?? "";
     var teacherId = Model.TeacherId;
     var dbId = Model.DbId;
     var hasTeachers = ViewBag.Teachers != null && ViewBag.Teachers.Count > 0;
 }
+
+<link rel="stylesheet" href="~/css/pages/courses.css" />
 
 <div class="page-header">
     <div>
@@ -52,7 +50,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label>Section <span class="req">*</span></label>
-                <input type="text" name="section" class="form-input" value="@section" required />
+                <input type="text" name="section" class="form-input" value="@courseSection" required />
             </div>
             <div class="form-group">
                 <label>Schedule <span class="req">*</span></label>
@@ -88,34 +86,32 @@
     </form>
 </div>
 
-@section Scripts {
-    <script>
-        (function() {
-            var form = document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    var courseCode = document.querySelector('input[name="courseCode"]');
-                    var courseName = document.querySelector('input[name="courseName"]');
-                    var section = document.querySelector('input[name="section"]');
-                    var schedule = document.querySelector('input[name="schedule"]');
-                    var teacherId = document.querySelector('select[name="teacherId"]');
-                    
-                    var codeValue = courseCode ? courseCode.value.trim() : '';
-                    var nameValue = courseName ? courseName.value.trim() : '';
-                    var sectionValue = section ? section.value.trim() : '';
-                    var scheduleValue = schedule ? schedule.value.trim() : '';
-                    var teacherValue = teacherId ? teacherId.value : '';
+<script>
+    (function() {
+        var form = document.querySelector('form');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                var courseCodeInput = document.querySelector('input[name="courseCode"]');
+                var courseNameInput = document.querySelector('input[name="courseName"]');
+                var sectionInput = document.querySelector('input[name="section"]');
+                var scheduleInput = document.querySelector('input[name="schedule"]');
+                var teacherIdSelect = document.querySelector('select[name="teacherId"]');
 
-                    if (!codeValue || !nameValue || !sectionValue || !scheduleValue || !teacherValue) {
-                        e.preventDefault();
-                        if (typeof Toast !== 'undefined') {
-                            Toast.warning('Please fill in all required fields.');
-                        } else {
-                            alert('Please fill in all required fields.');
-                        }
+                var codeValue = courseCodeInput ? courseCodeInput.value.trim() : '';
+                var nameValue = courseNameInput ? courseNameInput.value.trim() : '';
+                var sectionValue = sectionInput ? sectionInput.value.trim() : '';
+                var scheduleValue = scheduleInput ? scheduleInput.value.trim() : '';
+                var teacherValue = teacherIdSelect ? teacherIdSelect.value : '';
+
+                if (!codeValue || !nameValue || !sectionValue || !scheduleValue || !teacherValue) {
+                    e.preventDefault();
+                    if (typeof Toast !== 'undefined') {
+                        Toast.warning('Please fill in all required fields.');
+                    } else {
+                        alert('Please fill in all required fields.');
                     }
-                });
-            }
-        })();
-    </script>
-}
+                }
+            });
+        }
+    })();
+</script>

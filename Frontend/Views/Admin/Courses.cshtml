@@ -1,15 +1,20 @@
-﻿﻿@model AMS.ViewModels.CoursesPageViewModel
+﻿@model AMS.ViewModels.CoursesPageViewModel
 @{
     Layout = "~/Views/Shared/_AdminLayout.cshtml";
     ViewData["Title"] = "Courses";
     ViewData["PageTitle"] = "Courses";
     ViewData["ActivePage"] = "Courses";
 }
+
+@{
+    var hasCourses = Model.Courses.Any();
+    var searchValue = Model.Search ?? "";
+}
+
 @section PageStyles {
     <link rel="stylesheet" href="~/css/pages/courses.css" />
 }
 
-<!-- HEADER -->
 <div class="page-header">
     <div>
         <h2>Courses</h2>
@@ -18,50 +23,56 @@
     <button class="btn-primary" onclick="openAddModal()">+ Add Course</button>
 </div>
 
-<!-- FILTER BAR -->
 <div class="filter-bar">
     <div class="search-wrapper">
         <svg class="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="10" cy="10" r="7" />
             <path d="M21 21L15 15" />
         </svg>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search courses..." value="@Model.Search" oninput="filterCourses()" />
+        <input type="text" id="searchInput" class="search-input" placeholder="Search courses..." value="@searchValue" oninput="filterCourses()" />
     </div>
 </div>
 
-<!-- COURSES GRID - CARDS -->
 <div class="courses-grid" id="coursesGrid">
-    @if (Model.Courses.Any())
+    @if (hasCourses)
     {
         foreach (var c in Model.Courses)
         {
-            <div class="course-card" data-name="@c.CourseName.ToLower()" data-code="@c.CourseCode.ToLower()" data-id="@c.DbId">
+            var courseName = c.CourseName ?? "";
+            var courseCode = c.CourseCode ?? "";
+            var courseSection = c.Section ?? "";
+            var courseSchedule = c.Schedule ?? "";
+            var courseUnits = c.Units;
+            var courseTeacher = c.TeacherName ?? "";
+            var courseId = c.DbId;
+
+            <div class="course-card" data-name="@courseName.ToLower()" data-code="@courseCode.ToLower()" data-id="@courseId">
                 <div class="course-card-header">
-                    <div class="course-code">@c.CourseCode</div>
+                    <div class="course-code">@courseCode</div>
                     <div class="course-actions-dropdown">
                         <button class="dropdown-btn" onclick="toggleDropdown(this)">⋯</button>
                         <div class="dropdown-menu">
-                            <button onclick="viewCourse(@c.DbId,'@Html.Raw(c.CourseName)','@c.CourseCode','@c.Section','@Html.Raw(c.Schedule)','@c.Units','@Html.Raw(c.TeacherName)')">View</button>
-                            <button onclick="editCourse(@c.DbId,'@c.CourseCode','@Html.Raw(c.CourseName)','@c.Units','@c.Section','@Html.Raw(c.Schedule)','@c.TeacherId')">Edit</button>
-                            <button onclick="confirmDelete(@c.DbId,'@Html.Raw(c.CourseName)')">Delete</button>
+                            <button onclick="viewCourse(@courseId,'@Html.Raw(courseName)','@courseCode','@courseSection','@Html.Raw(courseSchedule)','@courseUnits','@Html.Raw(courseTeacher)')">View</button>
+                            <button onclick="editCourse(@courseId,'@courseCode','@Html.Raw(courseName)','@courseUnits','@courseSection','@Html.Raw(courseSchedule)','@c.TeacherId')">Edit</button>
+                            <button onclick="confirmDelete(@courseId,'@Html.Raw(courseName)')">Delete</button>
                         </div>
                     </div>
                 </div>
                 <div class="course-card-body">
-                    <h3 class="course-name">@c.CourseName</h3>
-                    <p class="course-teacher">@c.TeacherName</p>
+                    <h3 class="course-name">@courseName</h3>
+                    <p class="course-teacher">@courseTeacher</p>
                     <div class="course-details">
-                        <span class="course-schedule">📅 @c.Schedule</span>
-                        <span class="course-section">📚 @c.Section</span>
-                        <span class="course-units">⚡ @c.Units units</span>
+                        <span class="course-schedule">📅 @courseSchedule</span>
+                        <span class="course-section">📚 @courseSection</span>
+                        <span class="course-units">⚡ @courseUnits units</span>
                     </div>
                 </div>
                 <div class="course-card-footer">
                     <span class="student-count">👥 0 Students</span>
                     <div class="action-btns">
-                        <button class="btn-sm btn-view" onclick="viewCourseDetails(@c.DbId)">Details</button>
-                        <button class="btn-manage" onclick="manageCourse(@c.DbId)">Manage</button>
-                        <button class="btn-sm btn-primary" onclick="generateAttendanceQR(@c.DbId, '@Html.Raw(c.CourseName)')">📱 Attendance QR</button>
+                        <button class="btn-sm btn-view" onclick="viewCourseDetails(@courseId)">Details</button>
+                        <button class="btn-manage" onclick="manageCourse(@courseId)">Manage</button>
+                        <button class="btn-sm btn-primary" onclick="generateAttendanceQR(@courseId, '@Html.Raw(courseName)')">📱 Attendance QR</button>
                     </div>
                 </div>
             </div>
@@ -77,7 +88,6 @@
     }
 </div>
 
-<!-- ADD / EDIT MODAL -->
 <div class="modal-overlay" id="courseModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -121,7 +131,6 @@
                         .GroupBy(t => t.TeacherNo)
                         .Select(g => g.First())
                         .ToList();
-
                         foreach (var t in uniqueTeachers)
                         {
                             <option value="@t.DbId">@t.FullName (@t.TeacherNo)</option>
@@ -137,7 +146,6 @@
     </div>
 </div>
 
-<!-- VIEW MODAL -->
 <div class="modal-overlay" id="viewModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -151,7 +159,6 @@
     </div>
 </div>
 
-<!-- DELETE MODAL -->
 <div class="modal-overlay" id="deleteModal">
     <div class="modal-card modal-sm">
         <div class="modal-header">
@@ -159,10 +166,7 @@
             <button class="modal-close" onclick="closeModal('deleteModal')">×</button>
         </div>
         <div class="modal-body">
-            <p style="font-size:13px;color:var(--text2);line-height:1.6">
-                Are you sure you want to delete <strong id="deleteName" style="color:var(--text)"></strong>?
-                This cannot be undone.
-            </p>
+            <p>Are you sure you want to delete <strong id="deleteName"></strong>? This cannot be undone.</p>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeModal('deleteModal')">Cancel</button>
@@ -171,7 +175,6 @@
     </div>
 </div>
 
-<!-- QR MODAL (for attendance QR) -->
 <div class="modal-overlay" id="qrModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -195,49 +198,53 @@
 
 @section Scripts {
     <script>
-        let searchTimer = null, pendingDeleteId = null, isEditing = false;
+        var searchTimer = null;
+        var pendingDeleteId = null;
+        var isEditing = false;
         var antiForgeryToken = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
 
-        // Filter courses by search
         function filterCourses() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const cards = document.querySelectorAll('.course-card');
-            cards.forEach(card => {
-                const name = card.getAttribute('data-name');
-                const code = card.getAttribute('data-code');
+            var searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            var cards = document.querySelectorAll('.course-card');
+            for (var i = 0; i < cards.length; i++) {
+                var card = cards[i];
+                var name = card.getAttribute('data-name');
+                var code = card.getAttribute('data-code');
                 if (name && code) {
-                    card.style.display = name.includes(searchTerm) || code.includes(searchTerm) ? '' : 'none';
+                    var show = name.includes(searchTerm) || code.includes(searchTerm);
+                    card.style.display = show ? '' : 'none';
                 }
-            });
+            }
         }
 
-        // Dropdown toggle
         function toggleDropdown(btn) {
-            const dropdown = btn.nextElementSibling;
-            document.querySelectorAll('.dropdown-menu').forEach(menu => {
-                if (menu !== dropdown) menu.classList.remove('show');
-            });
+            var dropdown = btn.nextElementSibling;
+            var menus = document.querySelectorAll('.dropdown-menu');
+            for (var i = 0; i < menus.length; i++) {
+                if (menus[i] !== dropdown) {
+                    menus[i].classList.remove('show');
+                }
+            }
             dropdown.classList.toggle('show');
         }
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
             if (!e.target.classList.contains('dropdown-btn')) {
-                document.querySelectorAll('.dropdown-menu').forEach(menu => menu.classList.remove('show'));
+                var menus = document.querySelectorAll('.dropdown-menu');
+                for (var i = 0; i < menus.length; i++) {
+                    menus[i].classList.remove('show');
+                }
             }
         });
 
-        // Course Management - Navigate to Manage page
         function manageCourse(id) {
             window.location.href = '/Admin/CourseManage/' + id;
         }
 
-        // Course Details - Navigate to Details page (FIXED)
         function viewCourseDetails(id) {
             window.location.href = '/Admin/CourseDetails/' + id;
         }
 
-        // Open Add Modal
         function openAddModal() {
             isEditing = false;
             document.getElementById('modalTitle').textContent = 'Add Course';
@@ -245,7 +252,6 @@
             openModal('courseModal');
         }
 
-        // Edit Course
         function editCourse(id, code, name, units, section, schedule, teacherId) {
             isEditing = true;
             document.getElementById('modalTitle').textContent = 'Edit Course';
@@ -259,49 +265,51 @@
             openModal('courseModal');
         }
 
-        // View Course (in modal)
         function viewCourse(id, name, code, section, schedule, units, teacher) {
-            document.getElementById('viewBody').innerHTML = `
-                <div class="profile-view">
-                    <div class="profile-avatar" style="font-size:12px;letter-spacing:.05em;">${escapeHtml(code)}</div>
-                    <h3 class="profile-name">${escapeHtml(name)}</h3>
-                    <div class="profile-details">
-                        <div class="detail-row"><span class="detail-label">Section</span><span>${escapeHtml(section)}</span></div>
-                        <div class="detail-row"><span class="detail-label">Schedule</span><span>${escapeHtml(schedule)}</span></div>
-                        <div class="detail-row"><span class="detail-label">Units</span><span>${units} units</span></div>
-                        <div class="detail-row"><span class="detail-label">Teacher</span><span>${escapeHtml(teacher)}</span></div>
-                    </div>
-                </div>`;
+            var viewBody = document.getElementById('viewBody');
+            if (viewBody) {
+                viewBody.innerHTML = '<div class="profile-view">' +
+                    '<div class="profile-avatar" style="font-size:12px;letter-spacing:.05em;">' + escapeHtml(code) + '</div>' +
+                    '<h3 class="profile-name">' + escapeHtml(name) + '</h3>' +
+                    '<div class="profile-details">' +
+                    '<div class="detail-row"><span class="detail-label">Section</span><span>' + escapeHtml(section) + '</span></div>' +
+                    '<div class="detail-row"><span class="detail-label">Schedule</span><span>' + escapeHtml(schedule) + '</span></div>' +
+                    '<div class="detail-row"><span class="detail-label">Units</span><span>' + units + ' units</span></div>' +
+                    '<div class="detail-row"><span class="detail-label">Teacher</span><span>' + escapeHtml(teacher) + '</span></div>' +
+                    '</div>' +
+                    '</div>';
+            }
             openModal('viewModal');
         }
 
-        // Confirm Delete
         function confirmDelete(id, name) {
             pendingDeleteId = id;
-            document.getElementById('deleteName').textContent = name;
+            var deleteName = document.getElementById('deleteName');
+            if (deleteName) {
+                deleteName.textContent = name;
+            }
             openModal('deleteModal');
         }
 
-        // Submit Course (Add/Edit)
         async function submitCourse() {
-            const code = document.getElementById('courseCode').value.trim();
-            const name = document.getElementById('courseName').value.trim();
-            const section = document.getElementById('section').value.trim();
-            const schedule = document.getElementById('schedule').value.trim();
-            const teacher = document.getElementById('teacherId').value;
-            const units = document.getElementById('units').value;
+            var code = document.getElementById('courseCode').value.trim();
+            var name = document.getElementById('courseName').value.trim();
+            var section = document.getElementById('section').value.trim();
+            var schedule = document.getElementById('schedule').value.trim();
+            var teacher = document.getElementById('teacherId').value;
+            var units = document.getElementById('units').value;
 
             if (!code || !name || !section || !schedule || !teacher) {
                 if (typeof Toast !== 'undefined') Toast.warning('Please fill in all required fields.');
                 return;
             }
 
-            const btn = document.getElementById('saveBtn');
+            var btn = document.getElementById('saveBtn');
             btn.disabled = true;
             btn.textContent = 'Saving...';
 
-            const url = isEditing ? '/Admin/UpdateCourse' : '/Admin/AddCourse';
-            const payload = new URLSearchParams({
+            var url = isEditing ? '/Admin/UpdateCourse' : '/Admin/AddCourse';
+            var payload = new URLSearchParams({
                 __RequestVerificationToken: antiForgeryToken,
                 id: document.getElementById('dbId').value,
                 courseCode: code,
@@ -313,12 +321,12 @@
             });
 
             try {
-                const res = await fetch(url, {
+                var res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
                     body: payload
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     if (typeof Toast !== 'undefined') Toast.success(data.message);
                     closeModal('courseModal');
@@ -326,7 +334,8 @@
                 } else {
                     if (typeof Toast !== 'undefined') Toast.error(data.message);
                 }
-            } catch {
+            } catch (error) {
+                console.error('Error:', error);
                 if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
             } finally {
                 btn.disabled = false;
@@ -334,24 +343,23 @@
             }
         }
 
-        // Submit Delete
         async function submitDelete() {
-            const btn = document.getElementById('confirmDeleteBtn');
+            var btn = document.getElementById('confirmDeleteBtn');
             btn.disabled = true;
             btn.textContent = 'Deleting...';
 
-            const payload = new URLSearchParams({
+            var payload = new URLSearchParams({
                 __RequestVerificationToken: antiForgeryToken,
                 id: pendingDeleteId
             });
 
             try {
-                const res = await fetch('/Admin/DeleteCourse', {
+                var res = await fetch('/Admin/DeleteCourse', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
                     body: payload
                 });
-                const data = await res.json();
+                var data = await res.json();
                 if (data.success) {
                     if (typeof Toast !== 'undefined') Toast.success(data.message);
                     closeModal('deleteModal');
@@ -359,7 +367,8 @@
                 } else {
                     if (typeof Toast !== 'undefined') Toast.error(data.message);
                 }
-            } catch {
+            } catch (error) {
+                console.error('Error:', error);
                 if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
             } finally {
                 btn.disabled = false;
@@ -367,7 +376,6 @@
             }
         }
 
-        // Generate Attendance QR
         async function generateAttendanceQR(courseId, courseName) {
             openModal('qrModal');
 
@@ -381,19 +389,19 @@
                 courseNameElement.textContent = courseName;
             }
 
-            const today = new Date().toISOString().slice(0, 10);
-            const formData = new URLSearchParams();
+            var today = new Date().toISOString().slice(0, 10);
+            var formData = new URLSearchParams();
             formData.append('__RequestVerificationToken', antiForgeryToken);
             formData.append('courseId', courseId);
             formData.append('date', today);
 
             try {
-                const response = await fetch('/Admin/GenerateAttendanceQR', {
+                var response = await fetch('/Admin/GenerateAttendanceQR', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                     body: formData
                 });
-                const data = await response.json();
+                var data = await response.json();
 
                 if (data.success && data.qrCode) {
                     if (qrContainer) {
@@ -414,31 +422,28 @@
             }
         }
 
-        // Clear Form
         function clearForm() {
-            const ids = ['dbId', 'courseCode', 'courseName', 'section', 'schedule'];
-            ids.forEach(id => {
-                const el = document.getElementById(id);
+            var ids = ['dbId', 'courseCode', 'courseName', 'section', 'schedule'];
+            for (var i = 0; i < ids.length; i++) {
+                var el = document.getElementById(ids[i]);
                 if (el) el.value = '';
-            });
-            const unitsEl = document.getElementById('units');
+            }
+            var unitsEl = document.getElementById('units');
             if (unitsEl) unitsEl.value = '3';
-            const teacherEl = document.getElementById('teacherId');
+            var teacherEl = document.getElementById('teacherId');
             if (teacherEl) teacherEl.value = '';
         }
 
-        // Modal Functions
         function openModal(id) {
-            const modal = document.getElementById(id);
+            var modal = document.getElementById(id);
             if (modal) modal.classList.add('active');
         }
 
         function closeModal(id) {
-            const modal = document.getElementById(id);
+            var modal = document.getElementById(id);
             if (modal) modal.classList.remove('active');
         }
 
-        // Escape HTML
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -449,17 +454,21 @@
             });
         }
 
-        // Close modal when clicking outside
-        document.querySelectorAll('.modal-overlay').forEach(o => {
-            o.addEventListener('click', function(e) {
-                if (e.target === this) this.classList.remove('active');
+        var overlays = document.querySelectorAll('.modal-overlay');
+        for (var i = 0; i < overlays.length; i++) {
+            overlays[i].addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('active');
+                }
             });
-        });
+        }
 
-        // Close modal on Escape key
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+                var activeModals = document.querySelectorAll('.modal-overlay.active');
+                for (var i = 0; i < activeModals.length; i++) {
+                    activeModals[i].classList.remove('active');
+                }
             }
         });
     </script>

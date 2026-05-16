@@ -6,23 +6,29 @@
     ViewData["ActivePage"] = "Courses";
 }
 
-@section PageStyles {
-    <link rel="stylesheet" href="~/css/pages/course-details.css" />
-}
-
 @{
     var totalStudents = Model.TotalStudents;
     var enrolledStudents = Model.EnrolledStudents;
     var totalAttendanceRecords = Model.TotalAttendanceRecords;
-    var hasStudents = Model.Students != null && Model.Students.Any();
-    var hasTodayAttendance = Model.TodayAttendance != null && Model.TodayAttendance.Any();
-    var selectedDate = ViewBag.SelectedDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var hasStudents = (Model.Students != null && Model.Students.Count > 0);
+    var hasTodayAttendance = (Model.TodayAttendance != null && Model.TodayAttendance.Count > 0);
+    var selectedDate = (ViewBag.SelectedDate as string) ?? DateTime.Today.ToString("yyyy-MM-dd");
+    var courseName = Model.Course.CourseName ?? "";
+    var courseCode = Model.Course.CourseCode ?? "";
+    var courseSection = Model.Course.Section ?? "";
+    var courseSchedule = Model.Course.Schedule ?? "";
+    var courseTeacher = Model.Course.TeacherName ?? "";
+    var courseId = Model.Course.DbId;
+}
+
+@section PageStyles {
+    <link rel="stylesheet" href="~/css/pages/course-details.css" />
 }
 
 <div class="page-header">
     <div>
-        <h2>@Model.Course.CourseName</h2>
-        <p>@Model.Course.CourseCode | Section: @Model.Course.Section | Schedule: @Model.Course.Schedule | Teacher: @Model.Course.TeacherName</p>
+        <h2>@courseName</h2>
+        <p>@courseCode | Section: @courseSection | Schedule: @courseSchedule | Teacher: @courseTeacher</p>
     </div>
     <a href="@Url.Action("Courses", "Admin")" class="btn-secondary">← Back to Courses</a>
 </div>
@@ -71,8 +77,10 @@
                         {
                             var attendanceRate = student.AttendanceRate;
                             var isEnrolled = student.IsEnrolled;
-                            var studentName = student.StudentName ?? "";
-                            var studentInitial = studentName.Length > 0 ? studentName[0].ToString().ToUpper() : "?";
+                            var studentNameValue = student.StudentName ?? "";
+                            var studentInitial = (studentNameValue.Length > 0) ? studentNameValue[0].ToString().ToUpper() : "?";
+                            var studentNoValue = student.StudentNo ?? "";
+                            var studentEmailValue = student.Email ?? "";
 
                             <tr>
                                 <td class="student-cell">
@@ -80,11 +88,11 @@
                                         @studentInitial
                                     </div>
                                     <div>
-                                        <p class="cell-name">@student.StudentName</p>
-                                        <p class="cell-sub">@student.Email</p>
+                                        <p class="cell-name">@studentNameValue</p>
+                                        <p class="cell-sub">@studentEmailValue</p>
                                     </div>
                                 </td>
-                                <td class="hide-sm"><span class="id-badge">@student.StudentNo</span></td>
+                                <td class="hide-sm"><span class="id-badge">@studentNoValue</span></td>
                                 <td class="hide-sm">
                                     <div class="attend-mini">
                                         <div class="attend-bar" style="width: @attendanceRate%"></div>
@@ -138,11 +146,13 @@
                     {
                         foreach (var record in Model.TodayAttendance)
                         {
-                            var isPresent = record.Status == "Present";
-                            var isAbsent = record.Status == "Absent";
-                            var isLate = record.Status == "Late";
-                            var studentName = record.StudentName ?? "";
-                            var studentInitial = studentName.Length > 0 ? studentName[0].ToString().ToUpper() : "?";
+                            var isPresent = (record.Status == "Present");
+                            var isAbsent = (record.Status == "Absent");
+                            var isLate = (record.Status == "Late");
+                            var studentNameValue = record.StudentName ?? "";
+                            var studentInitial = (studentNameValue.Length > 0) ? studentNameValue[0].ToString().ToUpper() : "?";
+                            var studentNoValue = record.StudentNo ?? "";
+                            var remarksValue = record.Remarks ?? "";
 
                             <tr data-studentid="@record.StudentId" data-attendanceid="@record.AttendanceId">
                                 <td class="student-cell">
@@ -150,10 +160,10 @@
                                         @studentInitial
                                     </div>
                                     <div>
-                                        <p class="cell-name">@record.StudentName</p>
+                                        <p class="cell-name">@studentNameValue</p>
                                     </div>
                                 </td>
-                                <td class="hide-sm"><span class="id-badge">@record.StudentNo</span></td>
+                                <td class="hide-sm"><span class="id-badge">@studentNoValue</span></td>
                                 <td>
                                     <select class="status-select" data-studentid="@record.StudentId">
                                         <option value="Present" selected="@isPresent">● Present</option>
@@ -162,7 +172,7 @@
                                     </select>
                                 </td>
                                 <td>
-                                    <input type="text" class="remarks-input" data-studentid="@record.StudentId" value="@record.Remarks" placeholder="Remarks" />
+                                    <input type="text" class="remarks-input" data-studentid="@record.StudentId" value="@remarksValue" placeholder="Remarks" />
                                 </td>
                                 <td>
                                     <button class="btn-sm btn-save" data-studentid="@record.StudentId">Save</button>
@@ -182,7 +192,6 @@
     </div>
 </div>
 
-<!-- QR MODAL -->
 <div class="modal-overlay" id="qrModal">
     <div class="modal-card">
         <div class="modal-header">
@@ -194,8 +203,8 @@
             <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
                 <div class="spinner-ring"></div>
             </div>
-            <p><strong>Course:</strong> <span id="qrCourseName">@Model.Course.CourseName</span></p>
-            <p><strong>Course Code:</strong> @Model.Course.CourseCode</p>
+            <p><strong>Course:</strong> <span id="qrCourseName">@courseName</span></p>
+            <p><strong>Course Code:</strong> @courseCode</p>
             <p style="font-size: 12px; color: #64748b;">Students scan this QR to mark attendance</p>
             <p style="font-size: 12px; color: #64748b;">No login required - just enter Student ID and Name</p>
         </div>
@@ -209,8 +218,8 @@
     <script src="~/js/pages/course-details.js"></script>
     <script>
         window.courseDetailsData = {
-            courseId: @Model.Course.DbId,
-            courseName: '@Html.Raw(Model.Course.CourseName)'
+            courseId: @courseId,
+            courseName: '@Html.Raw(courseName)'
         };
     </script>
 }
