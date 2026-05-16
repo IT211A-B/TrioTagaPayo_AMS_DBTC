@@ -5,6 +5,7 @@ using Attendance_Management_System.Helpers;
 using Attendance_Management_System.Interfacess;
 using Attendance_Management_System.Models;
 using Attendance_Management_System.Repositories.Interfaces;
+using Attendance_Management_System.Services;
 
 namespace Attendance_Management_System.Controllers
 {
@@ -93,6 +94,57 @@ namespace Attendance_Management_System.Controllers
             await _userRepository.SaveChangesAsync();
 
             return Ok(new { success = true, message = $"Password for {dto.Username} has been reset successfully." });
+        }
+
+        /// <summary>
+        /// Creates User accounts for existing Students (migration).
+        /// Call this ONCE after deploying the code.
+        /// </summary>
+        [HttpPost("migrate-students")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> MigrateStudentsToUsers()
+        {
+            var students = await _studentService.GetAllAsync();
+            int created = 0;
+            int failed = 0;
+
+            foreach (var studentDto in students)
+            {
+                // Check if User already exists with this StudentNo as username
+                var existingUser = await _userRepository.FindAsync(u => u.Username == studentDto.StudentNo);
+                if (existingUser != null) continue;
+
+                try
+                {
+                    var user = new User
+                    {
+                        Username = studentDto.StudentNo,
+                        PasswordHash = _hasher.Hash(studentDto.StudentNo), // default password = StudentNo
+                        Role = "Student",
+                        CreatedAt = DateTime.UtcNow,
+                        IsEmailVerified = true,
+                        StudentId = studentDto.Id
+                    };
+
+                    await _userRepository.AddAsync(user);
+                    created++;
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[MIGRATE] Failed for {studentDto.StudentNo}: {ex.Message}");
+                    failed++;
+                }
+            }
+
+            await _userRepository.SaveChangesAsync();
+
+            return Ok(new
+            {
+                totalStudents = students.Count(),
+                accountsCreated = created,
+                failed = failed,
+                message = $"Migration complete. Created {created} user accounts for students."
+            });
         }
     }
 }

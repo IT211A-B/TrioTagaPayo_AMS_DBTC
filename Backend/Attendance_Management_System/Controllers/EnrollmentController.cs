@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Attendance_Management_System.DBCONTEXT;
 using Attendance_Management_System.Models;
 using Microsoft.AspNetCore.Authorization;
+using BCrypt.Net;
 
 namespace Attendance_Management_System.Controllers
 {
@@ -106,6 +107,23 @@ namespace Attendance_Management_System.Controllers
                 await _context.Students.AddAsync(student);
                 await _context.SaveChangesAsync();
                 isNewStudent = true;
+
+                // ✅ CREATE USER ACCOUNT FOR NEW STUDENT (so they can log in later)
+                var existingUser = await _context.Users.FirstOrDefaultAsync(u => u.Username == student.StudentNo);
+                if (existingUser == null)
+                {
+                    var user = new User
+                    {
+                        Username = student.StudentNo,
+                        PasswordHash = BCrypt.Net.BCrypt.HashPassword(student.StudentNo), // default password = StudentNo
+                        Role = "Student",
+                        CreatedAt = DateTime.UtcNow,
+                        IsEmailVerified = true,   // auto-verified via enrollment
+                        StudentId = student.Id
+                    };
+                    await _context.Users.AddAsync(user);
+                    await _context.SaveChangesAsync();
+                }
             }
             else
             {

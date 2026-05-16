@@ -29,7 +29,13 @@ namespace Attendance_Management_System.Services
                 new Claim(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64)
             };
 
-            // TeacherId claim – use the value already stored in User object (set during login)
+            // ✅ Add StudentId claim if user is Student and has StudentId
+            if (user.Role == "Student" && user.StudentId.HasValue)
+            {
+                claims.Add(new Claim("StudentId", user.StudentId.Value.ToString()));
+            }
+
+            // TeacherId claim (existing)
             if (user.Role == "Teacher" && user.TeacherId.HasValue)
             {
                 claims.Add(new Claim("TeacherId", user.TeacherId.Value.ToString()));
