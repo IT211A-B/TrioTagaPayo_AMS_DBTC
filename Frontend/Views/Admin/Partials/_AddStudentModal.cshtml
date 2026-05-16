@@ -1,4 +1,8 @@
-﻿<div class="modal-overlay" id="addStudentModal">
+﻿@{
+    Layout = null;
+}
+
+<div class="modal-overlay" id="addStudentModal">
     <div class="modal-card">
         <div class="modal-header">
             <h3>Add Student</h3>
@@ -8,52 +12,109 @@
             @Html.AntiForgeryToken()
             <div class="form-group">
                 <label>First Name <span class="req">*</span></label>
-                <input type="text" id="addFirstName" class="form-input" required />
-            </div>
-            <div class="form-group">
-                <label>Middle Name</label>
-                <input type="text" id="addMiddleName" class="form-input" />
+                <input type="text" id="addFirstName" class="form-input" placeholder="e.g. Maria" required />
             </div>
             <div class="form-group">
                 <label>Last Name <span class="req">*</span></label>
-                <input type="text" id="addLastName" class="form-input" required />
+                <input type="text" id="addLastName" class="form-input" placeholder="e.g. Santos" required />
+            </div>
+            <div class="form-group">
+                <label>Middle Name</label>
+                <input type="text" id="addMiddleName" class="form-input" placeholder="Optional" />
             </div>
             <div class="form-group">
                 <label>Email <span class="req">*</span></label>
-                <input type="email" id="addEmail" class="form-input" required />
+                <input type="email" id="addEmail" class="form-input" placeholder="student@school.edu" required />
             </div>
             <div class="form-group">
                 <label>Section <span class="req">*</span></label>
-                <input type="text" id="addSection" class="form-input" required />
+                <input type="text" id="addSection" class="form-input" placeholder="e.g. CS101" required />
             </div>
             <div class="form-group">
                 <label>Mobile No</label>
-                <input type="text" id="addMobileNo" class="form-input" />
+                <input type="text" id="addMobileNo" class="form-input" placeholder="09XX-XXX-XXXX" />
+            </div>
+            <!-- NEW PASSWORD FIELDS -->
+            <div class="form-group">
+                <label>Password <span class="req">*</span></label>
+                <input type="password" id="addPassword" class="form-input" placeholder="Enter password for student" required />
+                <small style="color: #64748b; font-size: 10px; display: block; margin-top: 4px;">Minimum 6 characters. Student will use this to login.</small>
+            </div>
+            <div class="form-group">
+                <label>Confirm Password <span class="req">*</span></label>
+                <input type="password" id="addConfirmPassword" class="form-input" placeholder="Re-enter password" required />
             </div>
         </div>
         <div class="modal-footer">
             <button class="btn-secondary" onclick="closeModal('addStudentModal')">Cancel</button>
-            <button class="btn-primary" onclick="submitAddStudent()">Add Student</button>
+            <button class="btn-primary" id="saveStudentBtn" onclick="submitAddStudent()">Save Student</button>
         </div>
     </div>
 </div>
 
 <script>
     async function submitAddStudent() {
-        const firstName = document.getElementById('addFirstName').value.trim();
-        const lastName = document.getElementById('addLastName').value.trim();
-        const email = document.getElementById('addEmail').value.trim();
-        const section = document.getElementById('addSection').value.trim();
-        const middleName = document.getElementById('addMiddleName').value.trim();
-        const mobileNo = document.getElementById('addMobileNo').value.trim();
+        var firstName = document.getElementById('addFirstName')?.value.trim();
+        var lastName = document.getElementById('addLastName')?.value.trim();
+        var email = document.getElementById('addEmail')?.value.trim();
+        var section = document.getElementById('addSection')?.value.trim();
+        var middleName = document.getElementById('addMiddleName')?.value.trim();
+        var mobileNo = document.getElementById('addMobileNo')?.value.trim();
+        var password = document.getElementById('addPassword')?.value;
+        var confirmPassword = document.getElementById('addConfirmPassword')?.value;
 
+        // Validation
         if (!firstName || !lastName || !email || !section) {
-            if (typeof Toast !== 'undefined') Toast.warning('Please fill in all required fields.');
+            if (typeof Toast !== 'undefined') {
+                Toast.warning('Please fill in all required fields.');
+            } else {
+                alert('Please fill in all required fields.');
+            }
             return;
         }
 
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
-        const formData = new URLSearchParams();
+        if (!password) {
+            if (typeof Toast !== 'undefined') {
+                Toast.warning('Please enter a password for the student.');
+            } else {
+                alert('Please enter a password for the student.');
+            }
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            if (typeof Toast !== 'undefined') {
+                Toast.warning('Passwords do not match.');
+            } else {
+                alert('Passwords do not match.');
+            }
+            return;
+        }
+
+        if (password.length < 6) {
+            if (typeof Toast !== 'undefined') {
+                Toast.warning('Password must be at least 6 characters.');
+            } else {
+                alert('Password must be at least 6 characters.');
+            }
+            return;
+        }
+
+        var token = document.querySelector('input[name="__RequestVerificationToken"]')?.value;
+        if (!token) {
+            console.error('Anti-forgery token not found');
+            if (typeof Toast !== 'undefined') Toast.error('Security token missing. Please refresh the page.');
+            return;
+        }
+
+        var btn = document.getElementById('saveStudentBtn');
+        var originalText = btn?.textContent || 'Save Student';
+        if (btn) {
+            btn.disabled = true;
+            btn.textContent = 'Saving...';
+        }
+
+        var formData = new URLSearchParams();
         formData.append('__RequestVerificationToken', token);
         formData.append('firstName', firstName);
         formData.append('middleName', middleName);
@@ -61,24 +122,48 @@
         formData.append('email', email);
         formData.append('section', section);
         formData.append('mobileNo', mobileNo);
+        formData.append('password', password);
 
         try {
-            const response = await fetch('/Admin/AddStudent', {
+            var response = await fetch('/Admin/AddStudent', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
                 body: formData
             });
-            const data = await response.json();
+            var data = await response.json();
             if (data.success) {
-                if (typeof Toast !== 'undefined') Toast.success(data.message);
-                if (typeof closeModal === 'function') closeModal('addStudentModal');
-                setTimeout(() => location.reload(), 1500);
+                if (typeof Toast !== 'undefined') {
+                    Toast.success(data.message || 'Student added successfully!');
+                } else {
+                    alert('Student added successfully!');
+                }
+                if (typeof closeModal === 'function') {
+                    closeModal('addStudentModal');
+                }
+                setTimeout(function() {
+                    location.reload();
+                }, 1500);
             } else {
-                if (typeof Toast !== 'undefined') Toast.error(data.message);
+                if (typeof Toast !== 'undefined') {
+                    Toast.error(data.message || 'Failed to add student.');
+                } else {
+                    alert(data.message || 'Failed to add student.');
+                }
             }
         } catch (error) {
             console.error('Error adding student:', error);
-            if (typeof Toast !== 'undefined') Toast.error('An unexpected error occurred.');
+            if (typeof Toast !== 'undefined') {
+                Toast.error('An unexpected error occurred.');
+            } else {
+                alert('An unexpected error occurred.');
+            }
+        } finally {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
         }
     }
 </script>
