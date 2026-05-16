@@ -10,6 +10,15 @@
     <link rel="stylesheet" href="~/css/pages/course-details.css" />
 }
 
+@{
+    var totalStudents = Model.TotalStudents;
+    var enrolledStudents = Model.EnrolledStudents;
+    var totalAttendanceRecords = Model.TotalAttendanceRecords;
+    var hasStudents = Model.Students != null && Model.Students.Any();
+    var hasTodayAttendance = Model.TodayAttendance != null && Model.TodayAttendance.Any();
+    var selectedDate = ViewBag.SelectedDate as string ?? DateTime.Today.ToString("yyyy-MM-dd");
+}
+
 <div class="page-header">
     <div>
         <h2>@Model.Course.CourseName</h2>
@@ -22,19 +31,19 @@
     <div class="stat-card">
         <div class="stat-icon">◍</div>
         <p class="stat-label">TOTAL STUDENTS</p>
-        <p class="stat-value">@Model.TotalStudents</p>
+        <p class="stat-value">@totalStudents</p>
         <p class="stat-hint">In this section</p>
     </div>
     <div class="stat-card">
         <div class="stat-icon">✓</div>
         <p class="stat-label">ENROLLED</p>
-        <p class="stat-value">@Model.EnrolledStudents</p>
+        <p class="stat-value">@enrolledStudents</p>
         <p class="stat-hint">Have attendance records</p>
     </div>
     <div class="stat-card">
         <div class="stat-icon">◷</div>
         <p class="stat-label">ATTENDANCE RECORDS</p>
-        <p class="stat-value">@Model.TotalAttendanceRecords</p>
+        <p class="stat-value">@totalAttendanceRecords</p>
         <p class="stat-hint">Total logs</p>
     </div>
 </div>
@@ -56,35 +65,49 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var student in Model.Students)
+                    @if (hasStudents)
+                    {
+                        foreach (var student in Model.Students)
+                        {
+                            var attendanceRate = student.AttendanceRate;
+                            var isEnrolled = student.IsEnrolled;
+                            var studentName = student.StudentName ?? "";
+                            var studentInitial = studentName.Length > 0 ? studentName[0].ToString().ToUpper() : "?";
+
+                            <tr>
+                                <td class="student-cell">
+                                    <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                        @studentInitial
+                                    </div>
+                                    <div>
+                                        <p class="cell-name">@student.StudentName</p>
+                                        <p class="cell-sub">@student.Email</p>
+                                    </div>
+                                </td>
+                                <td class="hide-sm"><span class="id-badge">@student.StudentNo</span></td>
+                                <td class="hide-sm">
+                                    <div class="attend-mini">
+                                        <div class="attend-bar" style="width: @attendanceRate%"></div>
+                                    </div>
+                                    <span class="attend-pct">@attendanceRate%</span>
+                                </td>
+                                <td class="hide-sm">
+                                    @if (isEnrolled)
+                                    {
+                                        <span class="status-badge badge-active">Enrolled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge badge-inactive">Not Enrolled</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
                     {
                         <tr>
-                            <td class="student-cell">
-                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
-                                    @(student.StudentName.Length > 0 ? student.StudentName[0].ToString().ToUpper() : "?")
-                                </div>
-                                <div>
-                                    <p class="cell-name">@student.StudentName</p>
-                                    <p class="cell-sub">@student.Email</p>
-                                </div>
-                            </td>
-                            <td class="hide-sm"><span class="id-badge">@student.StudentNo</span></td>
-                            <td class="hide-sm">
-                                <div class="attend-mini">
-                                    <div class="attend-bar" style="width: @student.AttendanceRate%"></div>
-                                </div>
-                                <span class="attend-pct">@student.AttendanceRate%</span>
-                            </td>
-                            <td class="hide-sm">
-                                @if (student.IsEnrolled)
-                                {
-                                    <span class="status-badge badge-active">Enrolled</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge badge-inactive">Not Enrolled</span>
-                                }
-                            </td>
+                            <td colspan="4" class="empty-state">No students found in this course</td>
                         </tr>
                     }
                 </tbody>
@@ -95,7 +118,7 @@
     <div class="attendance-card">
         <div class="section-header">
             <span class="section-title">ATTENDANCE FOR</span>
-            <input type="date" id="attendanceDate" class="filter-input" value="@ViewBag.SelectedDate" />
+            <input type="date" id="attendanceDate" class="filter-input" value="@selectedDate" />
             <button class="btn-sm btn-success" id="markAllPresentBtn">✓ Mark All Present</button>
         </div>
 
@@ -111,36 +134,46 @@
                     </tr>
                 </thead>
                 <tbody id="attendanceBody">
-                    @foreach (var record in Model.TodayAttendance)
+                    @if (hasTodayAttendance)
                     {
-                        <tr data-studentid="@record.StudentId" data-attendanceid="@record.AttendanceId">
-                            <td class="student-cell">
-                                <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
-                                    @(record.StudentName.Length > 0 ? record.StudentName[0].ToString().ToUpper() : "?")
-                                </div>
-                                <div>
-                                    <p class="cell-name">@record.StudentName</p>
-                                </div>
-                            </td>
-                            <td class="hide-sm"><span class="id-badge">@record.StudentNo</span></td>
-                            <td>
-                                <select class="status-select" data-studentid="@record.StudentId">
-                                    @{
-                                        var isPresent = record.Status == "Present";
-                                        var isAbsent = record.Status == "Absent";
-                                        var isLate = record.Status == "Late";
-                                    }
-                                    <option value="Present" selected="@isPresent">● Present</option>
-                                    <option value="Absent" selected="@isAbsent">● Absent</option>
-                                    <option value="Late" selected="@isLate">● Late</option>
-                                </select>
-                            </td>
-                            <td>
-                                <input type="text" class="remarks-input" data-studentid="@record.StudentId" value="@record.Remarks" placeholder="Remarks" />
-                            </td>
-                            <td>
-                                <button class="btn-sm btn-save" data-studentid="@record.StudentId">Save</button>
-                            </td>
+                        foreach (var record in Model.TodayAttendance)
+                        {
+                            var isPresent = record.Status == "Present";
+                            var isAbsent = record.Status == "Absent";
+                            var isLate = record.Status == "Late";
+                            var studentName = record.StudentName ?? "";
+                            var studentInitial = studentName.Length > 0 ? studentName[0].ToString().ToUpper() : "?";
+
+                            <tr data-studentid="@record.StudentId" data-attendanceid="@record.AttendanceId">
+                                <td class="student-cell">
+                                    <div class="avatar" style="background:linear-gradient(135deg,#d81b60,#9c1040);">
+                                        @studentInitial
+                                    </div>
+                                    <div>
+                                        <p class="cell-name">@record.StudentName</p>
+                                    </div>
+                                </td>
+                                <td class="hide-sm"><span class="id-badge">@record.StudentNo</span></td>
+                                <td>
+                                    <select class="status-select" data-studentid="@record.StudentId">
+                                        <option value="Present" selected="@isPresent">● Present</option>
+                                        <option value="Absent" selected="@isAbsent">● Absent</option>
+                                        <option value="Late" selected="@isLate">● Late</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" class="remarks-input" data-studentid="@record.StudentId" value="@record.Remarks" placeholder="Remarks" />
+                                </td>
+                                <td>
+                                    <button class="btn-sm btn-save" data-studentid="@record.StudentId">Save</button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="empty-state">No attendance records for today</td>
                         </tr>
                     }
                 </tbody>
@@ -153,7 +186,7 @@
 <div class="modal-overlay" id="qrModal">
     <div class="modal-card">
         <div class="modal-header">
-            <h3>Course Enrollment QR</h3>
+            <h3>Course Attendance QR</h3>
             <button class="modal-close" id="closeQrModalBtn">×</button>
         </div>
         <div class="modal-body" style="text-align: center;">
@@ -163,7 +196,8 @@
             </div>
             <p><strong>Course:</strong> <span id="qrCourseName">@Model.Course.CourseName</span></p>
             <p><strong>Course Code:</strong> @Model.Course.CourseCode</p>
-            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to mark attendance</p>
+            <p style="font-size: 12px; color: #64748b;">No login required - just enter Student ID and Name</p>
         </div>
         <div class="modal-footer">
             <button class="btn-primary" id="closeModalBtn">Close</button>

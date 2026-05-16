@@ -180,7 +180,6 @@ namespace AMS.Controllers
                     }
                 }
 
-                // Step 3: Record attendance
                 var attendanceData = new
                 {
                     studentId = studentId,
@@ -383,5 +382,13 @@ namespace AMS.Controllers
             public string? StudentId { get; set; }
             public string? StudentName { get; set; }
         }
+        private string GenerateRandomPassword()
+        {
+            // Generate a simple password: "STU" + random numbers
+            var random = new Random();
+            var numbers = random.Next(1000, 9999);
+            return $"STU{numbers}";
+        }
     }
+
 }

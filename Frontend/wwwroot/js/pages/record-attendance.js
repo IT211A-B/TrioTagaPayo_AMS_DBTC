@@ -1,9 +1,9 @@
 ﻿(function () {
     'use strict';
 
-    const form = document.getElementById('attendanceForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const messageDiv = document.getElementById('message');
+    var form = document.getElementById('attendanceForm');
+    var submitBtn = document.getElementById('submitBtn');
+    var messageDiv = document.getElementById('message');
 
     if (!form) {
         console.error('Attendance form not found');
@@ -11,16 +11,16 @@
     }
 
     async function submitAttendance(formData) {
-        const token = document.querySelector('input[name="__RequestVerificationToken"]').value;
+        var token = document.querySelector('input[name="__RequestVerificationToken"]').value;
 
-        const payload = new URLSearchParams();
+        var payload = new URLSearchParams();
         payload.append('__RequestVerificationToken', token);
         payload.append('courseId', formData.get('courseId'));
         payload.append('date', formData.get('date'));
         payload.append('studentId', formData.get('studentId'));
         payload.append('studentName', formData.get('studentName'));
 
-        const response = await fetch('/Student/RecordAttendance', {
+        var response = await fetch('/Student/RecordAttendance', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded'
@@ -32,10 +32,20 @@
     }
 
     function showMessage(type, text) {
-        if (!messageDiv) return;
+        if (!messageDiv) {
+            return;
+        }
 
         messageDiv.className = 'message ' + type;
         messageDiv.textContent = (type === 'success' ? '✅ ' : '❌ ') + text;
+
+        if (type === 'success') {
+            setTimeout(function () {
+                if (messageDiv) {
+                    messageDiv.style.display = 'none';
+                }
+            }, 10000);
+        }
     }
 
     function hideMessage() {
@@ -46,7 +56,9 @@
     }
 
     function setButtonLoading(isLoading, originalText) {
-        if (!submitBtn) return;
+        if (!submitBtn) {
+            return;
+        }
 
         submitBtn.disabled = isLoading;
 
@@ -62,29 +74,31 @@
 
         hideMessage();
 
-        const studentId = document.getElementById('studentId')?.value.trim();
-        const studentName = document.getElementById('studentName')?.value.trim();
+        var studentId = document.getElementById('studentId');
+        var studentName = document.getElementById('studentName');
 
-        if (!studentId || !studentName) {
+        var studentIdValue = studentId ? studentId.value.trim() : '';
+        var studentNameValue = studentName ? studentName.value.trim() : '';
+
+        if (!studentIdValue || !studentNameValue) {
             showMessage('error', 'Please fill in both Student ID and Full Name');
             return;
         }
 
-        const originalButtonText = submitBtn?.textContent;
+        var originalButtonText = submitBtn ? submitBtn.textContent : '';
         setButtonLoading(true, originalButtonText);
 
         try {
-            const formData = new FormData(form);
-            const data = await submitAttendance(formData);
+            var formData = new FormData(form);
+            var data = await submitAttendance(formData);
 
             if (data.success) {
                 showMessage('success', data.message || 'Attendance recorded successfully!');
                 setButtonLoading(false, originalButtonText);
 
-                // Redirect to login page after 2 seconds
                 setTimeout(function () {
-                    window.location.href = '/Account/StudentLogin';
-                }, 2000);
+                    window.location.href = '/Student/Scanner';
+                }, 3000);
             } else {
                 showMessage('error', data.message || 'Failed to record attendance');
                 setButtonLoading(false, originalButtonText);
@@ -96,11 +110,9 @@
         }
     }
 
-    // Add event listener
     form.addEventListener('submit', handleSubmit);
 
-    // Auto-focus on first input
-    const firstInput = document.getElementById('studentId');
+    var firstInput = document.getElementById('studentId');
     if (firstInput) {
         firstInput.focus();
     }

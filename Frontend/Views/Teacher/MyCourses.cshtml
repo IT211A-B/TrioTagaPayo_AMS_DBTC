@@ -8,6 +8,7 @@
 
 @section PageStyles {
     <link rel="stylesheet" href="~/css/pages/my-courses.css" />
+    <link rel="stylesheet" href="~/css/components/modals.css" />
 }
 
 <div class="page-header">
@@ -35,7 +36,7 @@
                 </div>
                 <div class="course-card-footer">
                     <button class="btn-sm btn-view" onclick="location.href='/Teacher/MyStudents?courseId=@course.DbId'">View Students</button>
-                    <button class="btn-sm btn-primary" onclick="generateEnrollmentQR(@course.DbId, '@course.CourseName')">📱 QR Code</button>
+                    <button class="btn-sm btn-primary" onclick="generateAttendanceQR(@course.DbId, '@course.CourseName')">📱 Attendance QR</button>
                 </div>
             </div>
         }
@@ -54,16 +55,17 @@
 <div class="modal-overlay" id="qrModal">
     <div class="modal-card">
         <div class="modal-header">
-            <h3>Course Enrollment QR</h3>
+            <h3>Course Attendance QR</h3>
             <button class="modal-close" id="closeQrModalBtn">×</button>
         </div>
         <div class="modal-body" style="text-align: center;">
+            @Html.AntiForgeryToken()
             <div id="qrImageContainer" style="margin: 20px 0; min-height: 200px;">
                 <div class="spinner-ring"></div>
             </div>
             <p><strong>Course:</strong> <span id="qrCourseName"></span></p>
-            <p style="font-size: 12px; color: #64748b;">Students scan this QR to enroll in this course</p>
-            <p style="font-size: 12px; color: #64748b;">Students will need their Student ID and Full Name</p>
+            <p style="font-size: 12px; color: #64748b;">Students scan this QR to mark attendance for today's class</p>
+            <p style="font-size: 12px; color: #64748b;">No login required - just enter Student ID and Name</p>
         </div>
         <div class="modal-footer">
             <button class="btn-primary" id="closeModalBtn">Close</button>
@@ -73,5 +75,101 @@
 
 @section Scripts {
     <script src="~/js/pages/teacher-dashboard.js"></script>
-    <script src="~/js/pages/my-courses.js"></script>
+    <script>
+        var antiForgeryToken = '';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            if (tokenInput) antiForgeryToken = tokenInput.value;
+
+            var modalOverlay = document.getElementById('qrModal');
+            if (modalOverlay) {
+                modalOverlay.addEventListener('click', function(e) {
+                    if (e.target === this && typeof closeModal === 'function') {
+                        closeModal('qrModal');
+                    }
+                });
+            }
+
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && typeof closeModal === 'function') {
+                    closeModal('qrModal');
+                }
+            });
+
+            var closeModalBtn = document.getElementById('closeModalBtn');
+            if (closeModalBtn) {
+                closeModalBtn.addEventListener('click', function() {
+                    if (typeof closeModal === 'function') closeModal('qrModal');
+                });
+            }
+
+            var closeQrModalBtn = document.getElementById('closeQrModalBtn');
+            if (closeQrModalBtn) {
+                closeQrModalBtn.addEventListener('click', function() {
+                    if (typeof closeModal === 'function') closeModal('qrModal');
+                });
+            }
+        });
+
+        async function generateAttendanceQR(courseId, courseName) {
+            if (typeof openModal !== 'function') {
+                console.error('openModal not defined');
+                return;
+            }
+            openModal('qrModal');
+
+            var qrContainer = document.getElementById('qrImageContainer');
+            if (qrContainer) {
+                qrContainer.innerHTML = '<div class="spinner-ring"></div>';
+            }
+
+            var courseNameElement = document.getElementById('qrCourseName');
+            if (courseNameElement) {
+                courseNameElement.textContent = courseName;
+            }
+
+            const today = new Date().toISOString().slice(0, 10);
+            const formData = new URLSearchParams();
+            formData.append('__RequestVerificationToken', antiForgeryToken);
+            formData.append('courseId', courseId);
+            formData.append('date', today);
+
+            try {
+                const response = await fetch('/Teacher/GenerateAttendanceQR', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+                const data = await response.json();
+
+                if (data.success && data.qrCode) {
+                    if (qrContainer) {
+                        qrContainer.innerHTML = '<img src="data:image/png;base64,' + data.qrCode + '" style="width: 200px; height: 200px; margin: 0 auto; display: block;" />';
+                    }
+                } else {
+                    if (qrContainer) {
+                        qrContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">' + (data.message || 'Failed to generate QR code') + '</p>';
+                    }
+                    if (typeof Toast !== 'undefined') Toast.error(data.message || 'Failed to generate QR code');
+                }
+            } catch (error) {
+                console.error('Error generating QR:', error);
+                if (qrContainer) {
+                    qrContainer.innerHTML = '<p style="color: #ef4444; text-align: center;">Error generating QR code</p>';
+                }
+                if (typeof Toast !== 'undefined') Toast.error('Error generating QR code');
+            }
+        }
+
+        function openModal(id) {
+            var modal = document.getElementById(id);
+            if (modal) modal.classList.add('active');
+        }
+
+        function closeModal(id) {
+            var modal = document.getElementById(id);
+            if (modal) modal.classList.remove('active');
+        }
+    </script>
 }

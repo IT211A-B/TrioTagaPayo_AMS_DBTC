@@ -23,13 +23,13 @@
 
             <div class="title">
                 <h2>Welcome Student!</h2>
-                <p>Login to mark your attendance</p>
+                <p>Enter your Student ID to view your attendance</p>
             </div>
 
             @if (!string.IsNullOrEmpty(errorMsg))
             {
                 <div class="error-msg">
-                    ⚠️ @errorMsg
+                    @("⚠️ " + errorMsg)
                 </div>
             }
 
@@ -37,22 +37,18 @@
                 @Html.AntiForgeryToken()
 
                 <div class="input-group">
-                    <label>STUDENT ID / USERNAME</label>
-                    <input type="text" name="username" placeholder="e.g., 2024-00001" required autofocus />
+                    <label>STUDENT ID</label>
+                    <input type="text" name="username" placeholder="e.g., STU001 or 2024-00001" required autofocus />
                 </div>
 
-                <div class="input-group">
-                    <label>PASSWORD</label>
-                    <input type="password" name="password" placeholder="Enter your password" required />
-                </div>
+                <input type="hidden" name="password" value="auto-login" />
 
-                <button type="submit" class="login-btn" id="loginBtn">LOGIN</button>
+                <button type="submit" class="login-btn">LOGIN</button>
             </form>
 
             <div class="info-box">
-                <strong>💡 Don't have an account?</strong><br />
-                Scan the enrollment QR code from your teacher<br />
-                to create your account and enroll in courses.
+                <strong>💡 First time here?</strong><br />
+                Scan an attendance QR code from your teacher to create your account automatically.
             </div>
 
             <a href="@Url.Action("Login", "Account")" class="back-link">← Back to Admin/Teacher Login</a>
@@ -62,7 +58,5 @@
             </div>
         </div>
     </div>
-
-    <script src="~/js/pages/student-login.js"></script>
 </body>
 </html>

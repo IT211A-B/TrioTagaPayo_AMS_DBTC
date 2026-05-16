@@ -144,7 +144,6 @@ button {
             text-decoration: underline;
         }
 
-/* Responsive */
 @media (max-width: 480px) {
     .card {
         padding: 25px;

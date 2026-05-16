@@ -1,68 +1,146 @@
-﻿@{
-    Layout = null;
-    ViewData["Title"] = "Student Login";
-    string errorMsg = ViewBag.Error as string ?? "";
+﻿* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Student Login - 3TagaPayu AMS</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="~/css/pages/student-login.css" />
-</head>
-<body>
-    <div class="login-container">
-        <div class="login-card">
-            <div class="logo">
-                <h1>3TagaPayu <span>AMS</span></h1>
-                <p>Student Portal</p>
-            </div>
+body {
+    font-family: 'Outfit', sans-serif;
+    background: linear-gradient(135deg, #0a0010 0%, #1a0030 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
 
-            <div class="title">
-                <h2>Welcome Student!</h2>
-                <p>Login to mark your attendance</p>
-            </div>
+.login-container {
+    max-width: 450px;
+    width: 100%;
+    margin: 0 auto;
+}
 
-            @if (!string.IsNullOrEmpty(errorMsg))
-            {
-                <div class="error-msg">
-                    ⚠️ @errorMsg
-                </div>
-            }
+.login-card {
+    background: rgba(13, 26, 42, 0.95);
+    border: 1px solid rgba(216, 27, 96, 0.3);
+    padding: 32px;
+    width: 100%;
+}
 
-            <form method="post" asp-action="StudentLogin" asp-controller="Account">
-                @Html.AntiForgeryToken()
+.logo {
+    text-align: center;
+    margin-bottom: 24px;
+}
 
-                <div class="input-group">
-                    <label>STUDENT ID / USERNAME</label>
-                    <input type="text" name="username" placeholder="e.g., 2024-00001" required autofocus />
-                </div>
+    .logo h1 {
+        font-size: 24px;
+        font-weight: 900;
+        color: #e2eaf4;
+    }
 
-                <div class="input-group">
-                    <label>PASSWORD</label>
-                    <input type="password" name="password" placeholder="Enter your password" required />
-                </div>
+    .logo span {
+        color: #d81b60;
+    }
 
-                <button type="submit" class="login-btn" id="loginBtn">LOGIN</button>
-            </form>
+    .logo p {
+        font-size: 11px;
+        color: #64748b;
+    }
 
-            <div class="info-box">
-                <strong>💡 Don't have an account?</strong><br />
-                Scan the enrollment QR code from your teacher<br />
-                to create your account and enroll in courses.
-            </div>
+.title {
+    text-align: center;
+    margin-bottom: 24px;
+}
 
-            <a href="@Url.Action("Login", "Account")" class="back-link">← Back to Admin/Teacher Login</a>
+    .title h2 {
+        font-size: 20px;
+        font-weight: 700;
+        color: #e2eaf4;
+        margin-bottom: 4px;
+    }
 
-            <div class="footer">
-                <p>3TagaPayu Attendance Management System</p>
-            </div>
-        </div>
-    </div>
+    .title p {
+        font-size: 12px;
+        color: #64748b;
+    }
 
-    <script src="~/js/pages/student-login.js"></script>
-</body>
-</html>
+.error-msg {
+    border-left: 3px solid #ef4444;
+    background: rgba(239, 68, 68, 0.1);
+    padding: 10px 13px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #fca5a5;
+}
+
+.input-group {
+    margin-bottom: 20px;
+}
+
+    .input-group label {
+        display: block;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #64748b;
+        margin-bottom: 6px;
+    }
+
+    .input-group input {
+        width: 100%;
+        padding: 12px 14px;
+        background: rgba(0, 0, 0, 0.4);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        color: #e2eaf4;
+        font-size: 14px;
+    }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #d81b60;
+        }
+
+.login-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(90deg, #d81b60, #9c1040);
+    border: none;
+    color: white;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+    .login-btn:hover {
+        opacity: 0.9;
+    }
+
+.info-box {
+    background: rgba(56, 189, 248, 0.08);
+    border-left: 3px solid #38bdf8;
+    padding: 12px;
+    margin-top: 20px;
+    font-size: 11px;
+    color: #64748b;
+    text-align: center;
+}
+
+.back-link {
+    display: block;
+    text-align: center;
+    margin-top: 20px;
+    font-size: 11px;
+    color: #38bdf8;
+    text-decoration: none;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 10px;
+    color: #334155;
+}
