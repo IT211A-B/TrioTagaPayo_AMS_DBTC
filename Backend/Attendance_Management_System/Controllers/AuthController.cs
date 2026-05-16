@@ -188,7 +188,12 @@ namespace Attendance_Management_System.Controllers
             await _studentRepository.AddAsync(student);
             await _studentRepository.SaveChangesAsync();
 
-            var frontendUrl = _configuration["FrontendUrl"] ?? "https://localhost:7033";
+            // ✅ LINK USER TO STUDENT
+            user.StudentId = student.Id;
+            _userRepository.Update(user);
+            await _userRepository.SaveChangesAsync();
+
+            var frontendUrl = _configuration["FrontendUrl"] ?? "https://triotagapayo-ams-dbtc-vzpc.onrender.com/";
             var verificationLink = $"{frontendUrl}/verify-email?token={user.EmailVerificationToken}";
             var emailBody = $@"
                 <html>

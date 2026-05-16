@@ -1,4 +1,6 @@
-﻿public class User
+﻿using Attendance_Management_System.Models;
+
+public class User
 {
     public int Id { get; set; }
     public string Username { get; set; } = string.Empty;
@@ -10,7 +12,11 @@
     public int? TeacherId { get; set; }
     public string? ProfilePhotoUrl { get; set; }
 
-    // ✅ Email verification fields
+    // ✅ NEW: Link to Student (for Student role)
+    public int? StudentId { get; set; }
+    public Student? Student { get; set; }
+
+    // Email verification fields
     public bool IsEmailVerified { get; set; } = false;
     public string? EmailVerificationToken { get; set; }
     public DateTime? EmailVerificationTokenExpiry { get; set; }
