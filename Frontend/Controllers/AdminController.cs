@@ -1057,4 +1057,4 @@ public class AdminController : Controller
             ? Json(new { success = true, message = $"Marked {courseStudents.Count} students as present." })
             : Json(new { success = false, message = $"Failed: {ParseError(result.Error)}" });
     }
-}" " 
+}
