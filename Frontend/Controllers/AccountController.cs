@@ -301,7 +301,7 @@ namespace AMS.Controllers
 
             var role = HttpContext.Session.GetString("Role");
             var userName = HttpContext.Session.GetString("Username") ?? "User";
-            var profilePhotoUrl = HttpContext.Session.GetString("ProfilePicture");
+            var profilePhotoUrl = HttpContext.Session.GetString("ProfilePicture") ?? "";
             var model = new ProfileViewModel
             {
                 FullName = userName,
