@@ -5,7 +5,6 @@
     var isSubmitting = false;
 
     document.addEventListener('DOMContentLoaded', function () {
-        // Get courseId from URL
         var urlParams = new URLSearchParams(window.location.search);
         courseId = urlParams.get('courseId');
 
@@ -15,7 +14,6 @@
             loadCourseInfo();
         }
 
-        // Bind button click event
         var enrollBtn = document.getElementById('enrollBtn');
         if (enrollBtn) {
             enrollBtn.addEventListener('click', submitEnrollment);
@@ -46,7 +44,8 @@
                 var schedule = data.schedule || 'N/A';
                 var teacherName = data.teacherName || 'N/A';
 
-                courseInfoDiv.innerHTML = '<div class="course-detail">' +
+                courseInfoDiv.innerHTML =
+                    '<div class="course-detail">' +
                     '<span class="course-code">' + escapeHtml(courseCode) + '</span>' +
                     '<h3 class="course-name">' + escapeHtml(courseName) + '</h3>' +
                     '<p class="course-meta">Section: ' + escapeHtml(section) + ' | Schedule: ' + escapeHtml(schedule) + '</p>' +
@@ -108,7 +107,6 @@
         }
 
         try {
-            // Step 1: Register the student account
             var registerResponse = await fetch('/api/Auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -143,7 +141,6 @@
                 btn.textContent = 'Enrolling in Course...';
             }
 
-            // Step 2: Enroll in the course
             var enrollResponse = await fetch('/api/Enrollment/self-enroll', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

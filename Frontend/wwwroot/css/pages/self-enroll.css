@@ -69,7 +69,8 @@ body {
     margin: 8px 0 4px;
 }
 
-.course-meta, .course-teacher {
+.course-meta,
+.course-teacher {
     font-size: 12px;
     color: #64748b;
 }

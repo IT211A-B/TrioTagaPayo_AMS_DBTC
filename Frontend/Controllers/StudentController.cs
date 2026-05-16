@@ -104,103 +104,59 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
-        // RECORD ATTENDANCE (GUEST MODE - AUTO-CREATE STUDENT)
+        // RECORD ATTENDANCE - REQUIRES LOGIN (SECURE)
         // ─────────────────────────────────────────────────────
-        [AllowAnonymous]
         [HttpGet]
-        public IActionResult RecordAttendance(int courseId, string date)
+        public async Task<IActionResult> RecordAttendance(int courseId, string date)
         {
-            ViewBag.CourseId = courseId;
-            ViewBag.Date = date;
-
-            return View(new RecordAttendanceViewModel
+            if (!IsLoggedIn())
             {
-                CourseId = courseId,
-                Date = date,
-                RequiresLogin = !IsLoggedIn()
-            });
-        }
-
-        [AllowAnonymous]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> RecordAttendance([FromForm] RecordAttendanceRequest request)
-        {
-            try
-            {
-                int? studentId = null;
-                string studentFullName = request.StudentName ?? "";
-
-                // Step 1: Try to find existing student by StudentNo
-                var allStudents = await _api.GetAllAsync<StudentApiModel>("/api/Student");
-                StudentApiModel? existingStudent = null;
-
-                if (allStudents != null)
-                {
-                    existingStudent = allStudents.FirstOrDefault(s => s.StudentNo == request.StudentId);
-                }
-
-                if (existingStudent != null)
-                {
-                    studentId = existingStudent.Id;
-                    studentFullName = $"{existingStudent.FirstName} {existingStudent.LastName}";
-                }
-                else
-                {
-                    // Step 2: Auto-create student account
-                    string firstName = "Guest";
-                    string lastName = "Student";
-
-                    if (!string.IsNullOrEmpty(request.StudentName))
-                    {
-                        var nameParts = request.StudentName.Trim().Split(' ');
-                        firstName = nameParts[0];
-                        lastName = nameParts.Length > 1 ? string.Join(" ", nameParts.Skip(1)) : "Student";
-                    }
-
-                    var newStudent = new
-                    {
-                        studentNo = request.StudentId ?? "",
-                        firstName = firstName,
-                        lastName = lastName,
-                        middleName = "",
-                        email = string.IsNullOrEmpty(request.StudentId) ? "guest@student.ams.edu" : $"{request.StudentId}@student.ams.edu",
-                        section = "Guest",
-                        mobileNo = ""
-                    };
-
-                    var createResult = await _api.PostAsync<StudentApiModel>("/api/Student", newStudent);
-                    if (createResult.Success && createResult.Data != null)
-                    {
-                        studentId = createResult.Data.Id;
-                    }
-                    else
-                    {
-                        return Json(new { success = false, message = "Failed to create student record" });
-                    }
-                }
-
-                var attendanceData = new
-                {
-                    studentId = studentId,
-                    courseId = request.CourseId,
-                    date = request.Date,
-                    status = "Present",
-                    remarks = "Scanned via QR"
-                };
-
-                var apiResult = await _api.PostAsync<object>("/api/Attendance", attendanceData);
-
-                if (apiResult.Success)
-                {
-                    return Json(new { success = true, message = $"Attendance recorded for {studentFullName}!" });
-                }
-
-                return Json(new { success = false, message = apiResult.Error ?? "Failed to record attendance" });
+                TempData["RedirectCourseId"] = courseId;
+                TempData["RedirectDate"] = date;
+                return RedirectToAction("StudentLogin", "Account");
             }
-            catch (Exception ex)
+
+            if (!IsStudent())
             {
-                return Json(new { success = false, message = ex.Message });
+                return RedirectToAction("Login", "Account");
+            }
+
+            var studentIdStr = HttpContext.Session.GetString("StudentId");
+            var studentName = HttpContext.Session.GetString("StudentName") ??
+                              HttpContext.Session.GetString("Username") ?? "Student";
+
+            if (string.IsNullOrEmpty(studentIdStr) || !int.TryParse(studentIdStr, out int studentId))
+            {
+                TempData["Error"] = "Student not found. Please log in again.";
+                return RedirectToAction("StudentLogin", "Account");
+            }
+
+            if (!DateOnly.TryParse(date, out _))
+            {
+                TempData["Error"] = "Invalid date format.";
+                return RedirectToAction("Dashboard");
+            }
+
+            var attendanceData = new
+            {
+                studentId = studentId,
+                courseId = courseId,
+                date = date,
+                status = "Present",
+                remarks = "Scanned via QR"
+            };
+
+            var result = await _api.PostAsync<object>("/api/Attendance", attendanceData);
+
+            if (result.Success)
+            {
+                TempData["Success"] = $"Attendance recorded for {studentName}!";
+                return RedirectToAction("Dashboard");
+            }
+            else
+            {
+                TempData["Error"] = result.Error ?? "Failed to record attendance";
+                return RedirectToAction("Dashboard");
             }
         }
 
@@ -215,7 +171,6 @@ namespace AMS.Controllers
 
             try
             {
-                // If the QR contains the RecordAttendance URL, handle directly
                 if (qrData.Contains("/Student/RecordAttendance"))
                 {
                     var uri = new Uri(qrData);
@@ -247,7 +202,6 @@ namespace AMS.Controllers
                     }
                 }
 
-                // Otherwise, treat as sessionId
                 string sessionId = "";
                 if (qrData.Contains("sessionId="))
                 {
@@ -375,31 +329,5 @@ namespace AMS.Controllers
             if (!IsLoggedIn()) return RedirectToAction("StudentLogin", "Account");
             return RedirectToAction("Dashboard");
         }
-
-        // ─────────────────────────────────────────────────────
-        // VIEW MODELS
-        // ─────────────────────────────────────────────────────
-        public class RecordAttendanceViewModel
-        {
-            public int CourseId { get; set; }
-            public string Date { get; set; } = "";
-            public bool RequiresLogin { get; set; }
-        }
-
-        public class RecordAttendanceRequest
-        {
-            public int CourseId { get; set; }
-            public string Date { get; set; } = "";
-            public string? StudentId { get; set; }
-            public string? StudentName { get; set; }
-        }
-        private string GenerateRandomPassword()
-        {
-            // Generate a simple password: "STU" + random numbers
-            var random = new Random();
-            var numbers = random.Next(1000, 9999);
-            return $"STU{numbers}";
-        }
     }
-
 }
