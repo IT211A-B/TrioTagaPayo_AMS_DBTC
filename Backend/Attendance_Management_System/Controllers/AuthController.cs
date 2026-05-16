@@ -7,7 +7,7 @@ using Attendance_Management_System.Models;
 using BCrypt.Net;
 using Attendance_Management_System.DTOs;
 using Attendance_Management_System.Repositories.Interfaces;
-using Attendance_Management_System.Services; // for SendGridEmailService
+using Attendance_Management_System.Services;
 
 namespace Attendance_Management_System.Controllers
 {
@@ -19,9 +19,9 @@ namespace Attendance_Management_System.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly IPasswordHasher _hasher;
-        private readonly EmailJSHelper _emailJS;          // Keep for attendance notifications (optional)
+        private readonly EmailJSHelper _emailJS;
         private readonly IConfiguration _configuration;
-        private readonly SendGridEmailService _sendGridEmail; // ✅ SendGrid
+        private readonly SendGridEmailService _sendGridEmail;
 
         public AuthController(
             IAuthService authService,
@@ -30,7 +30,7 @@ namespace Attendance_Management_System.Controllers
             IPasswordHasher hasher,
             EmailJSHelper emailJS,
             IConfiguration configuration,
-            SendGridEmailService sendGridEmail)          // ✅ Inject SendGrid
+            SendGridEmailService sendGridEmail)
         {
             _authService = authService;
             _userRepository = userRepository;
@@ -41,47 +41,9 @@ namespace Attendance_Management_System.Controllers
             _sendGridEmail = sendGridEmail;
         }
 
-        [AllowAnonymous]
-        [HttpGet("hash-password")]
-        public IActionResult HashPassword(string password)
-        {
-            var hash = _hasher.Hash(password);
-            return Ok(new { password, hash });
-        }
-
-        // ========================= TEST ENDPOINTS =========================
-        [AllowAnonymous]
-        [HttpGet("test-bcrypt")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public IActionResult TestBcrypt()
-        {
-            try
-            {
-                var testPassword = "admin123";
-                var testHash = BCrypt.Net.BCrypt.HashPassword(testPassword);
-                var isValid = BCrypt.Net.BCrypt.Verify(testPassword, testHash);
-                return Ok(new { success = true, isValid, message = isValid ? "BCrypt is working!" : "BCrypt failed!" });
-            }
-            catch (Exception ex)
-            {
-                return Ok(new { success = false, error = ex.Message });
-            }
-        }
-
-        [AllowAnonymous]
-        [HttpGet("test-sendgrid")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<IActionResult> TestSendGrid()
-        {
-            var result = await _sendGridEmail.SendEmailAsync(
-                "maanojamesneil123@gmail.com", // change to your own test address
-                "Test from SendGrid",
-                "<h1>SendGrid works!</h1><p>If you see this, everything is set up correctly.</p>"
-            );
-            return Ok(new { success = result });
-        }
-
         // ========================= AUTHENTICATION =========================
+
+        /// <summary>Logs in a user and returns JWT tokens.</summary>
         [AllowAnonymous]
         [HttpPost("login")]
         [EnableRateLimiting("login")]
@@ -118,6 +80,7 @@ namespace Attendance_Management_System.Controllers
             return Ok(result);
         }
 
+        /// <summary>Refreshes the access token using a valid refresh token.</summary>
         [AllowAnonymous]
         [HttpPost("refresh")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -153,6 +116,7 @@ namespace Attendance_Management_System.Controllers
             return Ok(result);
         }
 
+        /// <summary>Logs out the current user and clears auth cookies.</summary>
         [Authorize]
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -164,6 +128,7 @@ namespace Attendance_Management_System.Controllers
             return Ok(new { message = "Logged out successfully." });
         }
 
+        /// <summary>Returns the currently authenticated user's info.</summary>
         [Authorize]
         [HttpGet("me")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -177,6 +142,8 @@ namespace Attendance_Management_System.Controllers
         }
 
         // ========================= REGISTRATION =========================
+
+        /// <summary>Registers a new student account and sends an email verification link.</summary>
         [AllowAnonymous]
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -221,7 +188,6 @@ namespace Attendance_Management_System.Controllers
             await _studentRepository.AddAsync(student);
             await _studentRepository.SaveChangesAsync();
 
-            // ✅ Send verification email using SendGrid
             var frontendUrl = _configuration["FrontendUrl"] ?? "https://localhost:7033";
             var verificationLink = $"{frontendUrl}/verify-email?token={user.EmailVerificationToken}";
             var emailBody = $@"
@@ -253,6 +219,8 @@ namespace Attendance_Management_System.Controllers
         }
 
         // ========================= PASSWORD MANAGEMENT =========================
+
+        /// <summary>Changes the password of the currently authenticated user.</summary>
         [Authorize]
         [HttpPost("change-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -283,6 +251,8 @@ namespace Attendance_Management_System.Controllers
         }
 
         // ========================= EMAIL VERIFICATION =========================
+
+        /// <summary>Resends the email verification link to the user.</summary>
         [AllowAnonymous]
         [HttpPost("resend-verification")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -301,7 +271,6 @@ namespace Attendance_Management_System.Controllers
             _userRepository.Update(user);
             await _userRepository.SaveChangesAsync();
 
-            // Get student email
             string email = "";
             if (user.Role == "Student")
             {
@@ -326,6 +295,7 @@ namespace Attendance_Management_System.Controllers
             return Ok(new { success = true, message = "Verification email sent." });
         }
 
+        /// <summary>Verifies a user's email address using the token sent via email.</summary>
         [AllowAnonymous]
         [HttpPost("verify-email")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -351,7 +321,9 @@ namespace Attendance_Management_System.Controllers
             return Ok(new { success = true, message = "Email verified successfully. You can now log in." });
         }
 
-        // ========================= FORGOT PASSWORD REQUEST =========================
+        // ========================= FORGOT PASSWORD =========================
+
+        /// <summary>Submits a forgot password request and notifies the admin.</summary>
         [AllowAnonymous]
         [HttpPost("forgot-password-request")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -361,14 +333,11 @@ namespace Attendance_Management_System.Controllers
             if (user == null)
                 return Ok(new { success = true, message = "If the account exists, the admin has been notified." });
 
-            // (Optional) Send email to admin
-            // var adminEmail = _configuration["AdminEmail"] ?? "admin@yourdomain.com";
-            // await _sendGridEmail.SendEmailAsync(adminEmail, "Password Reset Request", $"User {user.Username} requested a password reset.");
-
             return Ok(new { success = true, message = "The admin has been notified. You will receive instructions shortly." });
         }
 
         // ========================= HELPERS =========================
+
         private async Task<string> GenerateStudentNumber()
         {
             var students = await _studentRepository.GetAllAsync();

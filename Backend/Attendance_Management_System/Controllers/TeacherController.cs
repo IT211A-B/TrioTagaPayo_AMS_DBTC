@@ -27,14 +27,21 @@ namespace Attendance_Management_System.Controllers
             _courseService = courseService;
         }
 
+        /// <summary>Gets all teachers with optional pagination.</summary>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
         {
             var all = await _teacherService.GetAllAsync();
             return Ok(PaginationHelper.Paginate(all, page, pageSize));
         }
 
+        /// <summary>Gets a single teacher by ID.</summary>
         [HttpGet("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetById(int id)
         {
             var teacher = await _teacherService.GetByIdAsync(id);
@@ -43,14 +50,22 @@ namespace Attendance_Management_System.Controllers
                 : Ok(teacher);
         }
 
+        /// <summary>Creates a new teacher record.</summary>
         [HttpPost]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Create([FromBody] CreateTeacherDto dto)
         {
             var created = await _teacherService.CreateAsync(dto);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
+        /// <summary>Creates a new teacher with a linked user account.</summary>
         [HttpPost("with-account")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> CreateWithAccount([FromBody] CreateTeacherWithAccountDto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.Username) || string.IsNullOrWhiteSpace(dto.Password))
@@ -61,7 +76,11 @@ namespace Attendance_Management_System.Controllers
                 : Ok(result);
         }
 
+        /// <summary>Updates an existing teacher record.</summary>
         [HttpPut("{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTeacherDto dto)
         {
             var updated = await _teacherService.UpdateAsync(id, dto);
@@ -70,7 +89,11 @@ namespace Attendance_Management_System.Controllers
                 : Ok(updated);
         }
 
+        /// <summary>Updates the linked user account of a teacher.</summary>
         [HttpPut("{id}/account")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> UpdateAccount(int id, [FromBody] UpdateTeacherAccountDto dto)
         {
             var result = await _teacherService.UpdateAccountAsync(id, dto);
@@ -79,14 +102,22 @@ namespace Attendance_Management_System.Controllers
                 : Ok(result);
         }
 
+        /// <summary>Deletes a teacher record by ID.</summary>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
             var deleted = await _teacherService.DeleteAsync(id);
             return deleted ? NoContent() : NotFound(new { message = $"Teacher with ID {id} not found." });
         }
 
+        /// <summary>Toggles the active/inactive status of a teacher.</summary>
         [HttpPatch("{id}/toggle-status")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ToggleStatus(int id)
         {
             var result = await _teacherService.ToggleStatusAsync(id);
@@ -102,6 +133,10 @@ namespace Attendance_Management_System.Controllers
         [HttpPost("GenerateCourseQRCode")]
         [Authorize(Roles = "Admin,Teacher")]
         [ValidateAntiForgeryToken]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> GenerateCourseQRCode([FromForm] int courseId)
         {
             // Verify the course exists
