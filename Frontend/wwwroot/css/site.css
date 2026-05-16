@@ -26,7 +26,10 @@
 @import 'pages/courses.css';
 @import 'pages/students.css';
 @import 'pages/teachers.css';
-@import 'pages/profile.css'; /* MAKE SURE THIS IS INCLUDED */
+@import 'pages/profile.css';
+@import 'pages/student-dashboard.css';
+@import 'pages/student-scanner.css';
+@import 'pages/student-mobile.css'; /* ADD THIS LINE */
 
 /* Utilities */
 @import 'utilities/display.css';
