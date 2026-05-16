@@ -357,6 +357,17 @@ namespace AMS.Controllers
         }
 
         // ─────────────────────────────────────────────────────
+        // SELF ENROLLMENT PAGE (from enrollment QR)
+        // ─────────────────────────────────────────────────────
+        [AllowAnonymous]
+        [HttpGet]
+        public IActionResult SelfEnroll(int courseId)
+        {
+            ViewBag.CourseId = courseId;
+            return View();
+        }
+
+        // ─────────────────────────────────────────────────────
         // INDEX - Redirect to Dashboard
         // ─────────────────────────────────────────────────────
         public IActionResult Index()

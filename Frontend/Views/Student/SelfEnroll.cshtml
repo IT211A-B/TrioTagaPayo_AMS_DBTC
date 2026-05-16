@@ -1,4 +1,66 @@
-﻿@page
-@model AMS.Views.Student.SelfEnrollModel
-@{
+﻿@{
+    Layout = null;
+    ViewData["Title"] = "Student Self-Enrollment";
 }
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Self Enrollment - 3TagaPayu AMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/pages/self-enroll.css" />
+</head>
+<body>
+    <div class="enroll-container">
+        <div class="enroll-card">
+            <div class="logo">
+                <h1>3TagaPayu <span>AMS</span></h1>
+                <p>Student Self-Enrollment</p>
+            </div>
+
+            <div id="courseInfo" class="course-info">
+                <div class="loading">Loading course information...</div>
+            </div>
+
+            <div id="messageArea"></div>
+
+            <form id="enrollForm" style="display: none;">
+                <div class="form-group">
+                    <label>STUDENT ID <span class="required">*</span></label>
+                    <input type="text" id="studentId" class="form-input" placeholder="e.g., 2024-00001" required />
+                </div>
+
+                <div class="form-group">
+                    <label>FULL NAME <span class="required">*</span></label>
+                    <input type="text" id="fullName" class="form-input" placeholder="e.g., Juan Dela Cruz" required />
+                </div>
+
+                <div class="form-group">
+                    <label>CREATE PASSWORD <span class="required">*</span></label>
+                    <input type="password" id="password" class="form-input" placeholder="Minimum 6 characters" required />
+                </div>
+
+                <div class="form-group">
+                    <label>CONFIRM PASSWORD <span class="required">*</span></label>
+                    <input type="password" id="confirmPassword" class="form-input" placeholder="Re-enter your password" required />
+                </div>
+
+                <button type="button" id="enrollBtn" class="enroll-btn">Create Account & Enroll</button>
+            </form>
+
+            <div class="info-box">
+                <p>📌 After creating your account, you will be redirected to login.</p>
+                <p>🔐 Use your Student ID and the password you created to login.</p>
+            </div>
+
+            <div class="footer">
+                <p>3TagaPayu Attendance Management System</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/pages/self-enroll.js"></script>
+</body>
+</html>
