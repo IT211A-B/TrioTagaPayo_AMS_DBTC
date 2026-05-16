@@ -314,7 +314,7 @@ public class AdminController : Controller
     }
 
     // =============================================
-    // QR CODE GENERATION - FIXED with relative URL
+    // QR CODE GENERATION
     // =============================================
 
     [HttpGet]
@@ -333,7 +333,6 @@ public class AdminController : Controller
 
         try
         {
-            // FIXED: Use relative URL instead of hardcoded localhost
             var enrollmentUrl = $"/Student/SelfEnroll?courseId={courseId}";
 
             using (var qrGenerator = new QRCodeGenerator())
@@ -351,6 +350,7 @@ public class AdminController : Controller
             return Json(new { success = false, message = $"QR generation failed: {ex.Message}" });
         }
     }
+
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> GenerateAttendanceQR(int courseId, string date)
@@ -446,6 +446,152 @@ public class AdminController : Controller
     }
 
     // =============================================
+    // ADD STUDENT (UPDATED WITH PASSWORD)
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddStudent(string firstName, string middleName, string lastName, string email, string section, string mobileNo, string password)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        // Validate required fields
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) ||
+            string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(section))
+        {
+            return AjaxFail("Please fill in all required fields.");
+        }
+
+        // Validate password
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            return AjaxFail("Please enter a password for the student.");
+        }
+
+        if (password.Length < 6)
+        {
+            return AjaxFail("Password must be at least 6 characters.");
+        }
+
+        try
+        {
+            // Step 1: Generate Student Number
+            var studentNo = await GenerateStudentNumber();
+
+            // Step 2: Create Student record via API
+            var newStudent = new
+            {
+                studentNo = studentNo,
+                firstName = firstName,
+                middleName = middleName ?? "",
+                lastName = lastName,
+                email = email,
+                section = section,
+                mobileNo = mobileNo ?? ""
+            };
+
+            var createStudent = await _api.PostAsync<StudentApiModel>("/api/Student", newStudent);
+
+            if (!createStudent.Success)
+            {
+                return AjaxFail($"Failed to create student: {createStudent.Error}");
+            }
+
+            // Step 3: Create User account for the student
+            var registerData = new
+            {
+                username = studentNo,
+                password = password,
+                fullName = $"{firstName} {lastName}",
+                email = email,
+                role = "Student"
+            };
+
+            var registerUser = await _api.PostAsync<object>("/api/Auth/register", registerData);
+
+            if (!registerUser.Success)
+            {
+                // Rollback - delete the student if user creation fails
+                if (createStudent.Data != null)
+                {
+                    await _api.DeleteAsync($"/api/Student/{createStudent.Data.Id}");
+                }
+                return AjaxFail($"Failed to create user account: {registerUser.Error}");
+            }
+
+            return AjaxOk($"Student created successfully! Student ID: {studentNo}, Password: [set by admin]");
+        }
+        catch (Exception ex)
+        {
+            return AjaxFail($"Error: {ex.Message}");
+        }
+    }
+
+    // =============================================
+    // UPDATE STUDENT
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateStudent(int id, string firstName, string middleName, string lastName, string email, string section, string mobileNo)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) ||
+            string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(section))
+        {
+            return AjaxFail("Please fill in all required fields.");
+        }
+
+        var body = new
+        {
+            firstName = firstName,
+            middleName = middleName ?? "",
+            lastName = lastName,
+            email = email,
+            section = section,
+            mobileNo = mobileNo ?? ""
+        };
+
+        var result = await _api.PutAsync($"/api/Student/{id}", body);
+
+        if (result.Success)
+        {
+            return AjaxOk("Student updated successfully.");
+        }
+        return AjaxFail($"Failed: {ParseError(result.Error)}");
+    }
+
+    // =============================================
+    // DELETE STUDENT
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteStudent(int id)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        // First, get the student to know their StudentNo
+        var student = await _api.GetAsync<StudentApiModel>($"/api/Student/{id}");
+
+        // Delete the student record
+        var result = await _api.DeleteAsync($"/api/Student/{id}");
+
+        if (result.Success)
+        {
+            // Also try to delete the user account if it exists
+            if (student != null && !string.IsNullOrEmpty(student.StudentNo))
+            {
+                await _api.DeleteAsync($"/api/User/{student.StudentNo}");
+            }
+            return AjaxOk("Student deleted successfully.");
+        }
+
+        return AjaxFail($"Failed: {ParseError(result.Error)}");
+    }
+
+    // =============================================
     // TEACHERS
     // =============================================
 
@@ -467,6 +613,124 @@ public class AdminController : Controller
             Search = search,
             StatusFilter = status
         });
+    }
+
+    // =============================================
+    // ADD TEACHER
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> AddTeacher(string firstName, string lastName, string email)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) || string.IsNullOrWhiteSpace(email))
+        {
+            return AjaxFail("Please fill in all required fields.");
+        }
+
+        try
+        {
+            var teacherNo = await GenerateTeacherNumber();
+            var username = $"{firstName.ToLower()}.{lastName.ToLower()}";
+            var defaultPassword = $"teacher123";
+
+            // Create User account first
+            var registerData = new
+            {
+                username = username,
+                password = defaultPassword,
+                fullName = $"{firstName} {lastName}",
+                email = email,
+                role = "Teacher"
+            };
+
+            var registerUser = await _api.PostAsync<object>("/api/Auth/register", registerData);
+
+            if (!registerUser.Success)
+            {
+                return AjaxFail($"Failed to create teacher account: {registerUser.Error}");
+            }
+
+            // Then create Teacher record
+            var newTeacher = new
+            {
+                teacherNo = teacherNo,
+                firstName = firstName,
+                lastName = lastName,
+                email = email,
+                isActive = true,
+                username = username,
+                hasAccount = true
+            };
+
+            var createTeacher = await _api.PostAsync<TeacherApiModel>("/api/Teacher", newTeacher);
+
+            if (!createTeacher.Success)
+            {
+                // Rollback - delete user account if teacher creation fails
+                await _api.DeleteAsync($"/api/User/{username}");
+                return AjaxFail($"Failed to create teacher record: {createTeacher.Error}");
+            }
+
+            return AjaxOk($"Teacher created successfully! Username: {username}, Password: {defaultPassword}");
+        }
+        catch (Exception ex)
+        {
+            return AjaxFail($"Error: {ex.Message}");
+        }
+    }
+
+    // =============================================
+    // UPDATE TEACHER
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> UpdateTeacher(int id, string firstName, string lastName, string email)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName) || string.IsNullOrWhiteSpace(email))
+        {
+            return AjaxFail("Please fill in all required fields.");
+        }
+
+        var body = new
+        {
+            firstName = firstName,
+            lastName = lastName,
+            email = email
+        };
+
+        var result = await _api.PutAsync($"/api/Teacher/{id}", body);
+        return result.Success ? AjaxOk("Teacher updated successfully.") : AjaxFail($"Failed: {ParseError(result.Error)}");
+    }
+
+    // =============================================
+    // DELETE TEACHER
+    // =============================================
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteTeacher(int id)
+    {
+        if (!IsLoggedIn()) return Unauthorized();
+
+        var teacher = await _api.GetAsync<TeacherApiModel>($"/api/Teacher/{id}");
+        var result = await _api.DeleteAsync($"/api/Teacher/{id}");
+
+        if (result.Success)
+        {
+            if (teacher != null && !string.IsNullOrEmpty(teacher.Username))
+            {
+                await _api.DeleteAsync($"/api/User/{teacher.Username}");
+            }
+            return AjaxOk("Teacher deleted successfully.");
+        }
+
+        return AjaxFail($"Failed: {ParseError(result.Error)}");
     }
 
     // =============================================
@@ -793,4 +1057,4 @@ public class AdminController : Controller
             ? Json(new { success = true, message = $"Marked {courseStudents.Count} students as present." })
             : Json(new { success = false, message = $"Failed: {ParseError(result.Error)}" });
     }
-}
+}" " 
